@@ -9,9 +9,9 @@ import {
   getUserById,
   updateUser,
 } from '../controllers/userController.js';
-import { protect, admin } from '../middleware/authMiddleware.js';
+// Import the new 'authorize' function instead of 'admin'
+import { protect, authorize } from '../middleware/authMiddleware.js';
 
-// Note: The most specific routes should come first.
 // Routes for the logged-in user's profile
 router
   .route('/profile')
@@ -19,12 +19,14 @@ router
   .put(protect, updateUserProfile);
 
 // Routes for admin-only user management
-router.route('/').get(protect, admin, getUsers); // Changed authorize('admin') to admin
+// Use authorize('admin') instead of the old 'admin' middleware
+router.route('/').get(protect, authorize('admin'), getUsers);
 
 router
   .route('/:id')
-  .delete(protect, admin, deleteUser) // Changed authorize('admin') to admin
-  .get(protect, admin, getUserById)   // Changed authorize('admin') to admin
-  .put(protect, admin, updateUser);    // Changed authorize('admin') to admin
+  .delete(protect, authorize('admin'), deleteUser)
+  .get(protect, authorize('admin'), getUserById)
+  .put(protect, authorize('admin'), updateUser);
 
 export default router;
+

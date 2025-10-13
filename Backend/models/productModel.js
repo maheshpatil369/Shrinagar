@@ -1,83 +1,60 @@
 // Backend/models/productModel.js
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Product name is required'],
-      trim: true,
+      required: true,
     },
-    // Reference to the seller who owns this product
     seller: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Seller',
       required: true,
+      ref: 'User',
     },
     description: {
       type: String,
-      required: [true, 'Product description is required'],
+      required: true,
     },
     price: {
       type: Number,
-      required: [true, 'Product price is required'],
+      required: true,
     },
     category: {
       type: String,
-      required: [true, 'Product category is required'],
-      enum: ['ring', 'necklace', 'earrings', 'bracelet', 'other'],
-    },
-    material: {
-      type: String,
-      required: [true, 'Product material is required'],
+      required: true,
     },
     images: [
       {
-        type: String, // URLs to the images
-        required: true,
+        type: String, // URL to the image
       },
     ],
-    // URL for the 3D model for AR Try-On
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending',
+    },
+    // This field can store the URL to the AR model file
     arModelUrl: {
-        type: String,
+      type: String,
     },
     affiliateUrl: {
       type: String,
-      required: [true, 'Affiliate URL is required'],
+      required: true,
     },
-    inStock: {
-      type: Boolean,
-      default: true,
-    },
-    isFeatured: {
-      type: Boolean,
-      default: false,
-    },
-    // Product status, to be approved by an admin
-    status: {
-      type: String,
-      enum: ['pending', 'approved', 'rejected', 'suspended'],
-      default: 'pending',
-    },
-    // Fields for tracking views and clicks for analytics
-    viewCount: {
+    clicks: {
       type: Number,
       default: 0,
     },
-    clickCount: {
+    views: {
       type: Number,
-      default: 0,
-    },
+      default: 0
+    }
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
-
-// Create an index on name and description for text search capabilities
-productSchema.index({ name: 'text', description: 'text', material: 'text' });
-
 
 const Product = mongoose.model('Product', productSchema);
 
-module.exports = Product;
+// Use 'export default' instead of 'module.exports'
+export default Product;

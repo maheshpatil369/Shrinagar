@@ -1,15 +1,18 @@
-// shringar-backend/utils/generateToken.js
+// Backend/utils/generateToken.js
+import jwt from 'jsonwebtoken';
 
-const jwt = require('jsonwebtoken');
+const generateToken = (res, userId, role) => {
+  const token = jwt.sign({ userId, role }, process.env.JWT_SECRET, {
+    expiresIn: '30d',
+  });
 
-const generateToken = (id, role) => {
-  // jwt.sign() creates a new token.
-  // The first argument is the payload, which is the data we want to store in the token.
-  // The second argument is the JWT secret from our environment variables.
-  // The third argument is an options object, where we can set the token's expiration time.
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
+  res.cookie('jwt', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV !== 'development', // Use secure cookies in production
+    sameSite: 'strict', // Prevent CSRF attacks
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   });
 };
 
-module.exports = generateToken;
+// Use 'export default' instead of 'module.exports'
+export default generateToken;

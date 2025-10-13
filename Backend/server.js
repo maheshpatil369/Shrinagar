@@ -1,17 +1,16 @@
-// shringar-backend/server.js
-
-const express = require('express');
-const dotenv = require('dotenv');
-const cors = require('cors');
-const connectDB = require('./config/db');
-const { notFound, errorHandler } = require('./middleware/errorMiddleware');
+// Backend/server.js
+import express from 'express';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import cookieParser from 'cookie-parser'; // Import cookie-parser
+import connectDB from './config/db.js';
+import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 // Import routes
-const authRoutes = require('./routes/authRoutes');
-const productRoutes = require('./routes/productRoutes');
-const userRoutes = require('./routes/userRoutes');
-const sellerRoutes = require('./routes/sellerRoutes');
-
+import authRoutes from './routes/authRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import sellerRoutes from './routes/sellerRoutes.js';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -26,13 +25,18 @@ const app = express();
 // CORS Options to allow requests from your frontend development server
 const corsOptions = {
   origin: 'http://localhost:3000',
-  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+  credentials: true, // Allow cookies to be sent
+  optionsSuccessStatus: 200,
 };
 
 // Enable Cross-Origin Resource Sharing
 app.use(cors(corsOptions));
 // Enable express to parse JSON bodies from incoming requests
 app.use(express.json());
+// Enable express to parse URL-encoded bodies
+app.use(express.urlencoded({ extended: true }));
+// Enable cookie parser
+app.use(cookieParser());
 
 // --- Basic Test Route ---
 app.get('/', (req, res) => {
@@ -44,7 +48,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/sellers', sellerRoutes);
-
 
 // --- Error Handling Middleware ---
 app.use(notFound);
