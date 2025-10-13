@@ -1,22 +1,15 @@
-// Backend/routes/authRoutes.js
 import express from 'express';
 import {
-  registerUser,
   loginUser,
-  registerSeller,
+  registerUser,
+  logoutUser,
 } from '../controllers/authController.js';
-import {
-  validateRegistration,
-  validateLogin,
-  validateSellerRegistration,
-} from '../middleware/validationMiddleware.js';
-import { rateLimiter } from '../middleware/rateLimiter.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.post('/register', rateLimiter, validateRegistration, registerUser);
-router.post('/login', rateLimiter, validateLogin, loginUser);
-router.post('/register-seller', rateLimiter, validateSellerRegistration, registerSeller);
+router.post('/register', registerUser);
+router.post('/login', loginUser);
+router.post('/logout', protect, logoutUser);
 
 export default router;
-

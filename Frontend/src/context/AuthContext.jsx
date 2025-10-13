@@ -1,128 +1,83 @@
-// FILENAME: src/context/AuthContext.jsx
-//
-// This file creates a global state manager for authentication.
-// It handles login, logout, registration, and keeps track of the
-// current user's data and token throughout the entire application.
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import apiClient from '../api/apiClient'; // Import the new API client
+import Spinner from '../components/common/Spinner';
 
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+const AuthContext = createContext(null);
 
-// --- API Client Setup ---
-// We create a single, configured instance of Axios to communicate with the backend.
+export const useAuth = () => useContext(AuthContext);
 
-// IMPORTANT FOR YOUR LOCAL VITE PROJECT:
-// 1. Create a file named .env in the root of your frontend project.
-// 2. Add this line to the .env file: VITE_API_URL=http://localhost:8000
-// 3. Uncomment the line below to use the environment variable.
-// const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
-// This hardcoded URL is used to fix the compilation error and make the code runnable here.
-// You should replace this with the line above in your actual project.
-const baseURL = 'http://localhost:8000';
-
-const apiClient = axios.create({
-  baseURL: baseURL,
-});
-
-
-// Use an interceptor to automatically add the JWT token to the
-// 'Authorization' header for every protected API request.
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('shringar_token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// 1. Create the context
-const AuthContext = createContext();
-
-// 2. Create the provider component
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem('shringar_token'));
-  const [loading, setLoading] = useState(true); // To handle initial auth check
+  const [loading, setLoading] = useState(true); // Start with loading true
 
-  // This effect runs when the app first loads.
-  // It checks if a token exists in local storage and, if so,
-  // fetches the user's profile to validate the session.
-  useEffect(() => {
-    const validateUser = async () => {
-      if (token) {
-        try {
-          // The interceptor automatically adds the token to this request
-          const { data } = await apiClient.get('/api/users/profile');
-          setUser(data);
-        } catch (error) {
-          console.error('Session validation failed:', error);
-          // If token is invalid, log the user out
-          logout();
-        }
-      }
+  // Function to check the user's authentication status with the backend
+  const checkAuthStatus = useCallback(async () => {
+    try {
+      // This endpoint should return the user profile if the JWT cookie is valid
+      const data = await apiClient('/users/profile');
+      setUser(data);
+    } catch (error) {
+      // If the request fails (e.g., 401 Unauthorized), it means the user is not logged in
+      setUser(null);
+    } finally {
       setLoading(false);
-    };
-    validateUser();
-  }, [token]);
+    }
+  }, []);
 
-  // --- Core Authentication Functions ---
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   const login = async (email, password) => {
-    try {
-      const { data } = await apiClient.post('/api/auth/login', { email, password });
-      localStorage.setItem('shringar_token', data.token);
-      setToken(data.token);
-      setUser(data); // The response from your API includes user details
-      return { success: true };
-    } catch (error) {
-      return { success: false, message: error.response?.data?.message || 'Login failed' };
-    }
+    // The apiClient will throw an error on failure, which we can catch in the component
+    const data = await apiClient('/auth/login', {
+      body: { email, password },
+      method: 'POST',
+    });
+    setUser(data);
+    return data;
   };
 
   const register = async (name, email, password) => {
+    const data = await apiClient('/auth/register', {
+      body: { name, email, password },
+      method: 'POST',
+    });
+    setUser(data);
+    return data;
+  };
+
+  const logout = async () => {
     try {
-      const { data } = await apiClient.post('/api/auth/register', { name, email, password });
-      localStorage.setItem('shringar_token', data.token);
-      setToken(data.token);
-      setUser(data);
-      return { success: true };
+      await apiClient('/auth/logout', { method: 'POST' });
+      setUser(null);
     } catch (error) {
-        return { success: false, message: error.response?.data?.message || 'Registration failed' };
+      console.error('Logout failed:', error);
+      // Even if logout fails on the backend, clear the user state on the frontend
+      setUser(null);
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('shringar_token');
-    setToken(null);
-    setUser(null);
-  };
-
-  // The value that will be available to all consuming components
   const value = {
     user,
-    token,
-    isAuthenticated: !!token,
+    setUser,
+    isAuthenticated: !!user,
     loading,
     login,
     register,
     logout,
   };
 
+  // Render a loading spinner while checking auth status, then render the app
   return (
     <AuthContext.Provider value={value}>
-      {/* We don't render children until the initial auth check is complete */}
-      {!loading && children}
+      {loading ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <Spinner />
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 };
-
-// 3. Create a custom hook for easy access to the context
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
-

@@ -1,21 +1,20 @@
-// Backend/controllers/productController.js
-import asyncHandler from '../middleware/asyncHandler.js';
+import asyncHandler from 'express-async-handler';
 import Product from '../models/productModel.js';
 
 // @desc    Fetch all products
 // @route   GET /api/products
 // @access  Public
-const getProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find({ status: 'approved' });
+export const getProducts = asyncHandler(async (req, res) => {
+  const products = await Product.find({});
   res.json(products);
 });
 
 // @desc    Fetch single product
 // @route   GET /api/products/:id
 // @access  Public
-const getProductById = asyncHandler(async (req, res) => {
+export const getProductById = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
-  if (product && product.status === 'approved') {
+  if (product) {
     res.json(product);
   } else {
     res.status(404);
@@ -25,18 +24,17 @@ const getProductById = asyncHandler(async (req, res) => {
 
 // @desc    Create a product
 // @route   POST /api/products
-// @access  Private/Seller
-const createProduct = asyncHandler(async (req, res) => {
-  const { name, description, price, category, images, affiliateUrl } = req.body;
-
+// @access  Private/Admin/Seller
+export const createProduct = asyncHandler(async (req, res) => {
+  const { name, description, price, category, images, stock } = req.body;
   const product = new Product({
     name,
     description,
     price,
     category,
     images,
-    affiliateUrl,
-    seller: req.user._id, // from protect middleware
+    stock,
+    seller: req.user._id, // Link product to the logged-in seller
   });
 
   const createdProduct = await product.save();
@@ -45,73 +43,25 @@ const createProduct = asyncHandler(async (req, res) => {
 
 // @desc    Update a product
 // @route   PUT /api/products/:id
-// @access  Private/Seller
-const updateProduct = asyncHandler(async (req, res) => {
-    const { name, description, price, category, images, affiliateUrl } = req.body;
-
-    const product = await Product.findById(req.params.id);
-
-    if (product) {
-        // Check if the user is the seller of the product
-        if (product.seller.toString() !== req.user._id.toString()) {
-            res.status(401);
-            throw new Error('Not authorized to update this product');
-        }
-
-        product.name = name || product.name;
-        product.description = description || product.description;
-        product.price = price || product.price;
-        product.category = category || product.category;
-        product.images = images || product.images;
-        product.affiliateUrl = affiliateUrl || product.affiliateUrl;
-        product.status = 'pending'; // Require re-approval after edit
-
-        const updatedProduct = await product.save();
-        res.json(updatedProduct);
-    } else {
-        res.status(404);
-        throw new Error('Product not found');
-    }
-});
-
-
-// @desc    Delete a product
-// @route   DELETE /api/products/:id
-// @access  Private/Seller
-const deleteProduct = asyncHandler(async (req, res) => {
-    const product = await Product.findById(req.params.id);
-
-    if (product) {
-         // Check if the user is the seller of the product
-        if (product.seller.toString() !== req.user._id.toString()) {
-            res.status(401);
-            throw new Error('Not authorized to delete this product');
-        }
-        await Product.deleteOne({ _id: product._id });
-        res.json({ message: 'Product removed' });
-    } else {
-        res.status(404);
-        throw new Error('Product not found');
-    }
-});
-
-
-// @desc    Get pending products for admin approval
-// @route   GET /api/products/pending
-// @access  Private/Admin
-const getPendingProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find({ status: 'pending' }).populate('seller', 'name email');
-  res.json(products);
-});
-
-// @desc    Approve a product
-// @route   PUT /api/products/:id/approve
-// @access  Private/Admin
-const approveProduct = asyncHandler(async (req, res) => {
+// @access  Private/Admin/Seller
+export const updateProduct = asyncHandler(async (req, res) => {
+  const { name, description, price, category, images, stock } = req.body;
   const product = await Product.findById(req.params.id);
 
   if (product) {
-    product.status = 'approved';
+    // Optional: Add check to ensure only the seller who created it can update it
+    if (product.seller.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      res.status(403);
+      throw new Error('User not authorized to update this product');
+    }
+
+    product.name = name || product.name;
+    product.description = description || product.description;
+    product.price = price || product.price;
+    product.category = category || product.category;
+    product.images = images || product.images;
+    product.stock = stock || product.stock;
+
     const updatedProduct = await product.save();
     res.json(updatedProduct);
   } else {
@@ -120,13 +70,22 @@ const approveProduct = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Delete a product
+// @route   DELETE /api/products/:id
+// @access  Private/Admin/Seller
+export const deleteProduct = asyncHandler(async (req, res) => {
+  const product = await Product.findById(req.params.id);
 
-export {
-  getProducts,
-  getProductById,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-  getPendingProducts,
-  approveProduct,
-};
+  if (product) {
+     if (product.seller.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      res.status(403);
+      throw new Error('User not authorized to delete this product');
+    }
+
+    await product.deleteOne({ _id: req.params.id });
+    res.json({ message: 'Product removed' });
+  } else {
+    res.status(404);
+    throw new Error('Product not found');
+  }
+});

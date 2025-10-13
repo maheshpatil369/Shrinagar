@@ -1,17 +1,26 @@
-// Backend/middleware/authMiddleware.js
 import jwt from 'jsonwebtoken';
-import asyncHandler from './asyncHandler.js';
+import asyncHandler from 'express-async-handler';
 import User from '../models/userModel.js';
 
-// Protect routes
+// Middleware to protect routes that require authentication
 const protect = asyncHandler(async (req, res, next) => {
   let token;
-  token = req.cookies.jwt || req.headers.authorization?.split(' ')[1];
+
+  // Read the JWT from the 'jwt' cookie
+  token = req.cookies.jwt;
 
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // Attach the user to the request object, excluding the password
       req.user = await User.findById(decoded.userId).select('-password');
+      
+      if (!req.user) {
+        res.status(401);
+        throw new Error('Not authorized, user not found');
+      }
+
       next();
     } catch (error) {
       console.error(error);
@@ -24,16 +33,17 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 });
 
-// Grant access to specific roles
+// Middleware to grant access to specific roles
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
-      res.status(403); // 403 Forbidden is more appropriate for authorization failure
-      throw new Error(`User role '${req.user?.role}' is not authorized to access this route`);
+      res.status(403); // 403 Forbidden is more appropriate for authorization errors
+      throw new Error(
+        `User role '${req.user?.role}' is not authorized to access this route`
+      );
     }
     next();
   };
 };
 
 export { protect, authorize };
-

@@ -1,15 +1,34 @@
-// Backend/controllers/authController.js
+import asyncHandler from 'express-async-handler';
 import User from '../models/userModel.js';
-import Seller from '../models/sellerModel.js';
 import generateToken from '../utils/generateToken.js';
-import asyncHandler from '../middleware/asyncHandler.js';
+
+// @desc    Auth user & get token
+// @route   POST /api/auth/login
+// @access  Public
+export const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  const user = await User.findOne({ email });
+
+  if (user && (await user.matchPassword(password))) {
+    generateToken(res, user._id);
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isSeller: user.isSeller,
+    });
+  } else {
+    res.status(401);
+    throw new Error('Invalid email or password');
+  }
+});
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
-const registerUser = asyncHandler(async (req, res) => {
+export const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
-
   const userExists = await User.findOne({ email });
 
   if (userExists) {
@@ -24,13 +43,13 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (user) {
-    const token = generateToken(user._id);
+    generateToken(res, user._id);
     res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
-      token,
+      isSeller: user.isSeller,
     });
   } else {
     res.status(400);
@@ -38,81 +57,13 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Auth user & get token
-// @route   POST /api/auth/login
-// @access  Public
-const loginUser = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-
-  const user = await User.findOne({ email });
-
-  if (user && (await user.matchPassword(password))) {
-    const token = generateToken(user._id);
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token,
-    });
-  } else {
-    res.status(401);
-    throw new Error('Invalid email or password');
-  }
-});
-
-// @desc    Register a new seller
-// @route   POST /api/auth/register-seller
-// @access  Public
-const registerSeller = asyncHandler(async (req, res) => {
-  const { name, email, password, businessName, gstNumber, panNumber, address } = req.body;
-
-  const userExists = await User.findOne({ email });
-
-  if (userExists) {
-    res.status(400);
-    throw new Error('User with this email already exists');
-  }
-
-  const sellerProfile = await Seller.create({
-    businessName,
-    gstNumber,
-    panNumber,
-    address,
+// @desc    Logout user / clear cookie
+// @route   POST /api/auth/logout
+// @access  Private
+export const logoutUser = asyncHandler(async (req, res) => {
+  res.cookie('jwt', '', {
+    httpOnly: true,
+    expires: new Date(0),
   });
-
-  if (!sellerProfile) {
-    res.status(400);
-    throw new Error('Invalid seller data');
-  }
-
-  const user = await User.create({
-    name,
-    email,
-    password,
-    role: 'seller',
-    sellerProfile: sellerProfile._id,
-  });
-
-  if (user) {
-    sellerProfile.user = user._id;
-    await sellerProfile.save();
-    
-    const token = generateToken(user._id);
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token,
-    });
-  } else {
-    // If user creation fails, we should ideally remove the created seller profile
-    await Seller.findByIdAndDelete(sellerProfile._id);
-    res.status(400);
-    throw new Error('Invalid user data');
-  }
+  res.status(200).json({ message: 'Logged out successfully' });
 });
-
-
-export { registerUser, loginUser, registerSeller };

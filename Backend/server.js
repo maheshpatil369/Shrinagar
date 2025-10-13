@@ -1,8 +1,7 @@
-// Backend/server.js
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import cookieParser from 'cookie-parser'; // Import cookie-parser
+import cookieParser from 'cookie-parser';
 import connectDB from './config/db.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
@@ -22,20 +21,19 @@ const app = express();
 
 // --- Middleware ---
 
-// CORS Options to allow requests from your frontend development server
+// CORS Options - Configure for your frontend origin
 const corsOptions = {
-  origin: 'http://localhost:3000',
-  credentials: true, // Allow cookies to be sent
-  optionsSuccessStatus: 200,
+  origin: 'http://localhost:3000', // In production, change this to your frontend's domain
+  credentials: true, // This allows cookies to be sent
 };
 
-// Enable Cross-Origin Resource Sharing
 app.use(cors(corsOptions));
-// Enable express to parse JSON bodies from incoming requests
+
+// Body parsers
 app.use(express.json());
-// Enable express to parse URL-encoded bodies
 app.use(express.urlencoded({ extended: true }));
-// Enable cookie parser
+
+// Cookie parser middleware
 app.use(cookieParser());
 
 // --- Basic Test Route ---
@@ -58,5 +56,7 @@ const PORT = process.env.PORT || 8000;
 
 // --- Start the Server ---
 app.listen(PORT, () => {
-  console.log(`Server is running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  console.log(
+    `Server is running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`
+  );
 });
