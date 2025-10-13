@@ -1,26 +1,30 @@
-// shringar-backend/routes/userRoutes.js
-
-const express = require('express');
+// Backend/routes/userRoutes.js
+import express from 'express';
 const router = express.Router();
-const {
-  getUsers,
-  getUserById,
-  updateUser,
-  deleteUser,
+import {
   getUserProfile,
   updateUserProfile,
-} = require('../controllers/userController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+  getUsers,
+  deleteUser,
+  getUserById,
+  updateUser,
+} from '../controllers/userController.js';
+import { protect, admin } from '../middleware/authMiddleware.js';
 
+// Note: The most specific routes should come first.
+// Routes for the logged-in user's profile
+router
+  .route('/profile')
+  .get(protect, getUserProfile)
+  .put(protect, updateUserProfile);
 
-// --- Protected User Routes ---
-router.route('/profile').get(protect, getUserProfile).put(protect, updateUserProfile);
+// Routes for admin-only user management
+router.route('/').get(protect, admin, getUsers); // Changed authorize('admin') to admin
 
+router
+  .route('/:id')
+  .delete(protect, admin, deleteUser) // Changed authorize('admin') to admin
+  .get(protect, admin, getUserById)   // Changed authorize('admin') to admin
+  .put(protect, admin, updateUser);    // Changed authorize('admin') to admin
 
-// --- Admin-Only Routes ---
-router.route('/').get(protect, authorize('admin'), getUsers);
-router.route('/:id').get(protect, authorize('admin'), getUserById)
-                   .put(protect, authorize('admin'), updateUser)
-                   .delete(protect, authorize('admin'), deleteUser);
-
-module.exports = router;
+export default router;

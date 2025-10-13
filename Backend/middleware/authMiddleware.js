@@ -1,59 +1,39 @@
-// shringar-backend/middleware/authMiddleware.js
+// Backend/middleware/authMiddleware.js
+import jwt from 'jsonwebtoken';
+import asyncHandler from './asyncHandler.js';
+import User from '../models/userModel.js';
 
-const jwt = require('jsonwebtoken');
-const User = require('../models/userModel');
-const asyncHandler = require('./asyncHandler');
-
-// Middleware to protect routes that require a logged-in user
-exports.protect = asyncHandler(async (req, res, next) => {
+// Protect routes
+const protect = asyncHandler(async (req, res, next) => {
   let token;
+  token = req.cookies.jwt || req.headers.authorization?.split(' ')[1];
 
-  // Check if the token is in the headers and starts with "Bearer"
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
+  if (token) {
     try {
-      // 1. Get token from header (e.g., "Bearer <token>" -> "<token>")
-      token = req.headers.authorization.split(' ')[1];
-
-      // 2. Verify the token using the secret key
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // 3. Find the user in the database by the ID from the token
-      // We exclude the password field from the result
-      req.user = await User.findById(decoded.id).select('-password');
-
-      if (!req.user) {
-        res.status(401);
-        throw new Error('Not authorized, user not found');
-      }
-
-      // 4. Proceed to the next middleware or the route handler
+      req.user = await User.findById(decoded.userId).select('-password');
       next();
     } catch (error) {
+      console.error(error);
       res.status(401);
       throw new Error('Not authorized, token failed');
     }
-  }
-
-  if (!token) {
+  } else {
     res.status(401);
     throw new Error('Not authorized, no token');
   }
 });
 
-// Middleware to authorize based on user role
-exports.authorize = (...roles) => {
+// Grant access to specific roles
+const authorize = (...roles) => {
   return (req, res, next) => {
-    // This middleware should run AFTER the `protect` middleware,
-    // so we will have access to `req.user`.
     if (!req.user || !roles.includes(req.user.role)) {
-      res.status(403);
-      throw new Error(
-        `User role '${req.user ? req.user.role : 'guest'}' is not authorized to access this route`
-      );
+      res.status(403); // 403 Forbidden is more appropriate for authorization failure
+      throw new Error(`User role '${req.user?.role}' is not authorized to access this route`);
     }
     next();
   };
 };
+
+export { protect, authorize };
+
