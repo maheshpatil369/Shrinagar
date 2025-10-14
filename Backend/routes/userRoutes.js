@@ -1,24 +1,26 @@
-import express from 'express';
-import {
+// shringar-backend/routes/userRoutes.js
+
+const express = require('express');
+const router = express.Router();
+const {
+  getUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
   getUserProfile,
   updateUserProfile,
-  getUsers,
-  deleteUser,
-} from '../controllers/userController.js';
-import { protect, authorize } from '../middleware/authMiddleware.js';
+} = require('../controllers/userController');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
-const router = express.Router();
 
-// User's own profile routes
-router.route('/profile')
-  .get(protect, getUserProfile)
-  .put(protect, updateUserProfile);
+// --- Protected User Routes ---
+router.route('/profile').get(protect, getUserProfile).put(protect, updateUserProfile);
 
-// Admin-only routes
-router.route('/')
-  .get(protect, authorize('admin'), getUsers);
 
-router.route('/:id')
-  .delete(protect, authorize('admin'), deleteUser);
+// --- Admin-Only Routes ---
+router.route('/').get(protect, authorize('admin'), getUsers);
+router.route('/:id').get(protect, authorize('admin'), getUserById)
+                   .put(protect, authorize('admin'), updateUser)
+                   .delete(protect, authorize('admin'), deleteUser);
 
-export default router;
+module.exports = router;

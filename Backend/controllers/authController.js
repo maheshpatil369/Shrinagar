@@ -1,41 +1,31 @@
-import asyncHandler from 'express-async-handler';
-import User from '../models/userModel.js';
-import generateToken from '../utils/generateToken.js';
-
-// @desc    Auth user & get token
-// @route   POST /api/auth/login
-// @access  Public
-export const loginUser = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-
-  if (user && (await user.matchPassword(password))) {
-    generateToken(res, user._id);
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      isSeller: user.isSeller,
-    });
-  } else {
-    res.status(401);
-    throw new Error('Invalid email or password');
-  }
-});
+// Internship/Backend/controllers/authController.js
+const User = require('../models/userModel');
+const generateToken = require('../utils/generateToken');
+const asyncHandler = require('../middleware/asyncHandler');
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
-export const registerUser = asyncHandler(async (req, res) => {
+exports.registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
-  const userExists = await User.findOne({ email });
 
-  if (userExists) {
+  // For security, the role should not be assignable from the registration form.
+  // It defaults to 'customer' based on the userModel.
+  // Admins can be assigned manually or through a separate, protected endpoint.
+
+  if (!name || !email || !password) {
     res.status(400);
-    throw new Error('User already exists');
+    throw new Error('Please enter all fields');
   }
 
+  // Check if user already exists
+  const userExists = await User.findOne({ email });
+  if (userExists) {
+    res.status(400);
+    throw new Error('User with this email already exists');
+  }
+
+  // Create new user with default 'customer' role
   const user = await User.create({
     name,
     email,
@@ -43,13 +33,12 @@ export const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (user) {
-    generateToken(res, user._id);
     res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
-      isSeller: user.isSeller,
+      token: generateToken(user._id, user.role),
     });
   } else {
     res.status(400);
@@ -57,13 +46,32 @@ export const registerUser = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Logout user / clear cookie
-// @route   POST /api/auth/logout
-// @access  Private
-export const logoutUser = asyncHandler(async (req, res) => {
-  res.cookie('jwt', '', {
-    httpOnly: true,
-    expires: new Date(0),
-  });
-  res.status(200).json({ message: 'Logged out successfully' });
+// @desc    Auth user & get token
+// @route   POST /api/auth/login
+// @access  Public
+exports.loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  // Check for email and password
+  if (!email || !password) {
+    res.status(400);
+    throw new Error('Please provide an email and password');
+  }
+
+  // Check if user exists and select the password for comparison
+  const user = await User.findOne({ email }).select('+password');
+
+  // Check if user exists and password matches
+  if (user && (await user.matchPassword(password))) {
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      token: generateToken(user._id, user.role),
+    });
+  } else {
+    res.status(401);
+    throw new Error('Invalid email or password');
+  }
 });

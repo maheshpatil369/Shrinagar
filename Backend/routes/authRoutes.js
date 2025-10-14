@@ -1,15 +1,27 @@
-import express from 'express';
-import {
-  loginUser,
-  registerUser,
-  logoutUser,
-} from '../controllers/authController.js';
-import { protect } from '../middleware/authMiddleware.js';
-
+const express = require('express');
 const router = express.Router();
+const {
+  registerUser,
+  loginUser,
+} = require('../controllers/authController');
+const { protect } = require('../middleware/authMiddleware');
 
+// @desc    Register a new user
+// @route   POST /api/auth/register
+// @access  Public
 router.post('/register', registerUser);
-router.post('/login', loginUser);
-router.post('/logout', protect, logoutUser);
 
-export default router;
+// @desc    Auth user & get token
+// @route   POST /api/auth/login
+// @access  Public
+router.post('/login', loginUser);
+
+
+// The problematic GET route that was causing the crash has been removed.
+// If you intended to have a GET route here, for example to get a user profile,
+// it should be defined correctly like this:
+// router.get('/profile', protect, getUserProfile); 
+// And getUserProfile would need to be imported from your userController.
+
+
+module.exports = router;
