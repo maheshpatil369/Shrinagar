@@ -8,10 +8,10 @@ const productSchema = new mongoose.Schema(
       required: [true, 'Product name is required'],
       trim: true,
     },
-    // Reference to the seller who owns this product
+    // Reference to the user who is the seller
     seller: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Seller',
+      ref: 'User',
       required: true,
     },
     description: {
@@ -25,7 +25,11 @@ const productSchema = new mongoose.Schema(
     category: {
       type: String,
       required: [true, 'Product category is required'],
-      enum: ['ring', 'necklace', 'earrings', 'bracelet', 'other'],
+      enum: ['ring', 'necklace', 'earrings', 'bracelet', 'watch', 'other'],
+    },
+    brand: {
+      type: String,
+      required: [true, 'Brand is required'],
     },
     material: {
       type: String,
@@ -37,21 +41,9 @@ const productSchema = new mongoose.Schema(
         required: true,
       },
     ],
-    // URL for the 3D model for AR Try-On
-    arModelUrl: {
-        type: String,
-    },
     affiliateUrl: {
       type: String,
       required: [true, 'Affiliate URL is required'],
-    },
-    inStock: {
-      type: Boolean,
-      default: true,
-    },
-    isFeatured: {
-      type: Boolean,
-      default: false,
     },
     // Product status, to be approved by an admin
     status: {

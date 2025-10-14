@@ -1,27 +1,32 @@
 // /Backend/routes/productRoutes.js
-// This file now correctly imports and uses the 'authorize' middleware.
-
-import express from 'express';
+const express = require('express');
 const router = express.Router();
-import {
+const {
   getProducts,
   getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
-  createProductReview,
-  getTopProducts,
-} from '../controllers/productController.js';
-import { protect, authorize, admin } from '../middleware/authMiddleware.js'; // Import authorize
+  getMyProducts,
+} = require('../controllers/productController.js');
+const { protect, authorize } = require('../middleware/authMiddleware.js');
 
-router.route('/').get(getProducts).post(protect, authorize('seller', 'admin'), createProduct);
-router.get('/top', getTopProducts);
-router
-  .route('/:id')
-  .get(getProductById)
+// Public route to get all approved products
+router.route('/').get(getProducts);
+
+// Seller route to create a new product
+router.route('/').post(protect, authorize('seller'), createProduct);
+
+// Seller route to get their own products
+router.route('/myproducts').get(protect, authorize('seller'), getMyProducts);
+
+// Public route to get a single product
+// Controller logic will handle authorization for non-approved products
+router.route('/:id').get(protect, getProductById); 
+
+// Seller/Admin routes to update or delete a product
+router.route('/:id')
   .put(protect, authorize('seller', 'admin'), updateProduct)
   .delete(protect, authorize('seller', 'admin'), deleteProduct);
-router.route('/:id/reviews').post(protect, authorize('customer'), createProductReview);
 
-export default router;
-
+module.exports = router;
