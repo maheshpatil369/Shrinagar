@@ -1,37 +1,24 @@
-// shringar-backend/middleware/authMiddleware.js
+// /Backend/middleware/authMiddleware.js
+// A new 'authorize' function has been added to handle role-based access control.
 
-const jwt = require('jsonwebtoken');
-const User = require('../models/userModel');
-const asyncHandler = require('./asyncHandler');
+import jwt from 'jsonwebtoken';
+import asyncHandler from './asyncHandler.js';
+import User from '../models/userModel.js';
 
-// Middleware to protect routes that require a logged-in user
-exports.protect = asyncHandler(async (req, res, next) => {
+// Protect routes
+export const protect = asyncHandler(async (req, res, next) => {
   let token;
 
-  // Check if the token is in the headers and starts with "Bearer"
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
+  const authHeader = req.headers.authorization;
+
+  if (authHeader && authHeader.startsWith('Bearer')) {
     try {
-      // 1. Get token from header (e.g., "Bearer <token>" -> "<token>")
-      token = req.headers.authorization.split(' ')[1];
-
-      // 2. Verify the token using the secret key
+      token = authHeader.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // 3. Find the user in the database by the ID from the token
-      // We exclude the password field from the result
-      req.user = await User.findById(decoded.id).select('-password');
-
-      if (!req.user) {
-        res.status(401);
-        throw new Error('Not authorized, user not found');
-      }
-
-      // 4. Proceed to the next middleware or the route handler
+      req.user = await User.findById(decoded.userId).select('-password');
       next();
     } catch (error) {
+      console.error(error);
       res.status(401);
       throw new Error('Not authorized, token failed');
     }
@@ -43,17 +30,36 @@ exports.protect = asyncHandler(async (req, res, next) => {
   }
 });
 
-// Middleware to authorize based on user role
-exports.authorize = (...roles) => {
-  return (req, res, next) => {
-    // This middleware should run AFTER the `protect` middleware,
-    // so we will have access to `req.user`.
-    if (!req.user || !roles.includes(req.user.role)) {
-      res.status(403);
-      throw new Error(
-        `User role '${req.user ? req.user.role : 'guest'}' is not authorized to access this route`
-      );
-    }
+// Admin middleware
+export const admin = (req, res, next) => {
+  if (req.user && req.user.isAdmin) {
     next();
+  } else {
+    res.status(401);
+    throw new Error('Not authorized as an admin');
+  }
+};
+
+// Role-based authorization middleware
+export const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      res.status(401);
+      throw new Error('Not authorized, please log in.');
+    }
+
+    const userRoles = [];
+    if (req.user.isAdmin) userRoles.push('admin');
+    if (req.user.isSeller) userRoles.push('seller');
+
+    const hasPermission = roles.some(role => userRoles.includes(role));
+
+    if (hasPermission) {
+      next();
+    } else {
+      res.status(403); // Forbidden
+      throw new Error('You do not have permission to perform this action.');
+    }
   };
 };
+

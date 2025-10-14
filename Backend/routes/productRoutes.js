@@ -1,30 +1,27 @@
-// shringar-backend/routes/productRoutes.js
+// /Backend/routes/productRoutes.js
+// This file now correctly imports and uses the 'authorize' middleware.
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const {
+import {
   getProducts,
   getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
-  updateProductViews,
-  updateProductClicks
-} = require('../controllers/productController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+  createProductReview,
+  getTopProducts,
+} from '../controllers/productController.js';
+import { protect, authorize, admin } from '../middleware/authMiddleware.js'; // Import authorize
 
-// --- Public Routes ---
-router.route('/').get(getProducts);
-router.route('/:id').get(getProductById);
-router.route('/:id/view').post(updateProductViews);
-router.route('/:id/click').post(updateProductClicks);
+router.route('/').get(getProducts).post(protect, authorize('seller', 'admin'), createProduct);
+router.get('/top', getTopProducts);
+router
+  .route('/:id')
+  .get(getProductById)
+  .put(protect, authorize('seller', 'admin'), updateProduct)
+  .delete(protect, authorize('seller', 'admin'), deleteProduct);
+router.route('/:id/reviews').post(protect, authorize('customer'), createProductReview);
 
+export default router;
 
-// --- Protected Seller/Admin Routes ---
-router.route('/').post(protect, authorize('seller', 'admin'), createProduct);
-router.route('/:id').put(protect, authorize('seller', 'admin'), updateProduct);
-
-// --- Protected Admin-Only Routes ---
-router.route('/:id').delete(protect, authorize('admin'), deleteProduct);
-
-module.exports = router;

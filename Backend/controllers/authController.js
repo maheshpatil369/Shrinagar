@@ -1,44 +1,46 @@
-// Internship/Backend/controllers/authController.js
-const User = require('../models/userModel');
-const generateToken = require('../utils/generateToken');
-const asyncHandler = require('../middleware/asyncHandler');
+// /Backend/controllers/authController.js
+// This file is updated to accept a 'role' during user registration and correctly handle login.
+
+import asyncHandler from '../middleware/asyncHandler.js';
+import User from '../models/userModel.js';
+import jwt from 'jsonwebtoken';
+
+// This function will generate and return a token including the user's role
+const generateToken = (id, role) => {
+  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
+    expiresIn: '30d',
+  });
+};
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
-exports.registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+const registerUser = asyncHandler(async (req, res) => {
+  const { name, email, password, role } = req.body; // Accept role from request
 
-  // For security, the role should not be assignable from the registration form.
-  // It defaults to 'customer' based on the userModel.
-  // Admins can be assigned manually or through a separate, protected endpoint.
-
-  if (!name || !email || !password) {
-    res.status(400);
-    throw new Error('Please enter all fields');
-  }
-
-  // Check if user already exists
   const userExists = await User.findOne({ email });
+
   if (userExists) {
     res.status(400);
-    throw new Error('User with this email already exists');
+    throw new Error('User already exists');
   }
 
-  // Create new user with default 'customer' role
+  // Use the provided role, or default to 'customer'
   const user = await User.create({
     name,
     email,
     password,
+    role: role || 'customer',
   });
 
   if (user) {
+    const token = generateToken(user._id, user.role);
     res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
-      token: generateToken(user._id, user.role),
+      token: token,
     });
   } else {
     res.status(400);
@@ -46,32 +48,30 @@ exports.registerUser = asyncHandler(async (req, res) => {
   }
 });
 
+
 // @desc    Auth user & get token
 // @route   POST /api/auth/login
 // @access  Public
-exports.loginUser = asyncHandler(async (req, res) => {
+const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-
-  // Check for email and password
-  if (!email || !password) {
-    res.status(400);
-    throw new Error('Please provide an email and password');
-  }
-
-  // Check if user exists and select the password for comparison
+  
+  // Find user by email and explicitly select the password field for comparison
   const user = await User.findOne({ email }).select('+password');
 
-  // Check if user exists and password matches
   if (user && (await user.matchPassword(password))) {
-    res.json({
+     const token = generateToken(user._id, user.role);
+     res.status(200).json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
-      token: generateToken(user._id, user.role),
+      token: token,
     });
   } else {
     res.status(401);
     throw new Error('Invalid email or password');
   }
 });
+
+export { registerUser, loginUser };
+

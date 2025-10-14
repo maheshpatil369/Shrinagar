@@ -1,59 +1,50 @@
-// shringar-backend/server.js
-
-const express = require('express');
-const dotenv = require('dotenv');
-const cors = require('cors');
-const connectDB = require('./config/db');
-const { notFound, errorHandler } = require('./middleware/errorMiddleware');
+// /Backend/server.js
+import express from 'express';
+import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
+import cors from 'cors'; // Import the cors package
+import { notFound, errorHandler } from './middleware/errorMiddleware.js';
+import connectDB from './config/db.js';
 
 // Import routes
-const authRoutes = require('./routes/authRoutes');
-const productRoutes = require('./routes/productRoutes');
-const userRoutes = require('./routes/userRoutes');
-const sellerRoutes = require('./routes/sellerRoutes');
+import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+import sellerRoutes from './routes/sellerRoutes.js';
 
-
-// Load environment variables from .env file
+// Load environment variables
 dotenv.config();
 
-// Connect to the database
+const port = process.env.PORT || 5000;
+
+// Connect to MongoDB
 connectDB();
 
 const app = express();
 
-// --- Middleware ---
+// Enable CORS for all routes
+app.use(cors());
 
-// CORS Options to allow requests from your frontend development server
-const corsOptions = {
-  origin: 'http://localhost:3000',
-  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-};
-
-// Enable Cross-Origin Resource Sharing
-app.use(cors(corsOptions));
-// Enable express to parse JSON bodies from incoming requests
+// Body parser middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// --- Basic Test Route ---
-app.get('/', (req, res) => {
-  res.send('Shringar API is running...');
-});
+// Cookie parser middleware
+app.use(cookieParser());
 
-// --- API Routes ---
+// API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/products', productRoutes);
 app.use('/api/sellers', sellerRoutes);
 
+// Root route
+app.get('/', (req, res) => {
+  res.send('API is running....');
+});
 
-// --- Error Handling Middleware ---
+// Error handling middleware
 app.use(notFound);
 app.use(errorHandler);
 
-// --- Port Configuration ---
-const PORT = process.env.PORT || 8000;
-
-// --- Start the Server ---
-app.listen(PORT, () => {
-  console.log(`Server is running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-});
+app.listen(port, () => console.log(`Server started on port ${port}`));

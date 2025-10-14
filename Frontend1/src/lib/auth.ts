@@ -1,41 +1,61 @@
-import { api, type SignupData, type LoginData } from './api';
+// /Frontend1/src/lib/auth.ts
+// This file has been updated with logout and getCurrentUser functions.
 
-export type UserRole = 'buyer' | 'seller' | 'admin';
+import { api } from './api'; // Correctly using a named import
 
+// This User interface now matches the backend response, including 'role'
 export interface User {
-  id: string;
-  email: string;
+  _id: string;
   name: string;
-  role: UserRole;
+  email: string;
+  role: 'customer' | 'seller' | 'admin';
+  token: string;
 }
 
-export const signup = async (data: SignupData): Promise<User> => {
-  const response = await api.register(data);
-  const authUser: User = response.user;
-  localStorage.setItem('user', JSON.stringify(authUser));
-  localStorage.setItem('auth_token', `mock_token_${authUser.id}`);
-  return authUser;
-};
+// Type for the login form credentials
+interface LoginCredentials {
+  email: string;
+  password: string;
+}
 
-export const login = async (data: LoginData): Promise<User> => {
-  const response = await api.login(data);
-  const authUser: User = response.user;
-  localStorage.setItem('user', JSON.stringify(authUser));
-  localStorage.setItem('auth_token', `mock_token_${authUser.id}`);
-  return authUser;
-};
+// Type for the signup form credentials, now including the role
+interface SignupCredentials {
+  name: string;
+  email: string;
+  password: string;
+  role: 'customer' | 'seller';
+}
 
-export const logout = async () => {
-  await api.logout();
-  localStorage.removeItem('user');
-  localStorage.removeItem('auth_token');
-};
+export async function login(credentials: LoginCredentials): Promise<User> {
+  const response = await api.post('/auth/login', credentials);
+  if (response.status !== 200) {
+    const errorMessage = response.data?.message || 'Login failed';
+    throw new Error(errorMessage);
+  }
+  return response.data;
+}
 
-export const getCurrentUser = (): User | null => {
-  const userStr = localStorage.getItem('user');
-  return userStr ? JSON.parse(userStr) : null;
-};
+export async function signup(credentials: SignupCredentials): Promise<User> {
+  const response = await api.post('/auth/users', credentials);
+  if (response.status !== 201) {
+    const errorMessage = response.data?.message || 'Signup failed';
+    throw new Error(errorMessage);
+  }
+  return response.data;
+}
 
-export const isAuthenticated = (): boolean => {
-  return !!localStorage.getItem('auth_token');
-};
+// New function to get user data from localStorage
+export function getCurrentUser(): User | null {
+  const userInfo = localStorage.getItem('userInfo');
+  if (userInfo) {
+    return JSON.parse(userInfo);
+  }
+  return null;
+}
+
+// New function to handle user logout
+export function logout() {
+  localStorage.removeItem('userInfo');
+  window.location.href = '/auth'; // Redirect to login page
+}
+

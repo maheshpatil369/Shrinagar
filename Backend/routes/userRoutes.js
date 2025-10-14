@@ -1,26 +1,24 @@
-// shringar-backend/routes/userRoutes.js
+// /Backend/routes/userRoutes.js
+// The user registration route is removed from here as it's now handled by authRoutes.
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const {
+import {
+  // registerUser, // No longer needed here
   getUsers,
-  getUserById,
-  updateUser,
+  getUserByID,
   deleteUser,
-  getUserProfile,
-  updateUserProfile,
-} = require('../controllers/userController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+  updateUser,
+} from '../controllers/userController.js';
+import { protect, admin } from '../middleware/authMiddleware.js';
 
+// The POST route for registration is removed from this chain.
+router.route('/').get(protect, admin, getUsers);
 
-// --- Protected User Routes ---
-router.route('/profile').get(protect, getUserProfile).put(protect, updateUserProfile);
+router
+  .route('/:id')
+  .delete(protect, admin, deleteUser)
+  .get(protect, admin, getUserByID)
+  .put(protect, admin, updateUser);
 
-
-// --- Admin-Only Routes ---
-router.route('/').get(protect, authorize('admin'), getUsers);
-router.route('/:id').get(protect, authorize('admin'), getUserById)
-                   .put(protect, authorize('admin'), updateUser)
-                   .delete(protect, authorize('admin'), deleteUser);
-
-module.exports = router;
+export default router;
