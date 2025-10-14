@@ -1,24 +1,19 @@
-// /Backend/routes/userRoutes.js
-// The user registration route is removed from here as it's now handled by authRoutes.
-
-import express from 'express';
+const express = require('express');
 const router = express.Router();
-import {
-  // registerUser, // No longer needed here
+const {
   getUsers,
-  getUserByID,
-  deleteUser,
+  getUserById,
   updateUser,
-} from '../controllers/userController.js';
-import { protect, admin } from '../middleware/authMiddleware.js';
+  deleteUser,
+} = require('../controllers/userController.js');
+const { protect, admin } = require('../middleware/authMiddleware.js');
 
-// The POST route for registration is removed from this chain.
+// Admin routes
 router.route('/').get(protect, admin, getUsers);
-
 router
   .route('/:id')
-  .delete(protect, admin, deleteUser)
-  .get(protect, admin, getUserByID)
-  .put(protect, admin, updateUser);
+  .get(protect, admin, getUserById)
+  .put(protect, admin, updateUser)
+  .delete(protect, admin, deleteUser);
 
-export default router;
+module.exports = router;
