@@ -1,5 +1,5 @@
 // /Frontend1/src/lib/auth.ts
-// This file has been updated with logout and getCurrentUser functions.
+// This file has been updated with the correct signup endpoint and logout/getCurrentUser functions.
 
 import { api } from './api'; // Correctly using a named import
 
@@ -36,7 +36,9 @@ export async function login(credentials: LoginCredentials): Promise<User> {
 }
 
 export async function signup(credentials: SignupCredentials): Promise<User> {
-  const response = await api.post('/auth/users', credentials);
+  // CORRECTED: The endpoint was changed from '/api/auth/users' to '/api/auth/register'
+  // to match the backend routes defined in your README.md.
+  const response = await api.post('/auth/register', credentials);
   if (response.status !== 201) {
     const errorMessage = response.data?.message || 'Signup failed';
     throw new Error(errorMessage);
@@ -58,4 +60,3 @@ export function logout() {
   localStorage.removeItem('userInfo');
   window.location.href = '/auth'; // Redirect to login page
 }
-

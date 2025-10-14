@@ -31,11 +31,14 @@ export default function Auth() {
   // State for loading and errors
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [signupError, setSignupError] = useState<string | null>(null);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setSignupError(null);
     try {
       const user = await login({ email: loginEmail, password: loginPassword });
       localStorage.setItem('userInfo', JSON.stringify(user));
@@ -53,7 +56,7 @@ export default function Auth() {
           break;
       }
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.');
+      setError(err.response?.data?.message || err.message || 'An unexpected error occurred.');
     } finally {
       setIsLoading(false);
     }
@@ -63,6 +66,7 @@ export default function Auth() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setSignupError(null);
     try {
       const user = await signup({ name: signupName, email: signupEmail, password: signupPassword, role: signupRole });
       localStorage.setItem('userInfo', JSON.stringify(user));
@@ -77,7 +81,7 @@ export default function Auth() {
           break;
       }
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.');
+      setSignupError(err.response?.data?.message || err.message || 'An unexpected error occurred.');
     } finally {
       setIsLoading(false);
     }
@@ -146,6 +150,13 @@ export default function Auth() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+             {signupError && (
+              <Alert variant="destructive" className="mb-4">
+                <Terminal className="h-4 w-4" />
+                <AlertTitle>Signup Failed</AlertTitle>
+                <AlertDescription>{signupError}</AlertDescription>
+              </Alert>
+            )}
             <form onSubmit={handleSignup}>
               <div className="grid gap-4">
                 <div className="grid gap-2">
@@ -206,4 +217,3 @@ export default function Auth() {
     </div>
   );
 }
-
