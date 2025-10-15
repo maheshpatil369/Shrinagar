@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   registerUser,
   loginUser,
+  verifyToken,
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -15,6 +16,11 @@ router.post('/register', registerUser);
 // @route   POST /api/auth/login
 // @access  Public
 router.post('/login', loginUser);
+
+// @desc    Verify an existing token
+// @route   POST /api/auth/verify-token
+// @access  Private (requires a valid token)
+router.post('/verify-token', protect, verifyToken);
 
 
 // The problematic GET route that was causing the crash has been removed.

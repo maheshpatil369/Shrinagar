@@ -1,9 +1,9 @@
 // /Backend/controllers/authController.js
 // This file is updated to accept a 'role' during user registration and correctly handle login.
 
-import asyncHandler from '../middleware/asyncHandler.js';
-import User from '../models/userModel.js';
-import jwt from 'jsonwebtoken';
+const asyncHandler = require('../middleware/asyncHandler.js');
+const User = require('../models/userModel.js');
+const jwt = require('jsonwebtoken');
 
 // This function will generate and return a token including the user's role
 const generateToken = (id, role) => {
@@ -73,5 +73,14 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, loginUser };
+// @desc    Verify user token
+// @route   POST /api/auth/verify-token
+// @access  Private
+const verifyToken = asyncHandler(async (req, res) => {
+  // If the 'protect' middleware passed successfully, req.user will be populated,
+  // indicating a valid token. We simply return the user data as confirmation.
+  res.status(200).json(req.user);
+});
+
+module.exports = { registerUser, loginUser, verifyToken };
 

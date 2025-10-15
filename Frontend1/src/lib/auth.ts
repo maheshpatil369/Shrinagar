@@ -46,6 +46,31 @@ export async function signup(credentials: SignupCredentials): Promise<User> {
   return response.data;
 }
 
+// New function to verify token with the backend
+export async function verifyToken(token: string): Promise<User> {
+  try {
+    const response = await api.post(
+      '/auth/verify-token',
+      {}, // Empty body for the POST request
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    if (response.status !== 200) {
+      throw new Error('Token verification failed');
+    }
+    return response.data;
+  } catch (err) {
+    // If token is invalid, backend sends 401, which axios throws as an error.
+    // We clear the invalid user info from storage and re-throw the error.
+    localStorage.removeItem('userInfo');
+    throw err;
+  }
+}
+
+
 // New function to get user data from localStorage
 export function getCurrentUser(): User | null {
   const userInfo = localStorage.getItem('userInfo');

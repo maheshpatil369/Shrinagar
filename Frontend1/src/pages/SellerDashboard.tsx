@@ -5,22 +5,22 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
-import { getCurrentUser, logout, User } from "../lib/auth";
-import { Product, ProductFormData, getMyProducts, createProduct, updateProduct, deleteProduct } from "../lib/products";
+import { getCurrentUser, logout, User, verifyToken } from "@/lib/auth";
+import { Product, ProductFormData, getMyProducts, createProduct, updateProduct, deleteProduct } from "@/lib/products";
 
-import { Button } from "../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "../components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../components/ui/form";
-import { Input } from "../components/ui/input";
-import { Textarea } from "../components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { useToast } from "../components/ui/use-toast";
-import { Badge } from "../components/ui/badge";
-import { PlusCircle, MoreVertical, Edit, Trash2, Eye, BarChart2 } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../components/ui/dropdown-menu";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { PlusCircle, MoreVertical, Edit, Trash2, Eye, BarChart2, ShieldCheck, ShieldAlert, LoaderCircle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const productSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters." }),
@@ -33,13 +33,15 @@ const productSchema = z.object({
   affiliateUrl: z.string().url({ message: "Please enter a valid URL." }),
 });
 
+type VerificationStatus = 'verifying' | 'verified' | 'failed';
 
 export default function SellerDashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>('verifying');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -60,15 +62,23 @@ export default function SellerDashboard() {
   useEffect(() => {
     const currentUser = getCurrentUser();
     if (currentUser && (currentUser.role === 'seller' || currentUser.role === 'admin')) {
-      setUser(currentUser);
-      fetchProducts();
+        verifyToken(currentUser.token)
+        .then(verifiedUser => {
+          setUser(verifiedUser);
+          setVerificationStatus('verified');
+          fetchProducts();
+        })
+        .catch(() => {
+          setVerificationStatus('failed');
+          setTimeout(() => navigate('/auth'), 2000);
+        });
     } else {
       navigate('/auth');
     }
   }, [navigate]);
 
   const fetchProducts = async () => {
-    setIsLoading(true);
+    setIsLoadingProducts(true);
     try {
       const sellerProducts = await getMyProducts();
       setProducts(sellerProducts);
@@ -80,7 +90,7 @@ export default function SellerDashboard() {
         description: "Failed to fetch your products.",
       });
     } finally {
-      setIsLoading(false);
+      setIsLoadingProducts(false);
     }
   };
 
@@ -148,8 +158,52 @@ export default function SellerDashboard() {
     }
   };
 
-  if (isLoading || !user) {
-    return <div>Loading...</div>;
+  const StatusIndicator = () => {
+    switch (verificationStatus) {
+      case 'verified':
+        return (
+          <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+            <ShieldCheck className="mr-2 h-4 w-4" />
+            Token Verified
+          </Badge>
+        );
+      case 'failed':
+        return (
+          <Badge variant="destructive">
+            <ShieldAlert className="mr-2 h-4 w-4" />
+            Token Invalid
+          </Badge>
+        );
+      case 'verifying':
+      default:
+        return (
+          <Badge variant="secondary">
+            <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+            Verifying Token...
+          </Badge>
+        );
+    }
+  };
+
+  if (verificationStatus === 'verifying') {
+     return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+            <LoaderCircle className="h-12 w-12 animate-spin text-gray-500" />
+            <p className="mt-4 text-gray-600 dark:text-gray-300">Verifying authentication...</p>
+        </div>
+    );
+  }
+
+  if (!user) {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+            <div className="w-full max-w-2xl p-8 space-y-6 bg-white rounded-lg shadow-md dark:bg-gray-800 text-center">
+                 <h1 className="text-3xl font-bold text-destructive">Authentication Failed</h1>
+                 <p className="text-muted-foreground">Your session is invalid or has expired. Redirecting to login...</p>
+                 <StatusIndicator />
+            </div>
+        </div>
+    );
   }
 
   return (
@@ -159,7 +213,8 @@ export default function SellerDashboard() {
           <h1 className="text-3xl font-bold">Seller Dashboard</h1>
           <p className="text-muted-foreground">Welcome back, {user.name}!</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
+           <StatusIndicator />
            <Button onClick={() => handleOpenDialog(null)}>
             <PlusCircle className="mr-2 h-4 w-4" /> Add Product
           </Button>
@@ -172,6 +227,7 @@ export default function SellerDashboard() {
           <CardTitle>Your Products</CardTitle>
         </CardHeader>
         <CardContent>
+          {isLoadingProducts ? (<div className="text-center"><LoaderCircle className="h-8 w-8 animate-spin inline-block" /></div>) : (
           <Table>
             <TableHeader>
               <TableRow>
@@ -242,6 +298,7 @@ export default function SellerDashboard() {
               )}
             </TableBody>
           </Table>
+          )}
         </CardContent>
       </Card>
 
@@ -335,4 +392,3 @@ export default function SellerDashboard() {
     </div>
   );
 }
-
