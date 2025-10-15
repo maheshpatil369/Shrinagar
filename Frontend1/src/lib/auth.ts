@@ -49,9 +49,10 @@ export async function signup(credentials: SignupCredentials): Promise<User> {
 // New function to verify token with the backend
 export async function verifyToken(token: string): Promise<User> {
   try {
-    const response = await api.post(
+    // FIXED: Changed from api.post to api.get to match the backend route definition.
+    // A GET request does not have a body, so the headers object is the second argument.
+    const response = await api.get(
       '/auth/verify-token',
-      {}, // Empty body for the POST request
       {
         headers: {
           Authorization: `Bearer ${token}`,

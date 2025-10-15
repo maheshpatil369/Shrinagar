@@ -8,6 +8,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const fs = require('fs'); // Import the file system module
 const { notFound, errorHandler } = require('./middleware/errorMiddleware.js');
 const connectDB = require('./config/db.js');
 
@@ -29,6 +30,14 @@ connectDB();
 
 // Initialize Express
 const app = express();
+
+// --- Create uploads directory if it doesn't exist ---
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir);
+  console.log(`Created directory: ${uploadsDir}`);
+}
+// ---
 
 // Enable CORS for all routes
 app.use(cors());
@@ -53,7 +62,7 @@ app.get('/', (req, res) => {
 });
 
 // Serve uploaded files statically
-app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
+app.use('/uploads', express.static(uploadsDir));
 
 // Error handling middleware
 app.use(notFound);

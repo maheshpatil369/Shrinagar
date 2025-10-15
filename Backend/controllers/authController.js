@@ -1,14 +1,8 @@
 // maheshpatil369/shrinagar/Shrinagar-fec0a47de051ffa389da59e3900a2428b5397e43/Backend/controllers/authController.js
 const asyncHandler = require('../middleware/asyncHandler.js');
 const User = require('../models/userModel.js');
-const jwt = require('jsonwebtoken');
-
-// This function will generate and return a token including the user's role
-const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
-  });
-};
+// Import the centralized token generation utility
+const generateToken = require('../utils/generateToken.js');
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -82,4 +76,3 @@ const verifyToken = asyncHandler(async (req, res) => {
 
 
 module.exports = { registerUser, loginUser, verifyToken };
-
