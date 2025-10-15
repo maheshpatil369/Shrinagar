@@ -1,12 +1,21 @@
 // /Backend/controllers/productController.js
 const asyncHandler = require('../middleware/asyncHandler.js');
 const Product = require('../models/productModel.js');
+const User = require('../models/userModel.js');
 
 // @desc    Fetch all APPROVED products
 // @route   GET /api/products
 // @access  Public
 const getProducts = asyncHandler(async (req, res) => {
   const products = await Product.find({ status: 'approved' });
+  res.json(products);
+});
+
+// @desc    Fetch ALL products for admin view
+// @route   GET /api/products/all
+// @access  Private/Admin
+const getAllProductsForAdmin = asyncHandler(async (req, res) => {
+  const products = await Product.find({}).populate('seller', 'name');
   res.json(products);
 });
 
@@ -25,8 +34,6 @@ const getProductById = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
   
   if (product) {
-    // Public users can only see approved products.
-    // The product's own seller or an admin can see it regardless of status.
     const isOwner = req.user && product.seller.toString() === req.user._id.toString();
     const isAdmin = req.user && req.user.role === 'admin';
 
@@ -141,4 +148,5 @@ module.exports = {
     updateProduct,
     deleteProduct,
     getMyProducts,
+    getAllProductsForAdmin,
 };

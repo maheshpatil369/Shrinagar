@@ -13,35 +13,32 @@ exports.enrollSeller = asyncHandler(async (req, res) => {
     gstNumber,
     panNumber,
     address,
-    bankDetails,
   } = req.body;
 
-  const userId = req.user._id; // Get user ID from protect middleware
+  const userId = req.user._id;
 
-  // Check if the user is already a seller
   const sellerExists = await Seller.findOne({ user: userId });
 
   if (sellerExists) {
     res.status(400);
     throw new Error('User is already a seller');
   }
-
-  const seller = new Seller({
+  
+  // Create and save the new seller profile
+  const seller = await Seller.create({
     user: userId,
     businessName,
     gstNumber,
     panNumber,
     address,
-    bankDetails,
   });
-
-  const createdSeller = await seller.save();
-
-  // IMPORTANT: We do NOT update the user's role to 'seller' immediately.
-  // This should only happen when an admin approves the application.
   
-  res.status(201).json(createdSeller);
+  // Link the seller profile to the user document
+  await User.findByIdAndUpdate(userId, { sellerProfile: seller._id, role: 'seller' });
+
+  res.status(201).json(seller);
 });
+
 
 // @desc    Get current seller's dashboard data
 // @route   GET /api/sellers/dashboard
@@ -52,8 +49,6 @@ exports.getSellerDashboard = asyncHandler(async (req, res) => {
         res.status(404);
         throw new Error('Seller profile not found');
     }
-    // In a real app, you would aggregate product views, clicks, sales, etc.
-    // For now, we'll send back the seller profile.
     res.json(seller);
 });
 
@@ -62,6 +57,7 @@ exports.getSellerDashboard = asyncHandler(async (req, res) => {
 // @route   GET /api/sellers
 // @access  Private/Admin
 exports.getSellers = asyncHandler(async (req, res) => {
+  // Populate the user field to get owner's name and email
   const sellers = await Seller.find({}).populate('user', 'name email');
   res.json(sellers);
 });
@@ -86,18 +82,18 @@ exports.updateSellerStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
   const seller = await Seller.findById(req.params.id);
 
-  if (seller) {
-    seller.status = status;
-    const updatedSeller = await seller.save();
-
-    // Also update the user's role if they are approved
-    if (status === 'active') {
-        await User.findByIdAndUpdate(seller.user, { role: 'seller' });
-    }
-    
-    res.json(updatedSeller);
-  } else {
+  if (!seller) {
     res.status(404);
     throw new Error('Seller not found');
   }
+
+  seller.status = status;
+  
+  // If a seller is approved, their user role should be 'seller'
+  // If they are suspended or rejected, we can revert them to 'customer'
+  const newRole = status === 'approved' ? 'seller' : 'customer';
+  await User.findByIdAndUpdate(seller.user, { role: newRole });
+
+  const updatedSeller = await seller.save();
+  res.json(updatedSeller);
 });

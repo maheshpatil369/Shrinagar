@@ -8,11 +8,15 @@ const {
   updateProduct,
   deleteProduct,
   getMyProducts,
+  getAllProductsForAdmin,
 } = require('../controllers/productController.js');
-const { protect, authorize } = require('../middleware/authMiddleware.js');
+const { protect, authorize, admin } = require('../middleware/authMiddleware.js');
 
 // Public route to get all approved products
 router.route('/').get(getProducts);
+
+// Admin route to get ALL products
+router.route('/all').get(protect, admin, getAllProductsForAdmin);
 
 // Seller route to create a new product
 router.route('/').post(protect, authorize('seller'), createProduct);

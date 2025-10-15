@@ -27,7 +27,7 @@ export interface Product {
     material: string;
     images: string[];
     affiliateUrl: string;
-    seller: string;
+    seller: string | { _id: string; name: string }; // seller can be a string ID or a populated User object
     status: 'pending' | 'approved' | 'rejected' | 'suspended';
     viewCount: number;
     clickCount: number;
@@ -42,6 +42,13 @@ export type ProductFormData = {
   material: string;
   images: string; // Storing as comma-separated string in form
   affiliateUrl: string;
+};
+
+// --- NEW ---
+// Fetches only products with 'approved' status for the buyer dashboard
+export const getApprovedProducts = async (): Promise<Product[]> => {
+    const { data } = await api.get('/products', getAuthHeaders());
+    return data;
 };
 
 // New function to handle image uploads
