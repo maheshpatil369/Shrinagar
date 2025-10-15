@@ -1,6 +1,4 @@
-// /Backend/controllers/authController.js
-// This file is updated to accept a 'role' during user registration and correctly handle login.
-
+// maheshpatil369/shrinagar/Shrinagar-fec0a47de051ffa389da59e3900a2428b5397e43/Backend/controllers/authController.js
 const asyncHandler = require('../middleware/asyncHandler.js');
 const User = require('../models/userModel.js');
 const jwt = require('jsonwebtoken');
@@ -74,13 +72,14 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 // @desc    Verify user token
-// @route   POST /api/auth/verify-token
+// @route   GET /api/auth/verify-token
 // @access  Private
 const verifyToken = asyncHandler(async (req, res) => {
-  // If the 'protect' middleware passed successfully, req.user will be populated,
-  // indicating a valid token. We simply return the user data as confirmation.
+  // If the protect middleware was successful, req.user will be populated.
+  // We can just return the user data.
   res.status(200).json(req.user);
 });
+
 
 module.exports = { registerUser, loginUser, verifyToken };
 

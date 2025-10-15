@@ -1,3 +1,4 @@
+// maheshpatil369/shrinagar/Shrinagar-fec0a47de051ffa389da59e3900a2428b5397e43/Backend/routes/authRoutes.js
 const express = require('express');
 const router = express.Router();
 const {
@@ -17,17 +18,12 @@ router.post('/register', registerUser);
 // @access  Public
 router.post('/login', loginUser);
 
-// @desc    Verify an existing token
-// @route   POST /api/auth/verify-token
-// @access  Private (requires a valid token)
-router.post('/verify-token', protect, verifyToken);
 
-
-// The problematic GET route that was causing the crash has been removed.
-// If you intended to have a GET route here, for example to get a user profile,
-// it should be defined correctly like this:
-// router.get('/profile', protect, getUserProfile); 
-// And getUserProfile would need to be imported from your userController.
+// @desc    Verify user token
+// @route   GET /api/auth/verify-token
+// @access  Private
+router.get('/verify-token', protect, verifyToken);
 
 
 module.exports = router;
+

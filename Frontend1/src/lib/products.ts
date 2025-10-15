@@ -1,4 +1,4 @@
-// /Frontend1/src/lib/products.ts
+// maheshpatil369/shrinagar/Shrinagar-fec0a47de051ffa389da59e3900a2428b5397e43/Frontend1/src/lib/products.ts
 import { api } from './api';
 
 const getAuthHeaders = () => {
@@ -42,6 +42,17 @@ export type ProductFormData = {
   material: string;
   images: string; // Storing as comma-separated string in form
   affiliateUrl: string;
+};
+
+// New function to handle image uploads
+export const uploadProductImage = async (formData: FormData): Promise<{ message: string; image: string; }> => {
+    const { data } = await api.post('/upload', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+            ...getAuthHeaders().headers,
+        },
+    });
+    return data;
 };
 
 export const getMyProducts = async (): Promise<Product[]> => {

@@ -1,7 +1,7 @@
 {
   "name": "shringar-backend",
   "version": "1.0.0",
-  "description": "Backend for the Shringar jewelry marketplace.",
+  "type": "commonjs",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

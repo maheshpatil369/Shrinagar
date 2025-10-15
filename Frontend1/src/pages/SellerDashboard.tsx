@@ -1,26 +1,26 @@
-// /Frontend1/src/pages/SellerDashboard.tsx
+// maheshpatil369/shrinagar/Shrinagar-fec0a47de051ffa389da59e3900a2428b5397e43/Frontend1/src/pages/SellerDashboard.tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
-import { getCurrentUser, logout, User, verifyToken } from "@/lib/auth";
-import { Product, ProductFormData, getMyProducts, createProduct, updateProduct, deleteProduct } from "@/lib/products";
+import { getCurrentUser, logout, User, verifyToken } from "../lib/auth";
+import { Product, ProductFormData, getMyProducts, createProduct, updateProduct, deleteProduct, uploadProductImage } from "../lib/products";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
-import { Badge } from "@/components/ui/badge";
-import { PlusCircle, MoreVertical, Edit, Trash2, Eye, BarChart2, ShieldCheck, ShieldAlert, LoaderCircle } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "../components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../components/ui/form";
+import { Input } from "../components/ui/input";
+import { Textarea } from "../components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { useToast } from "../components/ui/use-toast";
+import { Badge } from "../components/ui/badge";
+import { PlusCircle, MoreVertical, Edit, Trash2, Eye, BarChart2, ShieldCheck, ShieldAlert, LoaderCircle, Upload } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog";
 
 const productSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters." }),
@@ -42,6 +42,7 @@ export default function SellerDashboard() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>('verifying');
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -145,6 +146,39 @@ export default function SellerDashboard() {
         title: "Error",
         description: "Failed to delete product.",
       });
+    }
+  };
+
+  const uploadFileHandler = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+    setIsUploading(true);
+
+    try {
+        const data = await uploadProductImage(formData);
+        const currentImages = form.getValues('images');
+        // Append new image URL, handling case where input is empty
+        const newImages = currentImages ? `${currentImages}, ${data.image}` : data.image;
+        form.setValue('images', newImages, { shouldValidate: true });
+        toast({
+            title: "Success",
+            description: "Image uploaded and URL added.",
+        });
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Upload Error",
+            description: error?.response?.data?.message || "Failed to upload image.",
+        });
+    } finally {
+        setIsUploading(false);
+        // Reset file input value to allow uploading the same file again
+        if(e.target) {
+            e.target.value = '';
+        }
     }
   };
   
@@ -364,13 +398,40 @@ export default function SellerDashboard() {
                   </FormItem>
                 )} />
               </div>
-               <FormField control={form.control} name="images" render={({ field }) => (
-                  <FormItem>
+              <FormField control={form.control} name="images" render={({ field }) => (
+                <FormItem>
                     <FormLabel>Image URLs</FormLabel>
-                    <FormControl><Input placeholder="https://.../image1.jpg, https://.../image2.jpg" {...field} /></FormControl>
-                    <p className="text-xs text-muted-foreground">Add multiple URLs separated by commas.</p>
+                    <FormControl>
+                        <Textarea
+                            placeholder="Upload an image or paste URLs here, separated by commas."
+                            {...field}
+                        />
+                    </FormControl>
+                     <div className="flex items-center gap-2 pt-1">
+                        <Input
+                            type="file"
+                            id="image-file-upload"
+                            name="image"
+                            accept="image/*"
+                            onChange={uploadFileHandler}
+                            className="hidden"
+                        />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => document.getElementById('image-file-upload')?.click()}
+                            disabled={isUploading}
+                        >
+                            {isUploading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                            Upload Image
+                        </Button>
+                         <p className="text-xs text-muted-foreground">
+                            Upload one image at a time.
+                        </p>
+                    </div>
                     <FormMessage />
-                  </FormItem>
+                </FormItem>
                 )} />
                <FormField control={form.control} name="affiliateUrl" render={({ field }) => (
                   <FormItem>
@@ -392,3 +453,4 @@ export default function SellerDashboard() {
     </div>
   );
 }
+
