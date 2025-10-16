@@ -1,4 +1,4 @@
-// /Backend/routes/productRoutes.js
+// maheshpatil369/shrinagar/Shrinagar-47183708fc2b865cb6e3d62f63fcad35ec0165db/Backend/routes/productRoutes.js
 const express = require('express');
 const router = express.Router();
 const {
@@ -26,7 +26,8 @@ router.route('/myproducts').get(protect, authorize('seller'), getMyProducts);
 
 // Public route to get a single product
 // Controller logic will handle authorization for non-approved products
-router.route('/:id').get(protect, getProductById); 
+// REMOVED `protect` MIDDLEWARE to allow public access
+router.route('/:id').get(getProductById); 
 
 // Seller/Admin routes to update or delete a product
 router.route('/:id')
@@ -34,3 +35,4 @@ router.route('/:id')
   .delete(protect, authorize('seller', 'admin'), deleteProduct);
 
 module.exports = router;
+
