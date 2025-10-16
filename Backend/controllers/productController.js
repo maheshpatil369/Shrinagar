@@ -1,6 +1,8 @@
 // maheshpatil369/shrinagar/Shrinagar-47183708fc2b865cb6e3d62f63fcad35ec0165db/Backend/controllers/productController.js
 const asyncHandler = require('../middleware/asyncHandler.js');
 const Product = require('../models/productModel.js');
+const User = require('../models/userModel.js');
+const jwt = require('jsonwebtoken');
 
 // @desc    Fetch all APPROVED products with filtering and search
 // @route   GET /api/products
@@ -36,42 +38,46 @@ const getProducts = asyncHandler(async (req, res) => {
   res.json(products);
 });
 
-// @desc    Fetch trending products (top 4 by clicks + views)
-// @route   GET /api/products/trending
-// @access  Public
-const getTrendingProducts = asyncHandler(async (req, res) => {
-    const products = await Product.aggregate([
-        { $match: { status: 'approved' } },
-        { $addFields: { popularity: { $add: ["$viewCount", "$clickCount"] } } },
-        { $sort: { popularity: -1 } },
-        { $limit: 4 }
-    ]);
-    res.json(products);
-});
-
-
 // @desc    Fetch single product by ID and increment view count
 // @route   GET /api/products/:id
-// @access  Public
+// @access  Public (with auth checks for non-approved items)
 const getProductById = asyncHandler(async (req, res) => {
-  const product = await Product.findById(req.params.id);
-  
-  if (product) {
-    const isOwner = req.user && product.seller.toString() === req.user._id.toString();
-    const isAdmin = req.user && req.user.role === 'admin';
+  const product = await Product.findById(req.params.id).populate('seller', 'name');
 
-    if (product.status === 'approved' || isOwner || isAdmin) {
-      // Increment view count but don't wait for it to complete
-      Product.findByIdAndUpdate(req.params.id, { $inc: { viewCount: 1 } }).exec();
-      return res.json(product);
-    } else {
-      res.status(404);
-      throw new Error('Product not found or not approved');
-    }
-  } else {
+  if (!product) {
     res.status(404);
     throw new Error('Product not found');
   }
+
+  // Public users and all users can see approved products
+  if (product.status === 'approved') {
+    // Increment view count but don't wait for it to complete
+    Product.findByIdAndUpdate(req.params.id, { $inc: { viewCount: 1 } }).exec();
+    return res.json(product);
+  }
+
+  // For non-approved products, we need to check if the user is authorized
+  let user = null;
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer')) {
+    try {
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      user = await User.findById(decoded.id).select('-password');
+    } catch (error) {
+      // Token failed, treat as public user.
+    }
+  }
+
+  const isOwner = user && product.seller && product.seller._id.toString() === user._id.toString();
+  const isAdmin = user && user.role === 'admin';
+
+  if (isOwner || isAdmin) {
+    return res.json(product);
+  }
+  
+  res.status(404);
+  throw new Error('Product not found or not available');
 });
 
 // @desc    Track a click on an affiliate link
@@ -81,7 +87,7 @@ const trackAffiliateClick = asyncHandler(async (req, res) => {
     const product = await Product.findById(req.params.id);
 
     if (product) {
-        product.clickCount += 1;
+        product.clickCount = (product.clickCount || 0) + 1;
         await product.save();
         res.status(200).json({ message: 'Click tracked' });
     } else {
@@ -150,6 +156,7 @@ const updateProduct = asyncHandler(async (req, res) => {
 
     if (isAdmin && status) {
         product.status = status;
+        // Optionally, send a notification upon status change
     }
 
     const updatedProduct = await product.save();
@@ -200,6 +207,6 @@ module.exports = {
     deleteProduct,
     getMyProducts,
     getAllProductsForAdmin,
-    getTrendingProducts,
     trackAffiliateClick,
 };
+

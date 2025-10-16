@@ -1,16 +1,13 @@
-// maheshpatil369/shrinagar/Shrinagar-47183708fc2b865cb6e3d62f63fcad35ec0165db/Frontend1/src/pages/BuyerLayout.tsx
+// maheshpatil369/shrinagar/Shrinagar-ec6ca96d478d060fcb4be15266db4b0ee9642b37/Frontend1/src/pages/BuyerLayout.tsx
 import { useEffect, useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser, logout, User, verifyToken } from "@/lib/auth";
-import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, ShieldAlert, LoaderCircle, Gem, User as UserIcon, LogOut } from 'lucide-react';
-
-type VerificationStatus = 'verifying' | 'verified' | 'failed';
+import { Gem, User as UserIcon, LogOut, LoaderCircle } from 'lucide-react';
 
 export default function BuyerLayout() {
   const [user, setUser] = useState<User | null>(null);
-  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>('verifying');
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,40 +16,31 @@ export default function BuyerLayout() {
       verifyToken(currentUser.token)
         .then(verifiedUser => {
           setUser(verifiedUser);
-          setVerificationStatus('verified');
         })
         .catch(() => {
-          setVerificationStatus('failed');
-          logout(); // Clears local storage and redirects
+          // Token is invalid, so clear it but don't redirect
+          logout();
+          setUser(null);
+        })
+        .finally(() => {
+            setIsLoadingUser(false);
         });
     } else {
-      navigate('/auth');
+      // No user is logged in, proceed as a guest
+      setIsLoadingUser(false);
     }
-  }, [navigate]);
+  }, []);
 
   const handleLogout = () => {
     logout();
+    setUser(null); // Update state immediately
+    navigate('/auth');
   };
 
-  const StatusIndicator = () => {
-    switch (verificationStatus) {
-      case 'verified':
-        return <Badge variant="default" className="bg-green-500 hover:bg-green-600"><ShieldCheck className="mr-2 h-4 w-4" />Verified</Badge>;
-      case 'failed':
-        return <Badge variant="destructive"><ShieldAlert className="mr-2 h-4 w-4" />Failed</Badge>;
-      default:
-        return <Badge variant="secondary"><LoaderCircle className="mr-2 h-4 w-4 animate-spin" />Verifying...</Badge>;
-    }
-  };
-
-  if (verificationStatus !== 'verified' || !user) {
+  if (isLoadingUser) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-        <div className="w-full max-w-2xl p-8 space-y-6 bg-white rounded-lg shadow-md dark:bg-gray-800 text-center">
-          <h1 className="text-3xl font-bold text-destructive">Authentication Issue</h1>
-          <p className="text-muted-foreground">Verifying your session or redirecting to login...</p>
-          <StatusIndicator />
-        </div>
+      <div className="flex h-screen items-center justify-center">
+        <LoaderCircle className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
@@ -66,16 +54,29 @@ export default function BuyerLayout() {
                 <span className="font-bold text-xl">Shrinagar</span>
             </Link>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground hidden sm:inline">Welcome, {user.name}!</span>
-            <Link to="/profile">
-                <Button variant="ghost" size="icon">
-                    <UserIcon className="h-5 w-5" />
-                    <span className="sr-only">Profile</span>
+            {user ? (
+              <>
+                <span className="text-sm text-muted-foreground hidden sm:inline">Welcome, {user.name}!</span>
+                <Link to="/profile">
+                    <Button variant="ghost" size="icon">
+                        <UserIcon className="h-5 w-5" />
+                        <span className="sr-only">Profile</span>
+                    </Button>
+                </Link>
+                <Button onClick={handleLogout} variant="outline" size="sm">
+                  <LogOut className="mr-2 h-4 w-4" /> Logout
                 </Button>
-            </Link>
-            <Button onClick={handleLogout} variant="outline" size="sm">
-              <LogOut className="mr-2 h-4 w-4" /> Logout
-            </Button>
+              </>
+            ) : (
+              <>
+                <Button onClick={() => navigate('/auth')} variant="outline" size="sm">
+                  Login
+                </Button>
+                 <Button onClick={() => navigate('/auth')} size="sm">
+                  Sign Up
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>

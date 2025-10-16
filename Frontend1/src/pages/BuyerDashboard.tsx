@@ -1,10 +1,10 @@
-// maheshpatil369/shrinagar/Shrinagar-47183708fc2b865cb6e3d62f63fcad35ec0165db/Frontend1/src/pages/BuyerDashboard.tsx
+// maheshpatil369/shrinagar/Shrinagar-ec6ca96d478d060fcb4be15266db4b0ee9642b37/Frontend1/src/pages/BuyerDashboard.tsx
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Product, getApprovedProducts, getTrendingProducts, ProductFilters } from "@/lib/products";
+import { Product, getApprovedProducts, ProductFilters } from "@/lib/products";
 import { ExternalLink, LoaderCircle, Search, SlidersHorizontal, Heart } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -13,29 +13,31 @@ import { Slider } from "@/components/ui/slider";
 import { addToWishlist } from "@/lib/user";
 import { getCurrentUser } from "@/lib/auth";
 import debounce from 'lodash.debounce';
+import { Label } from "@/components/ui/label";
 
 export default function BuyerDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<ProductFilters>({ minPrice: 0, maxPrice: 50000 });
   
   const { toast } = useToast();
   const currentUser = getCurrentUser();
 
-  const uniqueBrands = useMemo(() => [...new Set(products.map(p => p.brand))], [products]);
-  const uniqueMaterials = useMemo(() => [...new Set(products.map(p => p.material))], [products]);
+  const uniqueBrands = useMemo(() => {
+    if (!products || products.length === 0) return [];
+    return [...new Set(products.map(p => p.brand))];
+  }, [products]);
+  const uniqueMaterials = useMemo(() => {
+    if (!products || products.length === 0) return [];
+    return [...new Set(products.map(p => p.material))];
+  }, [products]);
 
   const fetchProducts = useCallback(
     debounce(async (currentFilters: ProductFilters) => {
       setIsLoading(true);
       try {
-        const [approvedProducts, trending] = await Promise.all([
-            getApprovedProducts(currentFilters),
-            getTrendingProducts()
-        ]);
+        const approvedProducts = await getApprovedProducts(currentFilters);
         setProducts(approvedProducts);
-        setTrendingProducts(trending);
       } catch (error) {
         toast({
           variant: "destructive",
@@ -87,7 +89,6 @@ export default function BuyerDashboard() {
     }
   };
 
-
   return (
     <div className="flex">
         {/* Filters Sidebar */}
@@ -103,10 +104,10 @@ export default function BuyerDashboard() {
                 </div>
                 <div>
                     <Label className="text-sm font-medium">Category</Label>
-                    <Select onValueChange={value => handleFilterChange('category', value)}>
+                    <Select onValueChange={value => handleFilterChange('category', value === "all" ? undefined : value)}>
                         <SelectTrigger><SelectValue placeholder="All Categories" /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">All Categories</SelectItem>
+                            <SelectItem value="all">All Categories</SelectItem>
                             {['ring', 'necklace', 'bracelet', 'earrings', 'watch', 'other'].map(cat => (
                                <SelectItem key={cat} value={cat} className="capitalize">{cat}</SelectItem>
                             ))}
@@ -115,20 +116,20 @@ export default function BuyerDashboard() {
                 </div>
                  <div>
                     <Label className="text-sm font-medium">Brand</Label>
-                    <Select onValueChange={value => handleFilterChange('brand', value)} disabled={uniqueBrands.length === 0}>
+                    <Select onValueChange={value => handleFilterChange('brand', value === "all" ? undefined : value)} disabled={uniqueBrands.length === 0}>
                         <SelectTrigger><SelectValue placeholder="All Brands" /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">All Brands</SelectItem>
+                            <SelectItem value="all">All Brands</SelectItem>
                             {uniqueBrands.map(brand => <SelectItem key={brand} value={brand}>{brand}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>
                  <div>
                     <Label className="text-sm font-medium">Material</Label>
-                    <Select onValueChange={value => handleFilterChange('material', value)} disabled={uniqueMaterials.length === 0}>
+                    <Select onValueChange={value => handleFilterChange('material', value === "all" ? undefined : value)} disabled={uniqueMaterials.length === 0}>
                         <SelectTrigger><SelectValue placeholder="All Materials" /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">All Materials</SelectItem>
+                            <SelectItem value="all">All Materials</SelectItem>
                             {uniqueMaterials.map(mat => <SelectItem key={mat} value={mat}>{mat}</SelectItem>)}
                         </SelectContent>
                     </Select>
@@ -152,28 +153,11 @@ export default function BuyerDashboard() {
         </aside>
 
         <main className="flex-1 p-4 md:p-8">
-            {/* Trending Section */}
-             <section className="mb-12">
-                <h2 className="text-2xl font-bold mb-4">Trending Items</h2>
-                {isLoading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {[...Array(4)].map((_, i) => <Card key={i} className="h-80 animate-pulse bg-muted"></Card>)}
-                    </div>
-                ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {trendingProducts.map((product) => (
-                       <ProductCard key={product._id} product={product} onAddToWishlist={handleAddToWishlist} />
-                    ))}
-                </div>
-                )}
-            </section>
-
-            {/* All Products Section */}
             <section>
-                <h2 className="text-2xl font-bold mb-4">All Products</h2>
+                <h2 className="text-2xl font-bold mb-4">All Jewelry</h2>
                 {isLoading ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                         {[...Array(8)].map((_, i) => <Card key={i} className="h-80 animate-pulse bg-muted"></Card>)}
+                         {[...Array(12)].map((_, i) => <Card key={i} className="h-80 animate-pulse bg-muted"></Card>)}
                     </div>
                 ) : products.length === 0 ? (
                     <div className="text-center py-20 border rounded-lg">
@@ -200,6 +184,7 @@ interface ProductCardProps {
 }
 
 function ProductCard({ product, onAddToWishlist }: ProductCardProps) {
+    const currentUser = getCurrentUser();
     return (
         <Card className="overflow-hidden flex flex-col group">
             <CardHeader className="p-0 relative">
@@ -210,14 +195,16 @@ function ProductCard({ product, onAddToWishlist }: ProductCardProps) {
                       className="w-full h-48 object-cover transition-transform group-hover:scale-105"
                     />
                 </Link>
-                <Button 
-                    size="icon" 
-                    className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/70 text-red-500 hover:bg-background"
-                    variant="ghost"
-                    onClick={(e) => onAddToWishlist(e, product)}
-                >
-                    <Heart className="h-4 w-4" />
-                </Button>
+                {currentUser && (
+                  <Button 
+                      size="icon" 
+                      className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/70 text-red-500 hover:bg-background"
+                      variant="ghost"
+                      onClick={(e) => onAddToWishlist(e, product)}
+                  >
+                      <Heart className="h-4 w-4" />
+                  </Button>
+                )}
             </CardHeader>
             <CardContent className="p-4 flex-grow">
                  <Link to={`/product/${product._id}`} className="space-y-1">
@@ -237,9 +224,4 @@ function ProductCard({ product, onAddToWishlist }: ProductCardProps) {
         </Card>
     );
 }
-
-// Add Label component for filters
-const Label = ({ className, ...props }: React.ComponentProps<"label">) => (
-    <label className={`block text-sm font-medium text-muted-foreground mb-2 ${className}`} {...props} />
-);
 
