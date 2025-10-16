@@ -1,12 +1,10 @@
-// maheshpatil369/shrinagar/Shrinagar-fec0a47de051ffa389da59e3900a2428b5397e43/Frontend1/src/lib/products.ts
+// maheshpatil369/shrinagar/Shrinagar-47183708fc2b865cb6e3d62f63fcad35ec0165db/Frontend1/src/lib/products.ts
 import { api } from './api';
 
 const getAuthHeaders = () => {
     const userInfoItem = localStorage.getItem('userInfo');
+    // For public routes, we don't need a token, so we can return an empty header object.
     if (!userInfoItem) {
-        // Handle case where user is not logged in
-        console.error("User not logged in");
-        // You might want to throw an error or redirect here
         return {};
     }
     const userInfo = JSON.parse(userInfoItem);
@@ -27,7 +25,7 @@ export interface Product {
     material: string;
     images: string[];
     affiliateUrl: string;
-    seller: string | { _id: string; name: string }; // seller can be a string ID or a populated User object
+    seller: string | { _id: string; name: string };
     status: 'pending' | 'approved' | 'rejected' | 'suspended';
     viewCount: number;
     clickCount: number;
@@ -44,12 +42,39 @@ export type ProductFormData = {
   affiliateUrl: string;
 };
 
-// --- NEW ---
-// Fetches only products with 'approved' status for the buyer dashboard
-export const getApprovedProducts = async (): Promise<Product[]> => {
-    const { data } = await api.get('/products', getAuthHeaders());
+export interface ProductFilters {
+    keyword?: string;
+    category?: string;
+    brand?: string;
+    material?: string;
+    minPrice?: number;
+    maxPrice?: number;
+}
+
+// Fetches only products with 'approved' status, with filtering
+export const getApprovedProducts = async (filters: ProductFilters = {}): Promise<Product[]> => {
+    const { data } = await api.get('/products', { params: filters });
     return data;
 };
+
+// Fetches a single product by ID
+export const getProductById = async (id: string): Promise<Product> => {
+    const { data } = await api.get(`/products/${id}`);
+    return data;
+};
+
+// Fetches trending products
+export const getTrendingProducts = async (): Promise<Product[]> => {
+    const { data } = await api.get('/products/trending');
+    return data;
+};
+
+// Tracks affiliate link click
+export const trackAffiliateClick = async (id: string): Promise<{ message: string }> => {
+    const { data } = await api.post(`/products/${id}/track-click`);
+    return data;
+};
+
 
 // New function to handle image uploads
 export const uploadProductImage = async (formData: FormData): Promise<{ message: string; image: string; }> => {
@@ -76,11 +101,12 @@ export const createProduct = async (productData: ProductFormData): Promise<Produ
     return data;
 };
 
-export const updateProduct = async (id: string, productData: ProductFormData): Promise<Product> => {
-    const payload = {
-        ...productData,
-        images: productData.images.split(',').map(img => img.trim()).filter(img => img),
-    };
+export const updateProduct = async (id: string, productData: Partial<ProductFormData>): Promise<Product> => {
+    const payload = { ...productData };
+    if (productData.images) {
+        // @ts-ignore
+        payload.images = productData.images.split(',').map(img => img.trim()).filter(img => img);
+    }
     const { data } = await api.put(`/products/${id}`, payload, getAuthHeaders());
     return data;
 };

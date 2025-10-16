@@ -1,136 +1,245 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "../components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { getCurrentUser, logout, User, verifyToken } from "../lib/auth";
-import { Product, getApprovedProducts } from "../lib/products";
-import { ShieldCheck, ShieldAlert, LoaderCircle, ExternalLink } from 'lucide-react';
-import { useToast } from "../components/ui/use-toast";
-
-type VerificationStatus = 'verifying' | 'verified' | 'failed';
+// maheshpatil369/shrinagar/Shrinagar-47183708fc2b865cb6e3d62f63fcad35ec0165db/Frontend1/src/pages/BuyerDashboard.tsx
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Product, getApprovedProducts, getTrendingProducts, ProductFilters } from "@/lib/products";
+import { ExternalLink, LoaderCircle, Search, SlidersHorizontal, Heart } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { addToWishlist } from "@/lib/user";
+import { getCurrentUser } from "@/lib/auth";
+import debounce from 'lodash.debounce';
 
 export default function BuyerDashboard() {
-  const [user, setUser] = useState<User | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>('verifying');
-  const navigate = useNavigate();
+  const [filters, setFilters] = useState<ProductFilters>({ minPrice: 0, maxPrice: 50000 });
+  
   const { toast } = useToast();
+  const currentUser = getCurrentUser();
+
+  const uniqueBrands = useMemo(() => [...new Set(products.map(p => p.brand))], [products]);
+  const uniqueMaterials = useMemo(() => [...new Set(products.map(p => p.material))], [products]);
+
+  const fetchProducts = useCallback(
+    debounce(async (currentFilters: ProductFilters) => {
+      setIsLoading(true);
+      try {
+        const [approvedProducts, trending] = await Promise.all([
+            getApprovedProducts(currentFilters),
+            getTrendingProducts()
+        ]);
+        setProducts(approvedProducts);
+        setTrendingProducts(trending);
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not fetch jewelry.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }, 300), 
+  [toast]);
 
   useEffect(() => {
-    const currentUser = getCurrentUser();
-    if (currentUser) {
-      verifyToken(currentUser.token)
-        .then(verifiedUser => {
-          setUser(verifiedUser);
-          setVerificationStatus('verified');
-          fetchProducts();
-        })
-        .catch(() => {
-          setVerificationStatus('failed');
-          setTimeout(() => navigate('/auth'), 2000);
-        });
-    } else {
-      navigate('/auth');
-    }
-  }, [navigate]);
+    fetchProducts(filters);
+  }, [fetchProducts, filters]);
+
+  const handleFilterChange = (key: keyof ProductFilters, value: string | number | undefined) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
   
-  const fetchProducts = async () => {
-    setIsLoading(true);
+  const handlePriceChange = (value: number[]) => {
+      handleFilterChange('minPrice', value[0]);
+      handleFilterChange('maxPrice', value[1]);
+  };
+
+  const handleAddToWishlist = async (e: React.MouseEvent, product: Product) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!currentUser) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "You must be logged in to add items to your wishlist.",
+        });
+        return;
+    }
     try {
-      const approvedProducts = await getApprovedProducts();
-      setProducts(approvedProducts);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not fetch jewelry.",
-      });
-    } finally {
-      setIsLoading(false);
+        await addToWishlist(product._id);
+        toast({
+            title: "Success",
+            description: `${product.name} added to your wishlist!`,
+        });
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: error.response?.data?.message || "Could not add to wishlist.",
+        });
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/auth');
-  };
-
-  const StatusIndicator = () => {
-    switch (verificationStatus) {
-      case 'verified':
-        return <Badge variant="default" className="bg-green-500 hover:bg-green-600"><ShieldCheck className="mr-2 h-4 w-4" />Token Verified</Badge>;
-      case 'failed':
-        return <Badge variant="destructive"><ShieldAlert className="mr-2 h-4 w-4" />Token Invalid</Badge>;
-      default:
-        return <Badge variant="secondary"><LoaderCircle className="mr-2 h-4 w-4 animate-spin" />Verifying...</Badge>;
-    }
-  };
-
-  if (verificationStatus !== 'verified' || !user) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-        <div className="w-full max-w-2xl p-8 space-y-6 bg-white rounded-lg shadow-md dark:bg-gray-800 text-center">
-          <h1 className="text-3xl font-bold text-destructive">Authentication Issue</h1>
-          <p className="text-muted-foreground">Verifying your session or redirecting to login...</p>
-          <StatusIndicator />
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      <header className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Jewelry Marketplace</h1>
-          <p className="text-muted-foreground">Welcome back, {user.name}! Browse approved products below.</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <StatusIndicator />
-          <Button onClick={handleLogout} variant="outline">Logout</Button>
-        </div>
-      </header>
-      
-      {isLoading ? (
-        <div className="flex justify-center items-center py-20">
-            <LoaderCircle className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      ) : products.length === 0 ? (
-        <div className="text-center py-20">
-            <h2 className="text-2xl font-semibold">No Jewelry Found</h2>
-            <p className="text-muted-foreground mt-2">Check back later for new arrivals!</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {products.map((product) => (
-            <Card key={product._id} className="overflow-hidden flex flex-col">
-              <CardHeader className="p-0">
-                <img 
-                  src={`http://localhost:8000${product.images[0]}`}
-                  alt={product.name}
-                  className="w-full h-48 object-cover"
-                />
-              </CardHeader>
-              <CardContent className="p-4 flex-grow">
-                <Badge variant="secondary" className="mb-2 capitalize">{product.category}</Badge>
-                <CardTitle className="text-lg font-semibold leading-tight mb-1">{product.name}</CardTitle>
-                <p className="text-sm text-muted-foreground">{product.brand}</p>
-                 <p className="text-lg font-bold mt-2">${product.price.toFixed(2)}</p>
-              </CardContent>
-              <CardFooter className="p-4 pt-0">
-                <Button asChild className="w-full">
-                  <a href={product.affiliateUrl} target="_blank" rel="noopener noreferrer">
-                    View Product <ExternalLink className="ml-2 h-4 w-4" />
-                  </a>
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      )}
+    <div className="flex">
+        {/* Filters Sidebar */}
+        <aside className="w-64 p-6 border-r sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto hidden md:block">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><SlidersHorizontal className="h-5 w-5"/> Filters</h2>
+            <div className="space-y-6">
+                <div>
+                    <Label className="text-sm font-medium">Search</Label>
+                    <div className="relative mt-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder="Search jewelry..." className="pl-9" onChange={e => handleFilterChange('keyword', e.target.value)}/>
+                    </div>
+                </div>
+                <div>
+                    <Label className="text-sm font-medium">Category</Label>
+                    <Select onValueChange={value => handleFilterChange('category', value)}>
+                        <SelectTrigger><SelectValue placeholder="All Categories" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="">All Categories</SelectItem>
+                            {['ring', 'necklace', 'bracelet', 'earrings', 'watch', 'other'].map(cat => (
+                               <SelectItem key={cat} value={cat} className="capitalize">{cat}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                 <div>
+                    <Label className="text-sm font-medium">Brand</Label>
+                    <Select onValueChange={value => handleFilterChange('brand', value)} disabled={uniqueBrands.length === 0}>
+                        <SelectTrigger><SelectValue placeholder="All Brands" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="">All Brands</SelectItem>
+                            {uniqueBrands.map(brand => <SelectItem key={brand} value={brand}>{brand}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+                 <div>
+                    <Label className="text-sm font-medium">Material</Label>
+                    <Select onValueChange={value => handleFilterChange('material', value)} disabled={uniqueMaterials.length === 0}>
+                        <SelectTrigger><SelectValue placeholder="All Materials" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="">All Materials</SelectItem>
+                            {uniqueMaterials.map(mat => <SelectItem key={mat} value={mat}>{mat}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div>
+                    <Label className="text-sm font-medium">Price Range</Label>
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                        <span>${filters.minPrice}</span>
+                        <span>${filters.maxPrice}</span>
+                    </div>
+                    <Slider 
+                        defaultValue={[0, 50000]} 
+                        max={50000} 
+                        step={100} 
+                        className="mt-2"
+                        value={[filters.minPrice || 0, filters.maxPrice || 50000]}
+                        onValueChange={handlePriceChange}
+                    />
+                </div>
+            </div>
+        </aside>
+
+        <main className="flex-1 p-4 md:p-8">
+            {/* Trending Section */}
+             <section className="mb-12">
+                <h2 className="text-2xl font-bold mb-4">Trending Items</h2>
+                {isLoading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {[...Array(4)].map((_, i) => <Card key={i} className="h-80 animate-pulse bg-muted"></Card>)}
+                    </div>
+                ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {trendingProducts.map((product) => (
+                       <ProductCard key={product._id} product={product} onAddToWishlist={handleAddToWishlist} />
+                    ))}
+                </div>
+                )}
+            </section>
+
+            {/* All Products Section */}
+            <section>
+                <h2 className="text-2xl font-bold mb-4">All Products</h2>
+                {isLoading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                         {[...Array(8)].map((_, i) => <Card key={i} className="h-80 animate-pulse bg-muted"></Card>)}
+                    </div>
+                ) : products.length === 0 ? (
+                    <div className="text-center py-20 border rounded-lg">
+                        <h2 className="text-2xl font-semibold">No Jewelry Found</h2>
+                        <p className="text-muted-foreground mt-2">Try adjusting your filters or check back later!</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {products.map((product) => (
+                           <ProductCard key={product._id} product={product} onAddToWishlist={handleAddToWishlist} />
+                        ))}
+                    </div>
+                )}
+            </section>
+        </main>
     </div>
   );
 }
+
+// Product Card Component
+interface ProductCardProps {
+    product: Product;
+    onAddToWishlist: (e: React.MouseEvent, product: Product) => void;
+}
+
+function ProductCard({ product, onAddToWishlist }: ProductCardProps) {
+    return (
+        <Card className="overflow-hidden flex flex-col group">
+            <CardHeader className="p-0 relative">
+                <Link to={`/product/${product._id}`}>
+                    <img 
+                      src={`http://localhost:8000${product.images[0]}`}
+                      alt={product.name}
+                      className="w-full h-48 object-cover transition-transform group-hover:scale-105"
+                    />
+                </Link>
+                <Button 
+                    size="icon" 
+                    className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/70 text-red-500 hover:bg-background"
+                    variant="ghost"
+                    onClick={(e) => onAddToWishlist(e, product)}
+                >
+                    <Heart className="h-4 w-4" />
+                </Button>
+            </CardHeader>
+            <CardContent className="p-4 flex-grow">
+                 <Link to={`/product/${product._id}`} className="space-y-1">
+                    <Badge variant="secondary" className="mb-2 capitalize">{product.category}</Badge>
+                    <CardTitle className="text-lg font-semibold leading-tight mb-1 group-hover:underline">{product.name}</CardTitle>
+                    <p className="text-sm text-muted-foreground">{product.brand}</p>
+                 </Link>
+            </CardContent>
+            <CardFooter className="p-4 pt-0 flex justify-between items-center">
+                <p className="text-lg font-bold">${product.price.toFixed(2)}</p>
+                <Button asChild size="sm" variant="outline" onClick={(e) => e.stopPropagation()}>
+                  <a href={product.affiliateUrl} target="_blank" rel="noopener noreferrer">
+                    View <ExternalLink className="ml-2 h-3 w-3" />
+                  </a>
+                </Button>
+            </CardFooter>
+        </Card>
+    );
+}
+
+// Add Label component for filters
+const Label = ({ className, ...props }: React.ComponentProps<"label">) => (
+    <label className={`block text-sm font-medium text-muted-foreground mb-2 ${className}`} {...props} />
+);
 

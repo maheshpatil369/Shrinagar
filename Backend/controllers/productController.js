@@ -1,50 +1,68 @@
 // maheshpatil369/shrinagar/Shrinagar-47183708fc2b865cb6e3d62f63fcad35ec0165db/Backend/controllers/productController.js
 const asyncHandler = require('../middleware/asyncHandler.js');
 const Product = require('../models/productModel.js');
-const User = require('../models/userModel.js');
-const Notification = require('../models/notificationModel.js');
 
-// @desc    Fetch all APPROVED products
+// @desc    Fetch all APPROVED products with filtering and search
 // @route   GET /api/products
 // @access  Public
 const getProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find({ status: 'approved' });
+  const { keyword, category, brand, material, minPrice, maxPrice } = req.query;
+
+  const query = { status: 'approved' };
+
+  if (keyword) {
+    query.$text = { $search: keyword };
+  }
+  if (category) {
+    query.category = category;
+  }
+  if (brand) {
+    query.brand = brand;
+  }
+  if (material) {
+    query.material = material;
+  }
+  if (minPrice || maxPrice) {
+    query.price = {};
+    if (minPrice) {
+      query.price.$gte = Number(minPrice);
+    }
+    if (maxPrice) {
+      query.price.$lte = Number(maxPrice);
+    }
+  }
+
+  const products = await Product.find(query).populate('seller', 'name');
   res.json(products);
 });
 
-// @desc    Fetch ALL products for admin view
-// @route   GET /api/products/all
-// @access  Private/Admin
-const getAllProductsForAdmin = asyncHandler(async (req, res) => {
-  const products = await Product.find({}).populate('seller', 'name');
-  res.json(products);
-});
-
-// @desc    Fetch seller's own products
-// @route   GET /api/products/myproducts
-// @access  Private/Seller
-const getMyProducts = asyncHandler(async (req, res) => {
-    const products = await Product.find({ seller: req.user._id });
+// @desc    Fetch trending products (top 4 by clicks + views)
+// @route   GET /api/products/trending
+// @access  Public
+const getTrendingProducts = asyncHandler(async (req, res) => {
+    const products = await Product.aggregate([
+        { $match: { status: 'approved' } },
+        { $addFields: { popularity: { $add: ["$viewCount", "$clickCount"] } } },
+        { $sort: { popularity: -1 } },
+        { $limit: 4 }
+    ]);
     res.json(products);
 });
 
-// @desc    Fetch single product by ID
+
+// @desc    Fetch single product by ID and increment view count
 // @route   GET /api/products/:id
-// @access  Public (with checks)
+// @access  Public
 const getProductById = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
   
   if (product) {
-    // Increment view count if the user is not the owner
     const isOwner = req.user && product.seller.toString() === req.user._id.toString();
-    if (!isOwner) {
-        product.viewCount = (product.viewCount || 0) + 1;
-        await product.save();
-    }
-      
     const isAdmin = req.user && req.user.role === 'admin';
 
     if (product.status === 'approved' || isOwner || isAdmin) {
+      // Increment view count but don't wait for it to complete
+      Product.findByIdAndUpdate(req.params.id, { $inc: { viewCount: 1 } }).exec();
       return res.json(product);
     } else {
       res.status(404);
@@ -56,9 +74,24 @@ const getProductById = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Create a product
-// @route   POST /api/products
-// @access  Private/Seller
+// @desc    Track a click on an affiliate link
+// @route   POST /api/products/:id/track-click
+// @access  Public
+const trackAffiliateClick = asyncHandler(async (req, res) => {
+    const product = await Product.findById(req.params.id);
+
+    if (product) {
+        product.clickCount += 1;
+        await product.save();
+        res.status(200).json({ message: 'Click tracked' });
+    } else {
+        res.status(404);
+        throw new Error('Product not found');
+    }
+});
+
+
+// ... (createProduct, updateProduct, deleteProduct, getMyProducts, getAllProductsForAdmin remain the same)
 const createProduct = asyncHandler(async (req, res) => {
   const { 
     name, price, description, brand, category, material, images, affiliateUrl 
@@ -69,6 +102,9 @@ const createProduct = asyncHandler(async (req, res) => {
     throw new Error('Please provide all required fields');
   }
 
+  // Ensure images is an array
+  const imagesArray = Array.isArray(images) ? images : images.split(',').map(img => img.trim()).filter(img => img);
+
   const product = new Product({
     name,
     price,
@@ -77,7 +113,7 @@ const createProduct = asyncHandler(async (req, res) => {
     category,
     description,
     material,
-    images,
+    images: imagesArray,
     affiliateUrl,
   });
 
@@ -85,9 +121,6 @@ const createProduct = asyncHandler(async (req, res) => {
   res.status(201).json(createdProduct);
 });
 
-// @desc    Update a product
-// @route   PUT /api/products/:id
-// @access  Private/Seller or Private/Admin
 const updateProduct = asyncHandler(async (req, res) => {
   const { name, price, description, brand, category, material, images, affiliateUrl, status } = req.body;
 
@@ -108,18 +141,15 @@ const updateProduct = asyncHandler(async (req, res) => {
     product.brand = brand || product.brand;
     product.category = category || product.category;
     product.material = material || product.material;
-    product.images = images || product.images;
+    
+    if (images) {
+       product.images = Array.isArray(images) ? images : images.split(',').map(img => img.trim()).filter(img => img);
+    }
+    
     product.affiliateUrl = affiliateUrl || product.affiliateUrl;
 
-    // Only admin can change the status
     if (isAdmin && status) {
         product.status = status;
-        // Create a notification for the seller
-        await Notification.create({
-            user: product.seller,
-            message: `Your product "${product.name}" has been ${status}.`,
-            link: '/seller',
-        });
     }
 
     const updatedProduct = await product.save();
@@ -130,9 +160,6 @@ const updateProduct = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Delete a product
-// @route   DELETE /api/products/:id
-// @access  Private/Seller or Private/Admin
 const deleteProduct = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
 
@@ -153,19 +180,15 @@ const deleteProduct = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Track affiliate link click
-// @route   PUT /api/products/:id/click
-// @access  Public
-const trackClick = asyncHandler(async (req, res) => {
-    const product = await Product.findById(req.params.id);
-    if (product) {
-        product.clickCount = (product.clickCount || 0) + 1;
-        await product.save();
-        res.json({ message: 'Click tracked' });
-    } else {
-        res.status(404);
-        throw new Error('Product not found');
-    }
+
+const getMyProducts = asyncHandler(async (req, res) => {
+    const products = await Product.find({ seller: req.user._id });
+    res.json(products);
+});
+
+const getAllProductsForAdmin = asyncHandler(async (req, res) => {
+  const products = await Product.find({}).populate('seller', 'name');
+  res.json(products);
 });
 
 
@@ -177,6 +200,6 @@ module.exports = {
     deleteProduct,
     getMyProducts,
     getAllProductsForAdmin,
-    trackClick
+    getTrendingProducts,
+    trackAffiliateClick,
 };
-

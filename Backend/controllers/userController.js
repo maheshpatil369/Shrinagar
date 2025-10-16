@@ -1,4 +1,3 @@
-// maheshpatil369/shrinagar/Shrinagar-47183708fc2b865cb6e3d62f63fcad35ec0165db/Backend/controllers/userController.js
 const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
 
@@ -68,10 +67,64 @@ const deleteUser = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Get logged-in user's profile
+// @route   GET /api/users/profile
+// @access  Private
+const getUserProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select('-password');
+  if (user) {
+    res.json(user);
+  } else {
+    res.status(404);
+    throw new Error('User not found');
+  }
+});
+
+// @desc    Get wishlist
+// @route   GET /api/users/wishlist
+// @access  Private
+const getWishlist = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).populate('wishlist');
+  res.json(user.wishlist || []);
+});
+
+// @desc    Add to wishlist
+// @route   POST /api/users/wishlist
+// @access  Private
+const addToWishlist = asyncHandler(async (req, res) => {
+  const { productId } = req.body;
+  const user = await User.findById(req.user._id);
+
+  if (!user.wishlist.includes(productId)) {
+    user.wishlist.push(productId);
+    await user.save();
+  }
+
+  res.json(user.wishlist);
+});
+
+// @desc    Remove from wishlist
+// @route   DELETE /api/users/wishlist/:productId
+// @access  Private
+const removeFromWishlist = asyncHandler(async (req, res) => {
+  const { productId } = req.params;
+  const user = await User.findById(req.user._id);
+
+  user.wishlist = user.wishlist.filter(
+    (id) => id.toString() !== productId.toString()
+  );
+
+  await user.save();
+  res.json(user.wishlist);
+});
+
 module.exports = {
   getUsers,
   getUserById,
   updateUser,
   deleteUser,
+  getUserProfile,
+  getWishlist,
+  addToWishlist,
+  removeFromWishlist,
 };
-
