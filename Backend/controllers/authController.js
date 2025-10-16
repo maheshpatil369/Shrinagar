@@ -1,14 +1,13 @@
-// maheshpatil369/shrinagar/Shrinagar-fec0a47de051ffa389da59e3900a2428b5397e43/Backend/controllers/authController.js
+// maheshpatil369/shrinagar/Shrinagar-47183708fc2b865cb6e3d62f63fcad35ec0165db/Backend/controllers/authController.js
 const asyncHandler = require('../middleware/asyncHandler.js');
 const User = require('../models/userModel.js');
-// Import the centralized token generation utility
 const generateToken = require('../utils/generateToken.js');
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body; // Accept role from request
+  const { name, email, password, role } = req.body;
 
   const userExists = await User.findOne({ email });
 
@@ -17,7 +16,6 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error('User already exists');
   }
 
-  // Use the provided role, or default to 'customer'
   const user = await User.create({
     name,
     email,
@@ -47,7 +45,6 @@ const registerUser = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   
-  // Find user by email and explicitly select the password field for comparison
   const user = await User.findOne({ email }).select('+password');
 
   if (user && (await user.matchPassword(password))) {
@@ -69,10 +66,9 @@ const loginUser = asyncHandler(async (req, res) => {
 // @route   GET /api/auth/verify-token
 // @access  Private
 const verifyToken = asyncHandler(async (req, res) => {
-  // If the protect middleware was successful, req.user will be populated.
-  // We can just return the user data.
   res.status(200).json(req.user);
 });
 
 
 module.exports = { registerUser, loginUser, verifyToken };
+

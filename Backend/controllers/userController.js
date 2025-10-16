@@ -1,3 +1,4 @@
+// maheshpatil369/shrinagar/Shrinagar-47183708fc2b865cb6e3d62f63fcad35ec0165db/Backend/controllers/userController.js
 const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
 
@@ -5,7 +6,7 @@ const User = require('../models/userModel');
 // @route   GET /api/users
 // @access  Private/Admin
 const getUsers = asyncHandler(async (req, res) => {
-  const users = await User.find({});
+  const users = await User.find({ role: { $ne: 'admin' } }); // Exclude admins
   res.json(users);
 });
 
@@ -72,4 +73,5 @@ module.exports = {
   getUserById,
   updateUser,
   deleteUser,
-};  
+};
+

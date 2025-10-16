@@ -1,4 +1,3 @@
-// server.js
 // ===============================================
 // Shrinagar Backend - Express Server Setup
 // ===============================================
@@ -8,7 +7,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const fs = require('fs'); // Import the file system module
+const fs = require('fs');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware.js');
 const connectDB = require('./config/db.js');
 
@@ -18,6 +17,8 @@ const userRoutes = require('./routes/userRoutes.js');
 const productRoutes = require('./routes/productRoutes.js');
 const sellerRoutes = require('./routes/sellerRoutes.js');
 const uploadRoutes = require('./routes/uploadRoutes.js');
+const adminRoutes = require('./routes/adminRoutes.js');
+const notificationRoutes = require('./routes/notificationRoutes.js');
 
 // Load environment variables
 dotenv.config();
@@ -55,6 +56,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/sellers', sellerRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Root route
 app.get('/', (req, res) => {

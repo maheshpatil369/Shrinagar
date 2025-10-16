@@ -1,7 +1,8 @@
-// /Backend/controllers/productController.js
+// maheshpatil369/shrinagar/Shrinagar-47183708fc2b865cb6e3d62f63fcad35ec0165db/Backend/controllers/productController.js
 const asyncHandler = require('../middleware/asyncHandler.js');
 const Product = require('../models/productModel.js');
 const User = require('../models/userModel.js');
+const Notification = require('../models/notificationModel.js');
 
 // @desc    Fetch all APPROVED products
 // @route   GET /api/products
@@ -34,7 +35,13 @@ const getProductById = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
   
   if (product) {
+    // Increment view count if the user is not the owner
     const isOwner = req.user && product.seller.toString() === req.user._id.toString();
+    if (!isOwner) {
+        product.viewCount = (product.viewCount || 0) + 1;
+        await product.save();
+    }
+      
     const isAdmin = req.user && req.user.role === 'admin';
 
     if (product.status === 'approved' || isOwner || isAdmin) {
@@ -107,6 +114,12 @@ const updateProduct = asyncHandler(async (req, res) => {
     // Only admin can change the status
     if (isAdmin && status) {
         product.status = status;
+        // Create a notification for the seller
+        await Notification.create({
+            user: product.seller,
+            message: `Your product "${product.name}" has been ${status}.`,
+            link: '/seller',
+        });
     }
 
     const updatedProduct = await product.save();
@@ -140,6 +153,21 @@ const deleteProduct = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Track affiliate link click
+// @route   PUT /api/products/:id/click
+// @access  Public
+const trackClick = asyncHandler(async (req, res) => {
+    const product = await Product.findById(req.params.id);
+    if (product) {
+        product.clickCount = (product.clickCount || 0) + 1;
+        await product.save();
+        res.json({ message: 'Click tracked' });
+    } else {
+        res.status(404);
+        throw new Error('Product not found');
+    }
+});
+
 
 module.exports = {
     getProducts,
@@ -149,4 +177,6 @@ module.exports = {
     deleteProduct,
     getMyProducts,
     getAllProductsForAdmin,
+    trackClick
 };
+
