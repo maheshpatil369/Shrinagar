@@ -1,15 +1,15 @@
 // maheshpatil369/shrinagar/Shrinagar-47183708fc2b865cb6e3d62f63fcad35ec0165db/Frontend1/src/pages/ProductDetailPage.tsx
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getProductById, Product } from '@/lib/products';
+import { getProductById, Product, trackAffiliateClick } from '../lib/products';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ExternalLink, LoaderCircle, ArrowLeft, Heart } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { addToWishlist } from '@/lib/user';
-import { getCurrentUser } from '@/lib/auth';
+import { addToWishlist } from '../lib/user';
+import { getCurrentUser } from '../lib/auth';
 
 
 export default function ProductDetailPage() {
@@ -101,7 +101,7 @@ export default function ProductDetailPage() {
                         {product.images.map((image, index) => (
                         <CarouselItem key={index}>
                             <div className="aspect-square">
-                            <img src={`http://localhost:8000${image}`} alt={`${product.name} view ${index + 1}`} className="w-full h-full object-cover" />
+                            <img src={image} alt={`${product.name} view ${index + 1}`} className="w-full h-full object-cover" />
                             </div>
                         </CarouselItem>
                         ))}

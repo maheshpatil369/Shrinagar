@@ -324,8 +324,8 @@ export default function AdminDashboard() {
                 <div><h4 className="font-semibold">Address</h4><p className="text-muted-foreground">{`${viewingSeller.address.street}, ${viewingSeller.address.city}, ${viewingSeller.address.state} - ${viewingSeller.address.pincode}`}</p></div>
                 <div><h4 className="font-semibold">Documents</h4>
                     <div className="flex items-center space-x-4 mt-2">
-                        {viewingSeller.verificationDocuments?.gstCertificate ? <Button size="sm" variant="outline" asChild><a href={`http://localhost:8000${viewingSeller.verificationDocuments.gstCertificate}`} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2 h-4 w-4"/>View GST</a></Button> : <p className="text-muted-foreground text-xs">No GST Cert.</p>}
-                        {viewingSeller.verificationDocuments?.panCard ? <Button size="sm" variant="outline" asChild><a href={`http://localhost:8000${viewingSeller.verificationDocuments.panCard}`} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2 h-4 w-4"/>View PAN</a></Button> : <p className="text-muted-foreground text-xs">No PAN Card.</p>}
+                        {viewingSeller.verificationDocuments?.gstCertificate ? <Button size="sm" variant="outline" asChild><a href={viewingSeller.verificationDocuments.gstCertificate} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2 h-4 w-4"/>View GST</a></Button> : <p className="text-muted-foreground text-xs">No GST Cert.</p>}
+                        {viewingSeller.verificationDocuments?.panCard ? <Button size="sm" variant="outline" asChild><a href={viewingSeller.verificationDocuments.panCard} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2 h-4 w-4"/>View PAN</a></Button> : <p className="text-muted-foreground text-xs">No PAN Card.</p>}
                     </div>
                 </div>
             </div>}

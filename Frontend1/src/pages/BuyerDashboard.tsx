@@ -4,14 +4,14 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Product, getApprovedProducts, ProductFilters } from "@/lib/products";
+import { Product, getApprovedProducts, ProductFilters } from "../lib/products";
 import { ExternalLink, LoaderCircle, Search, SlidersHorizontal, Heart } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { addToWishlist } from "@/lib/user";
-import { getCurrentUser } from "@/lib/auth";
+import { addToWishlist } from "../lib/user";
+import { getCurrentUser } from "../lib/auth";
 import debounce from 'lodash.debounce';
 import { Label } from "@/components/ui/label";
 
@@ -190,7 +190,7 @@ function ProductCard({ product, onAddToWishlist }: ProductCardProps) {
             <CardHeader className="p-0 relative">
                 <Link to={`/product/${product._id}`}>
                     <img 
-                      src={`http://localhost:8000${product.images[0]}`}
+                      src={product.images[0]}
                       alt={product.name}
                       className="w-full h-48 object-cover transition-transform group-hover:scale-105"
                     />
@@ -224,4 +224,3 @@ function ProductCard({ product, onAddToWishlist }: ProductCardProps) {
         </Card>
     );
 }
-

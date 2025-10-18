@@ -7,7 +7,6 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const fs = require('fs');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware.js');
 const connectDB = require('./config/db.js');
 
@@ -32,20 +31,13 @@ connectDB();
 // Initialize Express
 const app = express();
 
-// --- Create uploads directory if it doesn't exist ---
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
-  console.log(`Created directory: ${uploadsDir}`);
-}
-// ---
-
 // Enable CORS for all routes
 app.use(cors());
 
 // Body parser middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Increase the limit to allow for larger Base64 image strings
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Cookie parser middleware
 app.use(cookieParser());
@@ -64,8 +56,8 @@ app.get('/', (req, res) => {
   res.send('API is running....');
 });
 
-// Serve uploaded files statically
-app.use('/uploads', express.static(uploadsDir));
+// NOTE: The static file serving for '/uploads' has been removed
+// as images are now stored in the database.
 
 // Error handling middleware
 app.use(notFound);

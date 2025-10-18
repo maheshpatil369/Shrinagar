@@ -5,20 +5,8 @@ const multer = require('multer');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware.js');
 
-// Configure storage for Multer
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    // Files will be saved in the 'uploads' directory in the backend root
-    cb(null, 'uploads/');
-  },
-  filename(req, file, cb) {
-    // Create a unique filename to avoid overwrites
-    cb(
-      null,
-      `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`
-    );
-  },
-});
+// Configure storage for Multer to keep files in memory
+const storage = multer.memoryStorage();
 
 // Function to check that the file is an image
 function checkFileType(file, cb) {
@@ -33,7 +21,7 @@ function checkFileType(file, cb) {
   }
 }
 
-// Initialize upload middleware with storage and file filter
+// Initialize upload middleware with memory storage and file filter
 const upload = multer({
   storage,
   fileFilter: function (req, file, cb) {
@@ -41,7 +29,7 @@ const upload = multer({
   },
 });
 
-// @desc    Upload an image
+// @desc    Upload an image and convert to Base64
 // @route   POST /api/upload
 // @access  Private (requires token)
 router.post('/', protect, upload.single('image'), (req, res) => {
@@ -49,12 +37,14 @@ router.post('/', protect, upload.single('image'), (req, res) => {
     return res.status(400).json({ message: 'Please upload an image file' });
   }
   
-  // Return the path to the uploaded file
+  // Convert the image buffer to a Base64 Data URI
+  const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+  
+  // Return the Base64 URI
   res.status(200).json({
     message: 'Image uploaded successfully',
-    image: `/${req.file.path.replace(/\\/g, '/')}`, // Normalize path for URL
+    image: base64Image,
   });
 });
 
 module.exports = router;
-

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Seller, enrollSeller, uploadVerificationDocument } from "@/lib/seller";
+import { Seller, enrollSeller, uploadVerificationDocument } from "../lib/seller";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -161,8 +161,8 @@ export default function SellerProfile({ seller, onProfileUpdate }: SellerProfile
                 <div>
                   <h4 className="font-semibold text-base">Verification Documents</h4>
                   <div className="flex space-x-4 mt-2">
-                    {seller.verificationDocuments?.gstCertificate ? <Button variant="link" asChild><a href={`http://localhost:8000${seller.verificationDocuments.gstCertificate}`} target="_blank" rel="noopener noreferrer">View GST Certificate</a></Button> : <p className="text-muted-foreground">GST not uploaded.</p>}
-                    {seller.verificationDocuments?.panCard ? <Button variant="link" asChild><a href={`http://localhost:8000${seller.verificationDocuments.panCard}`} target="_blank" rel="noopener noreferrer">View PAN Card</a></Button> : <p className="text-muted-foreground">PAN not uploaded.</p>}
+                    {seller.verificationDocuments?.gstCertificate ? <Button variant="link" asChild><a href={seller.verificationDocuments.gstCertificate} target="_blank" rel="noopener noreferrer">View GST Certificate</a></Button> : <p className="text-muted-foreground">GST not uploaded.</p>}
+                    {seller.verificationDocuments?.panCard ? <Button variant="link" asChild><a href={seller.verificationDocuments.panCard} target="_blank" rel="noopener noreferrer">View PAN Card</a></Button> : <p className="text-muted-foreground">PAN not uploaded.</p>}
                   </div>
                 </div>
             </CardContent>
@@ -264,7 +264,7 @@ export default function SellerProfile({ seller, onProfileUpdate }: SellerProfile
                             </Button>
                         </div>
                     </FormControl>
-                    {gstFileUrl && <div className="flex items-center text-sm text-green-600 pt-2"><CheckCircle className="h-4 w-4 mr-2"/> Document Uploaded. <a href={`http://localhost:8000${gstFileUrl}`} target="_blank" rel="noopener noreferrer" className="ml-2 underline">View</a></div>}
+                    {gstFileUrl && <div className="flex items-center text-sm text-green-600 pt-2"><CheckCircle className="h-4 w-4 mr-2"/> Document Uploaded. <a href={gstFileUrl} target="_blank" rel="noopener noreferrer" className="ml-2 underline">View</a></div>}
                     <FormMessage />
                 </FormItem>
                 <FormItem>
@@ -290,7 +290,7 @@ export default function SellerProfile({ seller, onProfileUpdate }: SellerProfile
                             </Button>
                         </div>
                     </FormControl>
-                    {panFileUrl && <div className="flex items-center text-sm text-green-600 pt-2"><CheckCircle className="h-4 w-4 mr-2"/> Document Uploaded. <a href={`http://localhost:8000${panFileUrl}`} target="_blank" rel="noopener noreferrer" className="ml-2 underline">View</a></div>}
+                    {panFileUrl && <div className="flex items-center text-sm text-green-600 pt-2"><CheckCircle className="h-4 w-4 mr-2"/> Document Uploaded. <a href={panFileUrl} target="_blank" rel="noopener noreferrer" className="ml-2 underline">View</a></div>}
                     <FormMessage />
                 </FormItem>
             </div>

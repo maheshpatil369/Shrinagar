@@ -98,7 +98,7 @@ export default function UserProfile() {
                                     {wishlist.map(product => (
                                         <div key={product._id} className="flex items-center gap-4 rounded-md border p-4">
                                             <img 
-                                                src={`http://localhost:8000${product.images[0]}`} 
+                                                src={product.images[0]} 
                                                 alt={product.name} 
                                                 className="h-16 w-16 rounded-md object-cover"
                                             />
@@ -127,4 +127,3 @@ export default function UserProfile() {
         </div>
     );
 }
-
