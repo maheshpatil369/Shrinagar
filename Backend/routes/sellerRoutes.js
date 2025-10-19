@@ -1,28 +1,23 @@
-// shringar-backend/routes/sellerRoutes.js
-
+// maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Backend/routes/sellerRoutes.js
 const express = require('express');
 const router = express.Router();
 const {
-  enrollSeller,
-  getSellers,
-  getSellerById,
-  updateSellerStatus,
-  getSellerDashboard,
-} = require('../controllers/sellerController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+    enrollSeller,
+    getSellerDashboard,
+    getSellerProducts,
+} = require('../controllers/sellerController.js');
+const { protect, authorize } = require('../middleware/authMiddleware.js');
 
-// --- Protected Routes ---
+// --- Seller-Specific Routes ---
 
-// Route for a registered user to enroll as a seller
-router.route('/enroll').post(protect, enrollSeller);
+// CORRECTED: This route is now set to '/enroll' to match the frontend API call.
+router.route('/enroll').post(protect, authorize('seller'), enrollSeller);
 
-// Route for a seller to get their dashboard info
-router.route('/dashboard').get(protect, authorize('seller', 'admin'), getSellerDashboard);
+// Route for a seller to get their main dashboard information (profile details).
+router.route('/dashboard').get(protect, authorize('seller'), getSellerDashboard);
 
-
-// --- Admin-Only Routes ---
-router.route('/').get(protect, authorize('admin'), getSellers);
-router.route('/:id').get(protect, authorize('admin'), getSellerById);
-router.route('/:id/status').put(protect, authorize('admin'), updateSellerStatus);
+// Route for a seller to get a list of all their products.
+router.route('/products').get(protect, authorize('seller'), getSellerProducts);
 
 module.exports = router;
+

@@ -1,41 +1,31 @@
-// maheshpatil369/shrinagar/Shrinagar-47183708fc2b865cb6e3d62f63fcad35ec0165db/Backend/routes/productRoutes.js
+// maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Backend/routes/productRoutes.js
 const express = require('express');
 const router = express.Router();
 const {
   getProducts,
   getProductById,
+  getTrendingProducts, // Added for the new homepage
   createProduct,
   updateProduct,
   deleteProduct,
   getMyProducts,
-  getAllProductsForAdmin,
   trackAffiliateClick,
 } = require('../controllers/productController.js');
-const { protect, authorize, admin } = require('../middleware/authMiddleware.js');
+const { protect, authorize } = require('../middleware/authMiddleware.js');
 
-// Public route to get all approved products (with search and filtering)
+// --- Public Routes ---
 router.route('/').get(getProducts);
-
-// Admin route to get ALL products
-router.route('/all').get(protect, admin, getAllProductsForAdmin);
-
-// Seller route to create a new product
-router.route('/').post(protect, authorize('seller'), createProduct);
-
-// Seller route to get their own products
-router.route('/myproducts').get(protect, authorize('seller'), getMyProducts);
-
-// Public route to get a single product and track view.
-// The controller itself contains logic to differentiate public vs authenticated access.
+router.route('/trending').get(getTrendingProducts); // New route for the homepage
 router.route('/:id').get(getProductById);
-
-// Public route to track affiliate link clicks
 router.route('/:id/track-click').post(trackAffiliateClick);
 
-// Seller/Admin routes to update or delete a product
-router.route('/:id')
-  .put(protect, authorize('seller', 'admin'), updateProduct)
-  .delete(protect, authorize('seller', 'admin'), deleteProduct);
+// --- Seller Routes (Protected) ---
+router.route('/').post(protect, authorize('seller'), createProduct);
+router.route('/myproducts').get(protect, authorize('seller'), getMyProducts);
+router
+  .route('/:id')
+  .put(protect, authorize('seller'), updateProduct)
+  .delete(protect, authorize('seller'), deleteProduct);
 
 module.exports = router;
 

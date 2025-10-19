@@ -1,7 +1,4 @@
-// ===============================================
-// Shrinagar Backend - Express Server Setup
-// ===============================================
-
+// maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Backend/server.js
 const path = require('path');
 const express = require('express');
 const dotenv = require('dotenv');
@@ -19,27 +16,17 @@ const uploadRoutes = require('./routes/uploadRoutes.js');
 const adminRoutes = require('./routes/adminRoutes.js');
 const notificationRoutes = require('./routes/notificationRoutes.js');
 
-// Load environment variables
 dotenv.config();
-
-// Set port
 const port = process.env.PORT || 8000;
-
-// Connect to MongoDB
 connectDB();
-
-// Initialize Express
 const app = express();
 
-// Enable CORS for all routes
 app.use(cors());
 
-// Body parser middleware
-// Increase the limit to allow for larger Base64 image strings
+// Increase body parser limit for Base64 image data
 app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Cookie parser middleware
 app.use(cookieParser());
 
 // API Routes
@@ -51,17 +38,13 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 
-// Root route
 app.get('/', (req, res) => {
   res.send('API is running....');
 });
-
-// NOTE: The static file serving for '/uploads' has been removed
-// as images are now stored in the database.
 
 // Error handling middleware
 app.use(notFound);
 app.use(errorHandler);
 
-// Start server
 app.listen(port, () => console.log(`✅ Server started on port ${port}`));
+

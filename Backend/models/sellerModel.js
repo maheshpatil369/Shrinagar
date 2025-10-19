@@ -1,9 +1,8 @@
-// Backend/models/sellerModel.js
+// maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Backend/models/sellerModel.js
 const mongoose = require('mongoose');
 
 const sellerSchema = new mongoose.Schema(
   {
-    // Reference to the main User model for login credentials
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -31,7 +30,6 @@ const sellerSchema = new mongoose.Schema(
       state: { type: String, required: true },
       pincode: { type: String, required: true },
     },
-    // Status of the seller's application and account
     status: {
       type: String,
       enum: ['pending', 'approved', 'suspended', 'rejected'],
@@ -43,10 +41,10 @@ const sellerSchema = new mongoose.Schema(
       min: 0,
       max: 5,
     },
-    // Additional fields for verification and dashboard
     verificationDocuments: {
-        gstCertificate: { type: String }, // URL to the uploaded file
-        panCard: { type: String },       // URL to the uploaded file
+      // CORRECTED: Made these fields required to enforce upload at the database level.
+      gstCertificate: { type: String, required: [true, 'GST Certificate is required.'] },
+      panCard: { type: String, required: [true, 'PAN Card is required.'] },
     },
   },
   {
