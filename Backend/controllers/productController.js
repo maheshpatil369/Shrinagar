@@ -1,4 +1,4 @@
-// maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Backend/controllers/productController.js
+// maheshpatil369/shrinagar/Shrinagar-abcbe203037457af5cdd1912b6e3260dabf070c5/Backend/controllers/productController.js
 const asyncHandler = require('../middleware/asyncHandler.js');
 const Product = require('../models/productModel.js');
 const ProductView = require('../models/productViewModel.js'); // For accurate view tracking
@@ -12,12 +12,14 @@ const getProducts = asyncHandler(async (req, res) => {
   const query = { status: 'approved' };
 
   if (keyword) {
-    query.$or = [
+    // Using an object that can be expanded into the query
+    const searchOr = [
         { name: { $regex: keyword, $options: 'i' } },
         { description: { $regex: keyword, $options: 'i' } },
         { brand: { $regex: keyword, $options: 'i' } },
         { category: { $regex: keyword, $options: 'i' } },
     ];
+    query.$or = searchOr;
   }
   if (category) query.category = category;
   if (brand) query.brand = brand;
@@ -39,29 +41,33 @@ const getProducts = asyncHandler(async (req, res) => {
 const getProductById = asyncHandler(async (req, res) => {
     const product = await Product.findById(req.params.id).populate('seller', 'name email');
 
-    if (!product || product.status !== 'approved') {
+    // Only count views for approved products that are found
+    if (product && product.status === 'approved') {
+        // --- Accurate View Tracking Logic ---
+        const ipAddress = getClientIp(req);
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+        // Check if this IP has viewed this product in the last 24 hours
+        const existingView = await ProductView.findOne({
+            productId: product._id,
+            ipAddress: ipAddress,
+            viewedAt: { $gte: twentyFourHoursAgo },
+        });
+
+        // If no recent view is found, create one and increment the count
+        if (!existingView) {
+            await ProductView.create({ productId: product._id, ipAddress: ipAddress, userId: req.user?._id });
+            product.viewCount = (product.viewCount || 0) + 1;
+            await product.save();
+        }
+        // --- End View Tracking ---
+        
+        res.json(product);
+
+    } else {
         res.status(404);
-        throw new Error('Product not found');
+        throw new Error('Product not found or not approved');
     }
-
-    // --- Accurate View Tracking Logic ---
-    const ipAddress = getClientIp(req);
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
-    const existingView = await ProductView.findOne({
-        productId: product._id,
-        ipAddress: ipAddress,
-        createdAt: { $gte: twentyFourHoursAgo },
-    });
-
-    if (!existingView) {
-        await ProductView.create({ productId: product._id, ipAddress: ipAddress });
-        product.viewCount = (product.viewCount || 0) + 1;
-        await product.save();
-    }
-    // --- End View Tracking ---
-
-    res.json(product);
 });
 
 // @desc    Get trending products
@@ -105,7 +111,7 @@ const createProduct = asyncHandler(async (req, res) => {
     category,
     description,
     material,
-    images,
+    images: images.split(',').map(img => img.trim()).filter(Boolean), // Handle comma-separated string
     affiliateUrl,
     status: 'pending', // Always pending on creation
   });
@@ -128,7 +134,8 @@ const updateProduct = asyncHandler(async (req, res) => {
     product.brand = brand || product.brand;
     product.category = category || product.category;
     product.material = material || product.material;
-    product.images = images || product.images;
+    // Handle both array and comma-separated string for images
+    product.images = Array.isArray(images) ? images : images.split(',').map(img => img.trim()).filter(Boolean);
     product.affiliateUrl = affiliateUrl || product.affiliateUrl;
     product.status = 'pending'; // Re-submit for approval on update
 
@@ -174,4 +181,3 @@ module.exports = {
     deleteProduct,
     getMyProducts,
 };
-
