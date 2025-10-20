@@ -1,14 +1,43 @@
-// maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Backend/routes/uploadRoutes.js
+const path = require('path');
 const express = require('express');
-const router = express.Router();
 const multer = require('multer');
+const router = express.Router();
 const { protect } = require('../middleware/authMiddleware.js');
 
-// Configure Multer to store files in memory
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+// Configure multer for disk storage
+const storage = multer.diskStorage({
+  destination(req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename(req, file, cb) {
+    cb(
+      null,
+      `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`
+    );
+  },
+});
 
-// @desc    Upload an image and return as Base64 data URI
+// Function to check file type
+function checkFileType(file, cb) {
+  const filetypes = /jpg|jpeg|png/;
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = filetypes.test(file.mimetype);
+
+  if (extname && mimetype) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Images only!'));
+  }
+}
+
+const upload = multer({
+  storage,
+  fileFilter: function (req, file, cb) {
+    checkFileType(file, cb);
+  },
+});
+
+// @desc    Upload an image and return its path
 // @route   POST /api/upload
 // @access  Private
 router.post('/', protect, upload.single('image'), (req, res) => {
@@ -16,16 +45,13 @@ router.post('/', protect, upload.single('image'), (req, res) => {
     return res.status(400).json({ message: 'Please upload an image file' });
   }
 
-  // Convert buffer to Base64 Data URI
-  const mimeType = req.file.mimetype;
-  const base64Data = req.file.buffer.toString('base64');
-  const dataUri = `data:${mimeType};base64,${base64Data}`;
-
-  res.status(200).json({
-    message: 'Image processed successfully',
-    image: dataUri,
+  // Return the URL path to the uploaded file
+  res.status(200).send({
+    message: 'Image uploaded successfully',
+    image: `/${req.file.path.replace(/\\/g, '/')}`, // Normalize path for web
   });
 });
 
 module.exports = router;
 
+  

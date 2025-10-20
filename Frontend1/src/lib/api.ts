@@ -1,4 +1,4 @@
-// /Frontend1/src/lib/api.ts
+// maheshpatil369/shrinagar/Shrinagar-f1ede353ebcd0107a58d8a5b477911c8c5eb4f1d/Frontend1/src/lib/api.ts
 import axios from 'axios';
 import { logout } from './auth'; // Import the logout function
 
@@ -6,17 +6,18 @@ export const api = axios.create({
   baseURL: '/api',
 });
 
-// Add a response interceptor to handle errors globally
+// Add a response interceptor
 api.interceptors.response.use(
   (response) => response, // Directly return successful responses
   (error) => {
-    // Check if the error is a 401 Unauthorized
+    // Check if the error is a 401 Unauthorized response
     if (error.response && error.response.status === 401) {
-      console.error("Authentication error: 401 Unauthorized. Logging out.");
-      // If it is, call the logout function which will clear user data and redirect
+      // If it is, log the user out. This will clear the invalid token
+      // and redirect them to the login page.
       logout();
     }
-    // IMPORTANT: Reject the promise so the calling component knows the request failed
+    // For all other errors, just pass them along
     return Promise.reject(error);
   }
 );
+

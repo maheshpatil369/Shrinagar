@@ -1,4 +1,5 @@
 // maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Backend/controllers/adminController.js
+
 const asyncHandler = require('../middleware/asyncHandler.js');
 const User = require('../models/userModel.js');
 const Product = require('../models/productModel.js');
@@ -6,15 +7,17 @@ const Seller = require('../models/sellerModel.js');
 const SellerHistory = require('../models/sellerHistoryModel.js');
 const Notification = require('../models/notificationModel.js'); // Import Notification model
 
+// ===================================================================
 // @desc    Get dashboard stats
 // @route   GET /api/admin/stats
 // @access  Private/Admin
+// ===================================================================
 const getDashboardStats = asyncHandler(async (req, res) => {
     // Use countDocuments for efficient counting without fetching all data
     const totalUsers = await User.countDocuments();
     const totalSellers = await Seller.countDocuments();
     const totalProducts = await Product.countDocuments();
-        
+
     const pendingSellersCount = await Seller.countDocuments({ status: 'pending' });
     const pendingProductsCount = await Product.countDocuments({ status: 'pending' });
 
@@ -26,28 +29,79 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     });
 });
 
+// ===================================================================
+// @desc    Get chart data for dashboard
+// @route   GET /api/admin/chart-data
+// @access  Private/Admin
+// ===================================================================
+const getChartData = asyncHandler(async (req, res) => {
+    const { period = 'week' } = req.query;
+    let startDate = new Date();
+    let groupByFormat = "%Y-%m-%d"; // Daily
+
+    switch (period) {
+        case 'year':
+            startDate.setFullYear(startDate.getFullYear() - 1);
+            groupByFormat = "%Y-%m"; // Monthly
+            break;
+        case 'month':
+            startDate.setMonth(startDate.getMonth() - 1);
+            break;
+        case 'week':
+        default:
+            startDate.setDate(startDate.getDate() - 7);
+            break;
+    }
+
+    const usersData = await User.aggregate([
+        { $match: { createdAt: { $gte: startDate } } },
+        { $group: { _id: { $dateToString: { format: groupByFormat, date: "$createdAt" } }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+    ]);
+
+    const productsData = await Product.aggregate([
+        { $match: { createdAt: { $gte: startDate } } },
+        { $group: { _id: { $dateToString: { format: groupByFormat, date: "$createdAt" } }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+    ]);
+
+    // Combine data
+    const combinedData = {};
+    usersData.forEach(item => {
+        if (!combinedData[item._id]) combinedData[item._id] = { date: item._id, users: 0, products: 0 };
+        combinedData[item._id].users = item.count;
+    });
+    productsData.forEach(item => {
+        if (!combinedData[item._id]) combinedData[item._id] = { date: item._id, users: 0, products: 0 };
+        combinedData[item._id].products = item.count;
+    });
+
+    res.json(Object.values(combinedData).sort((a, b) => new Date(a.date) - new Date(b.date)));
+});
+
+// ===================================================================
 // @desc    Get all pending sellers and products for the approval inbox
 // @route   GET /api/admin/approvals
 // @access  Private/Admin
+// ===================================================================
 const getPendingApprovals = asyncHandler(async (req, res) => {
     const pendingSellers = await Seller.find({ status: 'pending' }).populate('user', 'name email');
-    
+
     const pendingProducts = await Product.find({ status: 'pending' }).populate({
-        path: 'seller', // This is the User model
+        path: 'seller',
         select: 'name sellerProfile',
         populate: {
-            path: 'sellerProfile', // Now populate the Seller model from the User
+            path: 'sellerProfile',
             select: 'businessName'
         }
     });
 
     const productsWithSellerName = pendingProducts.map(p => {
         const productObj = p.toObject();
-        // @ts-ignore
         const businessName = p.seller?.sellerProfile?.businessName || p.seller?.name;
         return {
             ...productObj,
-            seller: { 
+            seller: {
                 _id: productObj.seller._id,
                 businessName: businessName
             }
@@ -57,34 +111,39 @@ const getPendingApprovals = asyncHandler(async (req, res) => {
     res.json({ sellers: pendingSellers, products: productsWithSellerName });
 });
 
-
+// ===================================================================
 // @desc    Get a seller's full details, products, and history for admin review
 // @route   GET /api/admin/sellers/:id
 // @access  Private/Admin
+// ===================================================================
 const getSellerDetailsForAdmin = asyncHandler(async (req, res) => {
     const seller = await Seller.findById(req.params.id).populate('user', 'name email');
     if (!seller) {
         res.status(404);
         throw new Error('Seller not found');
     }
+
     const products = await Product.find({ seller: seller.user });
     const history = await SellerHistory.find({ sellerId: req.params.id }).sort({ createdAt: -1 }).populate('changedBy', 'name role');
-    
+
     res.json({ seller, products, history });
 });
 
-
+// ===================================================================
 // @desc    Get a seller's full history
 // @route   GET /api/admin/sellers/:id/history
 // @access  Private/Admin
+// ===================================================================
 const getSellerHistory = asyncHandler(async (req, res) => {
     const history = await SellerHistory.find({ sellerId: req.params.id }).sort({ createdAt: -1 }).populate('changedBy', 'name role');
     res.json(history);
 });
 
+// ===================================================================
 // @desc    Get all products for admin view
 // @route   GET /api/admin/products
 // @access  Private/Admin
+// ===================================================================
 const adminGetAllProducts = asyncHandler(async (req, res) => {
     const products = await Product.find({}).populate({
         path: 'seller',
@@ -93,23 +152,30 @@ const adminGetAllProducts = asyncHandler(async (req, res) => {
     res.json(products);
 });
 
+// ===================================================================
 // @desc    Get all sellers for admin
+// @access  Private/Admin
+// ===================================================================
 const adminGetAllSellers = asyncHandler(async (req, res) => {
-  const sellers = await Seller.find({}).populate('user', 'name email');
-  res.json(sellers);
+    const sellers = await Seller.find({}).populate('user', 'name email');
+    res.json(sellers);
 });
 
-// @desc    Update seller status and log history correctly
+// ===================================================================
+// @desc    Update seller status and log history
+// @access  Private/Admin
+// ===================================================================
 const adminUpdateSellerStatus = asyncHandler(async (req, res) => {
     const { status } = req.body;
     const seller = await Seller.findById(req.params.id);
     if (!seller) {
-        res.status(404); throw new Error('Seller not found');
+        res.status(404);
+        throw new Error('Seller not found');
     }
 
     const previousStatus = seller.status;
     seller.status = status;
-    
+
     await SellerHistory.create({
         sellerId: seller._id,
         changedBy: req.user._id,
@@ -120,26 +186,28 @@ const adminUpdateSellerStatus = asyncHandler(async (req, res) => {
         }],
         notes: `Seller status changed to ${status} by admin.`
     });
-    
-    // Create a notification for the seller
+
     await Notification.create({
         user: seller.user,
         message: `Your seller profile has been ${status}.`,
         link: '/seller'
     });
-    
+
     await seller.save();
     res.json(seller);
 });
 
+// ===================================================================
 // @desc    Update product status
+// @access  Private/Admin
+// ===================================================================
 const adminUpdateProductStatus = asyncHandler(async (req, res) => {
     const { status } = req.body;
     const product = await Product.findById(req.params.id);
+
     if (product) {
         product.status = status;
-        
-        // Create a notification for the seller
+
         await Notification.create({
             user: product.seller,
             message: `Your product "${product.name}" has been ${status}.`,
@@ -149,11 +217,15 @@ const adminUpdateProductStatus = asyncHandler(async (req, res) => {
         await product.save();
         res.json(product);
     } else {
-        res.status(404); throw new Error('Product not found');
+        res.status(404);
+        throw new Error('Product not found');
     }
 });
 
+// ===================================================================
 // @desc    Delete a product by admin
+// @access  Private/Admin
+// ===================================================================
 const adminDeleteProduct = asyncHandler(async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (product) {
@@ -165,13 +237,19 @@ const adminDeleteProduct = asyncHandler(async (req, res) => {
     }
 });
 
+// ===================================================================
 // @desc    Get all users (non-admins)
+// @access  Private/Admin
+// ===================================================================
 const adminGetAllUsers = asyncHandler(async (req, res) => {
     const users = await User.find({ role: { $ne: 'admin' } });
     res.json(users);
 });
 
+// ===================================================================
 // @desc    Update a user's role
+// @access  Private/Admin
+// ===================================================================
 const adminUpdateUserRole = asyncHandler(async (req, res) => {
     const { role } = req.body;
     const user = await User.findById(req.params.id);
@@ -186,7 +264,10 @@ const adminUpdateUserRole = asyncHandler(async (req, res) => {
     }
 });
 
+// ===================================================================
 // @desc    Delete a user by admin
+// @access  Private/Admin
+// ===================================================================
 const adminDeleteUser = asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id);
 
@@ -203,8 +284,12 @@ const adminDeleteUser = asyncHandler(async (req, res) => {
     }
 });
 
+// ===================================================================
+// Exports
+// ===================================================================
 module.exports = {
     getDashboardStats,
+    getChartData,
     getPendingApprovals,
     getSellerDetailsForAdmin,
     getSellerHistory,
@@ -217,4 +302,3 @@ module.exports = {
     adminUpdateUserRole,
     adminDeleteUser,
 };
-

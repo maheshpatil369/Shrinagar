@@ -31,6 +31,11 @@ export const getAdminDashboardStats = async (): Promise<any> => {
     return data;
 }
 
+export const getAdminChartData = async (period: 'week' | 'month' | 'year'): Promise<any[]> => {
+    const { data } = await api.get('/admin/chart-data', { ...getAuthHeaders(), params: { period } });
+    return data;
+};
+
 export const getPendingApprovals = async (): Promise<{ sellers: Seller[], products: Product[] }> => {
     const { data } = await api.get('/admin/approvals', getAuthHeaders());
     return data;
@@ -72,3 +77,4 @@ export const adminGetAllProducts = async (): Promise<Product[]> => {
     const { data } = await api.get('/admin/products', getAuthHeaders());
     return data;
 };
+

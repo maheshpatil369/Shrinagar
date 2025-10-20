@@ -1,4 +1,4 @@
-// maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Backend/server.js
+// maheshpatil369/shrinagar/Shrinagar-f1ede353ebcd0107a58d8a5b477911c8c5eb4f1d/Backend/server.js
 const path = require('path');
 const express = require('express');
 const dotenv = require('dotenv');
@@ -23,11 +23,16 @@ const app = express();
 
 app.use(cors());
 
-// Increase body parser limit for Base64 image data
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// Body parser middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use(cookieParser());
+
+// Statically serve the uploads folder.
+// The built-in __dirname is used here, no need to declare it.
+app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
+
 
 // API Routes
 app.use('/api/auth', authRoutes);
