@@ -6,27 +6,17 @@ import { format } from 'date-fns';
 import { getCurrentUser, logout, User } from "@/lib/auth";
 import { Product } from "@/lib/products";
 import { Seller } from "@/lib/seller";
-import { 
+import {
     getAdminDashboardStats,
     getPendingApprovals,
     getSellerDetailsForAdmin,
     updateSellerStatus,
+    updateProductStatus,
     SellerHistory,
+    adminGetAllUsers,
+    adminGetAllSellers,
+    adminGetAllProducts,
 } from "@/lib/admin";
-
-// Local helper to update product status (avoids relying on a non-existent export from "@/lib/admin")
-const updateProductStatus = async (productId: string, status: 'approved' | 'rejected') => {
-  const res = await fetch(`/api/admin/products/${productId}/status`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status }),
-  });
-  if (!res.ok) {
-    const errText = await res.text().catch(() => 'Failed to update product status');
-    throw new Error(errText);
-  }
-  return res.json();
-};
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -62,19 +52,33 @@ export default function AdminDashboard() {
   const [viewingSellerDetails, setViewingSellerDetails] = useState<ViewingSellerDetails | null>(null);
   const [viewingProductDetails, setViewingProductDetails] = useState<Product | null>(null);
   
+  // State for all items for the management tab
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [allSellers, setAllSellers] = useState<Seller[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+
+  // State for controlling tabs
+  const [mainTab, setMainTab] = useState("approvals");
+  const [managementTab, setManagementTab] = useState("users");
+
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const fetchData = async () => {
-    // Keep loading true if it's already true, otherwise set it for refetches
-    setIsLoading(prev => prev || true);
+    setIsLoading(true);
     try {
-      const [statsData, pendingData] = await Promise.all([
+      const [statsData, pendingData, usersData, sellersData, productsData] = await Promise.all([
         getAdminDashboardStats(),
         getPendingApprovals(),
+        adminGetAllUsers(),
+        adminGetAllSellers(),
+        adminGetAllProducts(),
       ]);
       setStats(statsData);
       setPending(pendingData);
+      setAllUsers(usersData);
+      setAllSellers(sellersData);
+      setAllProducts(productsData);
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "Failed to fetch admin data." });
     } finally {
@@ -105,7 +109,7 @@ export default function AdminDashboard() {
     try {
       await updateSellerStatus(sellerId, status);
       toast({ title: "Success", description: `Seller status updated to ${status}.` });
-      fetchData();
+      fetchData(); // Refetch all data
       if (viewingSellerDetails?.seller._id === sellerId) setViewingSellerDetails(null);
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "Failed to update seller status." });
@@ -116,7 +120,7 @@ export default function AdminDashboard() {
       try {
           await updateProductStatus(productId, status);
           toast({ title: "Success", description: `Product status updated to ${status}.` });
-          fetchData();
+          fetchData(); // Refetch all data
           if (viewingProductDetails?._id === productId) setViewingProductDetails(null);
       } catch (error) {
           toast({ variant: "destructive", title: "Error", description: "Failed to update product status."});
@@ -155,9 +159,10 @@ export default function AdminDashboard() {
         </div>
       </header>
       
-      <Tabs defaultValue="approvals">
-        <TabsList className="grid w-full grid-cols-2">
+      <Tabs value={mainTab} onValueChange={setMainTab}>
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="approvals">Approvals ({pending.sellers.length + pending.products.length})</TabsTrigger>
+          <TabsTrigger value="management">Management</TabsTrigger>
           <TabsTrigger value="dashboard">Dashboard Stats</TabsTrigger>
         </TabsList>
 
@@ -235,13 +240,68 @@ export default function AdminDashboard() {
                 </Card>
             </div>
         </TabsContent>
+        
+        <TabsContent value="management" className="mt-6">
+            <Tabs defaultValue={managementTab} onValueChange={setManagementTab}>
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="users">Users ({allUsers.length})</TabsTrigger>
+                    <TabsTrigger value="sellers">Sellers ({allSellers.length})</TabsTrigger>
+                    <TabsTrigger value="products">Products ({allProducts.length})</TabsTrigger>
+                </TabsList>
+                <TabsContent value="users" className="mt-4">
+                    <Card>
+                        <CardHeader><CardTitle>All Users</CardTitle><CardDescription>List of all registered customers and sellers.</CardDescription></CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Role</TableHead><TableHead>Joined On</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {allUsers.map(u => (
+                                        <TableRow key={u._id}><TableCell>{u.name}</TableCell><TableCell>{u.email}</TableCell><TableCell><Badge variant="outline" className="capitalize">{u.role}</Badge></TableCell><TableCell>{format(new Date(u.createdAt), "PP")}</TableCell></TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="sellers" className="mt-4">
+                    <Card>
+                        <CardHeader><CardTitle>All Sellers</CardTitle><CardDescription>List of all sellers, regardless of status.</CardDescription></CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader><TableRow><TableHead>Business Name</TableHead><TableHead>Owner</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {allSellers.map(s => (
+                                        <TableRow key={s._id}><TableCell>{s.businessName}</TableCell><TableCell>{s.user.name}</TableCell><TableCell><Badge variant={getStatusBadgeVariant(s.status)} className="capitalize">{s.status}</Badge></TableCell><TableCell><Button variant="outline" size="sm" onClick={() => handleViewSeller(s._id)}><Eye className="mr-2 h-4 w-4"/>Details</Button></TableCell></TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="products" className="mt-4">
+                     <Card>
+                        <CardHeader><CardTitle>All Products</CardTitle><CardDescription>List of all products, regardless of status.</CardDescription></CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader><TableRow><TableHead>Product</TableHead><TableHead>Seller</TableHead><TableHead>Price</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {allProducts.map(p => (
+                                        <TableRow key={p._id}><TableCell>{p.name}</TableCell>{/* @ts-ignore */}<TableCell>{p.seller.name}</TableCell><TableCell>${p.price.toFixed(2)}</TableCell><TableCell><Badge variant={getStatusBadgeVariant(p.status)} className="capitalize">{p.status}</Badge></TableCell><TableCell><Button variant="outline" size="sm" onClick={() => setViewingProductDetails(p)}><Eye className="mr-2 h-4 w-4"/>Review</Button></TableCell></TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+        </TabsContent>
 
         <TabsContent value="dashboard" className="mt-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Users</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats?.totalUsers}</div></CardContent></Card>
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Sellers</CardTitle><Package className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats?.totalSellers}</div></CardContent></Card>
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Products</CardTitle><BarChart2 className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats?.totalProducts}</div></CardContent></Card>
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Pending Approvals</CardTitle><Clock className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats?.pendingApprovals}</div></CardContent></Card>
+                <Card className="cursor-pointer hover:bg-muted/50" onClick={() => { setMainTab("management"); setManagementTab("users"); }}><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Users</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats?.totalUsers}</div></CardContent></Card>
+                <Card className="cursor-pointer hover:bg-muted/50" onClick={() => { setMainTab("management"); setManagementTab("sellers"); }}><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Sellers</CardTitle><Package className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats?.totalSellers}</div></CardContent></Card>
+                <Card className="cursor-pointer hover:bg-muted/50" onClick={() => { setMainTab("management"); setManagementTab("products"); }}><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Products</CardTitle><BarChart2 className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats?.totalProducts}</div></CardContent></Card>
+                <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setMainTab("approvals")}><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Pending Approvals</CardTitle><Clock className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats?.pendingApprovals}</div></CardContent></Card>
             </div>
         </TabsContent>
       </Tabs>

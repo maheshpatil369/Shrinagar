@@ -46,7 +46,6 @@ export const updateSellerStatus = async (sellerId: string, status: 'approved' | 
     return data;
 };
 
-// CORRECTED: Changed from api.put to api.post to match the backend route fix.
 export const updateProductStatus = async (productId: string, status: 'approved' | 'rejected'): Promise<Product> => {
     const { data } = await api.post(`/admin/products/${productId}/status`, { status }, getAuthHeaders());
     return data;
@@ -58,3 +57,18 @@ export const getSellerHistory = async (sellerId: string): Promise<SellerHistory[
     return data;
 };
 
+// Functions to get all users, sellers, and products for the management view
+export const adminGetAllUsers = async (): Promise<User[]> => {
+    const { data } = await api.get('/admin/users', getAuthHeaders());
+    return data;
+};
+
+export const adminGetAllSellers = async (): Promise<Seller[]> => {
+    const { data } = await api.get('/admin/sellers', getAuthHeaders());
+    return data;
+};
+
+export const adminGetAllProducts = async (): Promise<Product[]> => {
+    const { data } = await api.get('/admin/products', getAuthHeaders());
+    return data;
+};
