@@ -42,7 +42,6 @@ const sellerSchema = new mongoose.Schema(
       max: 5,
     },
     verificationDocuments: {
-      // CORRECTED: Made these fields required to enforce upload at the database level.
       gstCertificate: { type: String, required: [true, 'GST Certificate is required.'] },
       panCard: { type: String, required: [true, 'PAN Card is required.'] },
     },
@@ -51,6 +50,10 @@ const sellerSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Add an index on the status field to speed up queries for pending sellers
+sellerSchema.index({ status: 1 });
+
 
 const Seller = mongoose.model('Seller', sellerSchema);
 

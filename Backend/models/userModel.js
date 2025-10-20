@@ -32,7 +32,8 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Seller',
     },
-    favorites: [
+    // Corrected field name from 'favorites' to 'wishlist' to match controller logic
+    wishlist: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Product',
@@ -65,3 +66,4 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;
+  

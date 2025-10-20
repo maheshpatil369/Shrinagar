@@ -1,6 +1,7 @@
 // maheshpatil369/shrinagar/Shrinagar-47183708fc2b865cb6e3d62f63fcad35ec0165db/Frontend1/src/lib/seller.ts
 import { api } from './api';
 import { User } from './auth';
+import { Product } from './products';
 
 export interface Seller {
   _id: string;
@@ -41,6 +42,12 @@ export const getSellerDashboard = async (): Promise<Seller> => {
     return data;
 };
 
+// ADDED: Function to get products for the logged-in seller
+export const getSellerProducts = async (): Promise<Product[]> => {
+    const { data } = await api.get('/sellers/products', getAuthHeaders());
+    return data;
+};
+
 export const enrollSeller = async (sellerData: Omit<Seller, '_id' | 'user' | 'status' | 'rating'>): Promise<Seller> => {
     const { data } = await api.post('/sellers/enroll', sellerData, getAuthHeaders());
     return data;
@@ -56,4 +63,3 @@ export const uploadVerificationDocument = async (formData: FormData): Promise<{ 
     });
     return data;
 };
-

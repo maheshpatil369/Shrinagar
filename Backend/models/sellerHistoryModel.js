@@ -32,4 +32,3 @@ const sellerHistorySchema = new mongoose.Schema(
 const SellerHistory = mongoose.model('SellerHistory', sellerHistorySchema);
 
 module.exports = SellerHistory;
-

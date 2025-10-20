@@ -6,9 +6,9 @@ const {
     getPendingApprovals,
     getSellerHistory,
     adminGetAllSellers,
-    adminGetSellerById,
+    getSellerDetailsForAdmin,
     adminUpdateSellerStatus,
-    adminGetAllProducts, // CORRECTED: This route now lives here
+    adminGetAllProducts,
     adminUpdateProductStatus,
     adminDeleteProduct,
     adminGetAllUsers,
@@ -23,14 +23,14 @@ router.route('/approvals').get(protect, admin, getPendingApprovals);
 
 // Seller Management
 router.route('/sellers').get(protect, admin, adminGetAllSellers);
-router.route('/sellers/:id').get(protect, admin, adminGetSellerById);
+router.route('/sellers/:id').get(protect, admin, getSellerDetailsForAdmin);
 router.route('/sellers/:id/status').put(protect, admin, adminUpdateSellerStatus);
 router.route('/sellers/:id/history').get(protect, admin, getSellerHistory);
 
-// --- CORRECTED: Route for getting all products is now under /api/admin/products ---
 // Product Management
 router.route('/products').get(protect, admin, adminGetAllProducts); 
-router.route('/products/:id/status').put(protect, admin, adminUpdateProductStatus);
+// CORRECTED: Changed from .put() to .post() to match the client request
+router.route('/products/:id/status').post(protect, admin, adminUpdateProductStatus);
 router.route('/products/:id').delete(protect, admin, adminDeleteProduct);
 
 // User Management

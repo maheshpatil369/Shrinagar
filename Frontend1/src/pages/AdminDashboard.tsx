@@ -1,5 +1,5 @@
 // maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Frontend1/src/pages/AdminDashboard.tsx
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from 'date-fns';
 
@@ -12,21 +12,35 @@ import {
     getSellerDetailsForAdmin,
     updateSellerStatus,
     SellerHistory,
-    getSellerHistory
 } from "@/lib/admin";
+
+// Local helper to update product status (avoids relying on a non-existent export from "@/lib/admin")
+const updateProductStatus = async (productId: string, status: 'approved' | 'rejected') => {
+  const res = await fetch(`/api/admin/products/${productId}/status`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => 'Failed to update product status');
+    throw new Error(errText);
+  }
+  return res.json();
+};
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, ShieldAlert, LoaderCircle, Users, Package, BarChart2, Clock, Eye, CheckCircle, XCircle, ExternalLink, History } from 'lucide-react';
+import { ShieldCheck, LoaderCircle, Users, Package, BarChart2, Clock, Eye, CheckCircle, XCircle, ShieldAlert, History } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
-// Define a type for the detailed seller view
-// Define a type for the detailed seller view
+
 type ViewingSellerDetails = {
     seller: Seller;
     products: Product[];
@@ -39,18 +53,21 @@ type AdminStats = {
     totalProducts: number;
     pendingApprovals: number;
 };
+
 export default function AdminDashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [pending, setPending] = useState<{ sellers: Seller[], products: Product[] }>({ sellers: [], products: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [viewingSellerDetails, setViewingSellerDetails] = useState<ViewingSellerDetails | null>(null);
+  const [viewingProductDetails, setViewingProductDetails] = useState<Product | null>(null);
   
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const fetchData = async () => {
-    setIsLoading(true);
+    // Keep loading true if it's already true, otherwise set it for refetches
+    setIsLoading(prev => prev || true);
     try {
       const [statsData, pendingData] = await Promise.all([
         getAdminDashboardStats(),
@@ -77,11 +94,8 @@ export default function AdminDashboard() {
 
   const handleViewSeller = async (sellerId: string) => {
     try {
-        const [{ seller, products }, history] = await Promise.all([
-            getSellerDetailsForAdmin(sellerId),
-            getSellerHistory(sellerId)
-        ]);
-        setViewingSellerDetails({ seller, products, history });
+        const sellerDetails = await getSellerDetailsForAdmin(sellerId);
+        setViewingSellerDetails(sellerDetails);
     } catch (error) {
         toast({ variant: "destructive", title: "Error", description: "Failed to fetch seller details." });
     }
@@ -91,11 +105,22 @@ export default function AdminDashboard() {
     try {
       await updateSellerStatus(sellerId, status);
       toast({ title: "Success", description: `Seller status updated to ${status}.` });
-      fetchData(); // Refresh data
+      fetchData();
       if (viewingSellerDetails?.seller._id === sellerId) setViewingSellerDetails(null);
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "Failed to update seller status." });
     }
+  };
+
+  const handleProductStatusUpdate = async (productId: string, status: 'approved' | 'rejected') => {
+      try {
+          await updateProductStatus(productId, status);
+          toast({ title: "Success", description: `Product status updated to ${status}.` });
+          fetchData();
+          if (viewingProductDetails?._id === productId) setViewingProductDetails(null);
+      } catch (error) {
+          toast({ variant: "destructive", title: "Error", description: "Failed to update product status."});
+      }
   };
   
   const getStatusBadgeVariant = (status: string) => {
@@ -132,8 +157,8 @@ export default function AdminDashboard() {
       
       <Tabs defaultValue="approvals">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="approvals">Approvals</TabsTrigger>
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="approvals">Approvals ({pending.sellers.length + pending.products.length})</TabsTrigger>
+          <TabsTrigger value="dashboard">Dashboard Stats</TabsTrigger>
         </TabsList>
 
         <TabsContent value="approvals" className="mt-6">
@@ -143,12 +168,28 @@ export default function AdminDashboard() {
                     <CardContent>
                         {pending.sellers.length > 0 ? (
                             <Table>
-                                <TableHeader><TableRow><TableHead>Business Name</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
+                                <TableHeader><TableRow><TableHead>Business Name</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                                 <TableBody>
                                     {pending.sellers.map(seller => (
                                         <TableRow key={seller._id}>
-                                            <TableCell>{seller.businessName}</TableCell>
-                                            <TableCell className="text-right"><Button variant="outline" size="sm" onClick={() => handleViewSeller(seller._id)}><Eye className="mr-2 h-4 w-4"/>Review</Button></TableCell>
+                                            <TableCell className="font-medium">{seller.businessName}</TableCell>
+                                            <TableCell className="text-right space-x-2">
+                                                <Button variant="outline" size="sm" onClick={() => handleViewSeller(seller._id)}><Eye className="mr-2 h-4 w-4"/>Review</Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild><Button size="sm" variant="destructive"><XCircle className="mr-2 h-4 w-4"/>Reject</Button></AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader><AlertDialogTitle>Reject Seller?</AlertDialogTitle><AlertDialogDescription>This will permanently reject {seller.businessName}'s application.</AlertDialogDescription></AlertDialogHeader>
+                                                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleSellerStatusUpdate(seller._id, 'rejected')}>Confirm Reject</AlertDialogAction></AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild><Button size="sm" className="bg-green-600 hover:bg-green-700"><CheckCircle className="mr-2 h-4 w-4"/>Approve</Button></AlertDialogTrigger>
+                                                     <AlertDialogContent>
+                                                        <AlertDialogHeader><AlertDialogTitle>Approve Seller?</AlertDialogTitle><AlertDialogDescription>This will allow {seller.businessName} to start listing products.</AlertDialogDescription></AlertDialogHeader>
+                                                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleSellerStatusUpdate(seller._id, 'approved')}>Confirm Approve</AlertDialogAction></AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
@@ -161,15 +202,29 @@ export default function AdminDashboard() {
                     <CardContent>
                          {pending.products.length > 0 ? (
                             <Table>
-                                <TableHeader><TableRow><TableHead>Product Name</TableHead><TableHead>Seller</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
+                                <TableHeader><TableRow><TableHead>Product</TableHead><TableHead>Seller</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                                 <TableBody>
                                     {pending.products.map(product => (
                                         <TableRow key={product._id}>
-                                            <TableCell>{product.name}</TableCell>
-                                            <TableCell>{(product.seller as any)?.businessName || 'N/A'}</TableCell>
-                                            <TableCell className="text-right">
-                                               {/* Future: Add product review modal */}
-                                                <Button variant="outline" size="sm"><Eye className="mr-2 h-4 w-4"/>Review</Button>
+                                            <TableCell className="font-medium">{product.name}</TableCell>
+                                            {/* @ts-ignore */}
+                                            <TableCell>{product.seller?.businessName || 'N/A'}</TableCell>
+                                            <TableCell className="text-right space-x-2">
+                                                <Button variant="outline" size="sm" onClick={() => setViewingProductDetails(product)}><Eye className="mr-2 h-4 w-4"/>Review</Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild><Button size="sm" variant="destructive"><XCircle className="mr-2 h-4 w-4"/>Reject</Button></AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader><AlertDialogTitle>Reject Product?</AlertDialogTitle><AlertDialogDescription>This will reject the product "{product.name}".</AlertDialogDescription></AlertDialogHeader>
+                                                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleProductStatusUpdate(product._id, 'rejected')}>Confirm Reject</AlertDialogAction></AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild><Button size="sm" className="bg-green-600 hover:bg-green-700"><CheckCircle className="mr-2 h-4 w-4"/>Approve</Button></AlertDialogTrigger>
+                                                     <AlertDialogContent>
+                                                        <AlertDialogHeader><AlertDialogTitle>Approve Product?</AlertDialogTitle><AlertDialogDescription>This will make "{product.name}" visible to all buyers.</AlertDialogDescription></AlertDialogHeader>
+                                                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleProductStatusUpdate(product._id, 'approved')}>Confirm Approve</AlertDialogAction></AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -283,6 +338,48 @@ export default function AdminDashboard() {
             )}
         </DialogContent>
        </Dialog>
+
+        {/* Product Review Dialog */}
+        <Dialog open={!!viewingProductDetails} onOpenChange={() => setViewingProductDetails(null)}>
+            <DialogContent className="sm:max-w-3xl">
+                <DialogHeader>
+                    <DialogTitle>{viewingProductDetails?.name}</DialogTitle>
+                    <DialogDescription>
+                        Reviewing product from {/* @ts-ignore */}
+                        <strong>{viewingProductDetails?.seller?.businessName}</strong>. Status: <Badge variant={getStatusBadgeVariant(viewingProductDetails?.status || '')}>{viewingProductDetails?.status}</Badge>
+                    </DialogDescription>
+                </DialogHeader>
+                {viewingProductDetails && (
+                    <div className="grid grid-cols-2 gap-6 pt-4">
+                        <Carousel className="w-full col-span-2 sm:col-span-1">
+                            <CarouselContent>
+                                {viewingProductDetails.images.map((image, index) => (
+                                <CarouselItem key={index}>
+                                    <div className="aspect-square border rounded-lg overflow-hidden">
+                                        <img src={image} alt={`Product view ${index + 1}`} className="w-full h-full object-cover" />
+                                    </div>
+                                </CarouselItem>
+                                ))}
+                            </CarouselContent>
+                            <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2" />
+                            <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2" />
+                        </Carousel>
+                        <div className="space-y-4 text-sm col-span-2 sm:col-span-1">
+                            <div><h4 className="font-semibold">Description</h4><p className="text-muted-foreground">{viewingProductDetails.description}</p></div>
+                            <div><h4 className="font-semibold">Price</h4><p className="text-muted-foreground">${viewingProductDetails.price.toFixed(2)}</p></div>
+                            <div><h4 className="font-semibold">Brand</h4><p className="text-muted-foreground">{viewingProductDetails.brand}</p></div>
+                            <div><h4 className="font-semibold">Material</h4><p className="text-muted-foreground">{viewingProductDetails.material}</p></div>
+                            <div><h4 className="font-semibold">Category</h4><p className="text-muted-foreground capitalize">{viewingProductDetails.category}</p></div>
+                        </div>
+                    </div>
+                )}
+                 <div className="flex justify-end gap-2 pt-4 border-t mt-4">
+                    <Button variant="destructive" onClick={() => viewingProductDetails && handleProductStatusUpdate(viewingProductDetails._id, 'rejected')}><XCircle className="mr-2 h-4 w-4"/>Reject Product</Button>
+                    <Button className="bg-green-600 hover:bg-green-700" onClick={() => viewingProductDetails && handleProductStatusUpdate(viewingProductDetails._id, 'approved')}><CheckCircle className="mr-2 h-4 w-4"/>Approve Product</Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+
     </div>
   );
 }

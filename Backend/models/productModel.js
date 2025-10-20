@@ -37,7 +37,7 @@ const productSchema = new mongoose.Schema(
     },
     images: [
       {
-        type: String, // URLs to the images
+        type: String, // URLs or Base64 data URIs to the images
         required: true,
       },
     ],
@@ -68,6 +68,9 @@ const productSchema = new mongoose.Schema(
 
 // Create an index on name and description for text search capabilities
 productSchema.index({ name: 'text', description: 'text', material: 'text' });
+
+// Add an index on the status field to speed up queries for pending products
+productSchema.index({ status: 1 });
 
 
 const Product = mongoose.model('Product', productSchema);

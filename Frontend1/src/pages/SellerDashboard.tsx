@@ -1,5 +1,5 @@
 // maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Frontend1/src/pages/SellerDashboard.tsx
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,7 +7,8 @@ import * as z from "zod";
 
 import { getCurrentUser, logout, User, verifyToken } from "../lib/auth";
 import { Product, ProductFormData, createProduct, updateProduct, deleteProduct, uploadProductImage } from "../lib/products";
-import { Seller, getSellerDashboard } from "../lib/seller";
+// CORRECTED: Import getSellerProducts from the right place
+import { Seller, getSellerDashboard, getSellerProducts } from "../lib/seller";
 
 // UI Components
 import { Button } from "../components/ui/button";
@@ -57,23 +58,21 @@ export default function SellerDashboard() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const sellerData = await getSellerDashboard();
+      // CORRECTED: Fetch both dashboard and products data
+      const [sellerData, productsData] = await Promise.all([
+        getSellerDashboard(),
+        getSellerProducts()
+      ]);
       setSeller(sellerData);
-
-      // Attempt to dynamically import getSellerProducts if it's exported by the module.
-      // This avoids a static import error when the symbol is not exported.
-      let productsData: Product[] = [];
-      try {
-        const prodModule = (await import("../lib/products")) as any;
-        if (typeof prodModule.getSellerProducts === "function") {
-          productsData = await prodModule.getSellerProducts();
-        }
-      } catch (err) {
-        // ignore and keep productsData as empty array
-      }
       setProducts(productsData);
     } catch (error) {
-      toast({ variant: "destructive", title: "Error", description: "Failed to fetch seller data." });
+      // Gracefully handle cases where a seller is not yet enrolled
+      if ((error as any)?.response?.status === 404 || (error as any)?.response?.data === null) {
+          setSeller(null);
+          setProducts([]);
+      } else {
+        toast({ variant: "destructive", title: "Error", description: "Failed to fetch seller data." });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +86,7 @@ export default function SellerDashboard() {
     } else {
       navigate('/auth');
     }
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const handleOpenDialog = (product: Product | null) => {
     if (seller?.status !== 'approved') {
@@ -157,8 +156,6 @@ export default function SellerDashboard() {
     }
   };
 
-  const SellerStatusBanner = () => { /* ... (same as before) ... */ };
-
   if (isLoading || !user) {
     return (
         <div className="flex items-center justify-center min-h-screen"><LoaderCircle className="h-12 w-12 animate-spin" /></div>
@@ -175,7 +172,6 @@ export default function SellerDashboard() {
         <Button onClick={() => logout()} variant="outline">Logout</Button>
       </header>
       
-      {/* Dynamic Status Banner */}
       {!seller ? (
          <Alert className="mb-6"><Info className="h-4 w-4" /><AlertTitle>Welcome, Seller!</AlertTitle><AlertDescription>Please complete your profile to start listing products.</AlertDescription></Alert>
       ) : seller.status === 'pending' ? (
@@ -207,6 +203,7 @@ export default function SellerDashboard() {
                     <TableBody>
                     {products.length > 0 ? products.map((product) => (
                         <TableRow key={product._id}>
+                        {/* CORRECTED: Image now renders directly from Base64 data */}
                         <TableCell className="font-medium flex items-center gap-4"><img src={product.images[0]} alt={product.name} className="w-10 h-10 object-cover rounded-md border"/>{product.name}</TableCell>
                         <TableCell>${product.price.toFixed(2)}</TableCell>
                         <TableCell><Badge variant={getStatusBadgeVariant(product.status)} className="capitalize">{product.status}</Badge></TableCell>
@@ -242,13 +239,11 @@ export default function SellerDashboard() {
          </TabsContent>
       </Tabs>
 
-      {/* Dialog for Add/Edit Product */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[625px]">
           <DialogHeader><DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle></DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-               {/* Form Fields... (same as before) */}
               <div className="grid grid-cols-2 gap-4">
                  <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                  <FormField control={form.control} name="brand" render={({ field }) => (<FormItem><FormLabel>Brand</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -274,7 +269,7 @@ export default function SellerDashboard() {
                <FormField control={form.control} name="affiliateUrl" render={({ field }) => (<FormItem><FormLabel>Affiliate URL</FormLabel><FormControl><Input type="url" {...field} /></FormControl><FormMessage /></FormItem>)} />
                <DialogFooter>
                 <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-                <Button type="submit" disabled={form.formState.isSubmitting}>{editingProduct ? 'Save Changes' : 'Create Product'}</Button>
+                <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? <LoaderCircle className="animate-spin mr-2"/> : null}{editingProduct ? 'Save Changes' : 'Create Product'}</Button>
               </DialogFooter>
             </form>
           </Form>
@@ -283,4 +278,3 @@ export default function SellerDashboard() {
     </div>
   );
 }
-

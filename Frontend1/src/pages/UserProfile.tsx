@@ -4,7 +4,7 @@ import { User, getCurrentUser } from '@/lib/auth';
 import { Product } from '@/lib/products';
 import { getWishlist, removeFromWishlist } from '@/lib/user';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LoaderCircle, Heart, X, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -97,6 +97,7 @@ export default function UserProfile() {
                                 <div className="space-y-4">
                                     {wishlist.map(product => (
                                         <div key={product._id} className="flex items-center gap-4 rounded-md border p-4">
+                                            {/* CORRECTED: Image now renders directly from Base64 data */}
                                             <img 
                                                 src={product.images[0]} 
                                                 alt={product.name} 

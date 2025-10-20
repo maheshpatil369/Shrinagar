@@ -26,7 +26,6 @@ const getAuthHeaders = () => {
     return { headers: { Authorization: `Bearer ${userInfo.token}` } };
 };
 
-// ... (existing admin functions remain)
 export const getAdminDashboardStats = async (): Promise<any> => {
     const { data } = await api.get('/admin/stats', getAuthHeaders());
     return data;
@@ -37,8 +36,8 @@ export const getPendingApprovals = async (): Promise<{ sellers: Seller[], produc
     return data;
 };
 
-export const getSellerDetailsForAdmin = async (sellerId: string): Promise<{ seller: Seller, products: Product[] }> => {
-    const { data } = await api.get(`/admin/sellers/${sellerId}/details`, getAuthHeaders());
+export const getSellerDetailsForAdmin = async (sellerId: string): Promise<{ seller: Seller, products: Product[], history: SellerHistory[] }> => {
+    const { data } = await api.get(`/admin/sellers/${sellerId}`, getAuthHeaders());
     return data;
 };
 
@@ -47,7 +46,13 @@ export const updateSellerStatus = async (sellerId: string, status: 'approved' | 
     return data;
 };
 
-// New function to fetch seller history
+// CORRECTED: Changed from api.put to api.post to match the backend route fix.
+export const updateProductStatus = async (productId: string, status: 'approved' | 'rejected'): Promise<Product> => {
+    const { data } = await api.post(`/admin/products/${productId}/status`, { status }, getAuthHeaders());
+    return data;
+};
+
+
 export const getSellerHistory = async (sellerId: string): Promise<SellerHistory[]> => {
     const { data } = await api.get(`/admin/sellers/${sellerId}/history`, getAuthHeaders());
     return data;

@@ -84,6 +84,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
 // @route   GET /api/users/wishlist
 // @access  Private
 const getWishlist = asyncHandler(async (req, res) => {
+  // Correctly populate the 'wishlist' field, which replaced 'favorites'
   const user = await User.findById(req.user._id).populate('wishlist');
   res.json(user.wishlist || []);
 });
@@ -99,7 +100,9 @@ const addToWishlist = asyncHandler(async (req, res) => {
     user.wishlist.push(productId);
     await user.save();
   }
-
+  
+  // To provide the full product data back to the frontend, we can populate after saving
+  await user.populate('wishlist');
   res.json(user.wishlist);
 });
 
@@ -115,6 +118,7 @@ const removeFromWishlist = asyncHandler(async (req, res) => {
   );
 
   await user.save();
+  await user.populate('wishlist');
   res.json(user.wishlist);
 });
 
