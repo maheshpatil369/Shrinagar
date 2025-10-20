@@ -1,4 +1,4 @@
-// maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Backend/controllers/sellerController.js
+// maheshpatil369/shrinagar/Shrinagar-abcbe203037457af5cdd1912b6e3260dabf070c5/Backend/controllers/sellerController.js
 const asyncHandler = require('../middleware/asyncHandler.js');
 const Seller = require('../models/sellerModel.js');
 const SellerHistory = require('../models/sellerHistoryModel.js');
@@ -7,6 +7,7 @@ const Product = require('../models/productModel.js');
 
 // Helper to compare nested objects like 'address' or 'verificationDocuments'
 const getChangedFields = (oldObj, newObj) => {
+    // ... existing code ...
     const changes = [];
     // Ensure objects are not null/undefined before getting keys
     const oldKeys = oldObj ? Object.keys(oldObj) : [];
@@ -31,6 +32,7 @@ const getChangedFields = (oldObj, newObj) => {
 // @route   POST /api/sellers/enroll
 // @access  Private/Seller
 const enrollSeller = asyncHandler(async (req, res) => {
+    // ... existing code ...
   const { businessName, gstNumber, panNumber, address, verificationDocuments } = req.body;
   const userId = req.user._id;
 
@@ -87,6 +89,7 @@ const enrollSeller = asyncHandler(async (req, res) => {
 // @route   GET /api/sellers/dashboard
 // @access  Private/Seller
 const getSellerDashboard = asyncHandler(async (req, res) => {
+    // ... existing code ...
   const seller = await Seller.findOne({ user: req.user._id });
 
   if (!seller) {
@@ -100,6 +103,7 @@ const getSellerDashboard = asyncHandler(async (req, res) => {
 // @route   GET /api/sellers/products
 // @access  Private/Seller
 const getSellerProducts = asyncHandler(async (req, res) => {
+    // ... existing code ...
     const seller = await Seller.findOne({ user: req.user._id });
 
     if (!seller) {
@@ -111,9 +115,49 @@ const getSellerProducts = asyncHandler(async (req, res) => {
     res.status(200).json(products);
 });
 
+// @desc    Get analytics for the current seller
+// @route   GET /api/sellers/analytics
+// @access  Private/Seller
+const getSellerAnalytics = asyncHandler(async (req, res) => {
+    const products = await Product.find({ seller: req.user._id });
+
+    if (!products) {
+        return res.json({
+            totalViews: 0,
+            totalClicks: 0,
+            conversionRate: 0,
+            topProducts: [],
+            performanceData: [],
+        });
+    }
+
+    const totalViews = products.reduce((acc, p) => acc + p.viewCount, 0);
+    const totalClicks = products.reduce((acc, p) => acc + p.clickCount, 0);
+    const conversionRate = totalViews > 0 ? (totalClicks / totalViews) * 100 : 0;
+
+    const topProducts = [...products]
+        .sort((a, b) => b.viewCount - a.viewCount)
+        .slice(0, 5);
+
+    const performanceData = products.map(p => ({
+        name: p.name,
+        views: p.viewCount,
+        clicks: p.clickCount,
+    }));
+    
+    res.json({
+        totalViews,
+        totalClicks,
+        conversionRate,
+        topProducts,
+        performanceData,
+    });
+});
+
+
 module.exports = {
   enrollSeller,
   getSellerDashboard,
   getSellerProducts,
+  getSellerAnalytics,
 };
-

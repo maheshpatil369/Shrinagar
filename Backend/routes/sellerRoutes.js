@@ -1,10 +1,11 @@
-// maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Backend/routes/sellerRoutes.js
+// maheshpatil369/shrinagar/Shrinagar-abcbe203037457af5cdd1912b6e3260dabf070c5/Backend/routes/sellerRoutes.js
 const express = require('express');
 const router = express.Router();
 const {
     enrollSeller,
     getSellerDashboard,
     getSellerProducts,
+    getSellerAnalytics,
 } = require('../controllers/sellerController.js');
 const { protect, authorize } = require('../middleware/authMiddleware.js');
 
@@ -19,5 +20,7 @@ router.route('/dashboard').get(protect, authorize('seller'), getSellerDashboard)
 // Route for a seller to get a list of all their products.
 router.route('/products').get(protect, authorize('seller'), getSellerProducts);
 
-module.exports = router;
+// NEW: Route for a seller to get their analytics data.
+router.route('/analytics').get(protect, authorize('seller'), getSellerAnalytics);
 
+module.exports = router;

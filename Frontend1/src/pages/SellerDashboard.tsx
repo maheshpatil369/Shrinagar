@@ -1,14 +1,16 @@
-// maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Frontend1/src/pages/SellerDashboard.tsx
+// maheshpatil369/shrinagar/Shrinagar-abcbe203037457af5cdd1912b6e3260dabf070c5/Frontend1/src/pages/SellerDashboard.tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
 
 import { getCurrentUser, logout, User, verifyToken } from "../lib/auth";
 import { Product, ProductFormData, createProduct, updateProduct, deleteProduct, uploadProductImage } from "../lib/products";
 // CORRECTED: Import getSellerProducts from the right place
-import { Seller, getSellerDashboard, getSellerProducts } from "../lib/seller";
+import { Seller, getSellerDashboard, getSellerProducts, getSellerAnalytics, SellerAnalytics } from "../lib/seller";
 
 // UI Components
 import { Button } from "../components/ui/button";
@@ -21,14 +23,16 @@ import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "../components/ui/badge";
-import { PlusCircle, MoreVertical, Edit, Trash2, LoaderCircle, Upload, CheckCircle, Clock, Info, XCircle, ShieldAlert } from 'lucide-react';
+import { PlusCircle, MoreVertical, Edit, Trash2, LoaderCircle, Upload, CheckCircle, Clock, Info, XCircle, ShieldAlert, TrendingUp, Eye, MousePointerClick } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SellerProfile from "./SellerProfile";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 const productSchema = z.object({
+  // ... existing code ...
   name: z.string().min(3, { message: "Name must be at least 3 characters." }),
   description: z.string().min(10, { message: "Description must be at least 10 characters." }),
   price: z.coerce.number().positive({ message: "Price must be a positive number." }),
@@ -43,6 +47,7 @@ export default function SellerDashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [seller, setSeller] = useState<Seller | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [analytics, setAnalytics] = useState<SellerAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -51,6 +56,7 @@ export default function SellerDashboard() {
   const navigate = useNavigate();
 
   const form = useForm<ProductFormData>({
+    // ... existing code ...
     resolver: zodResolver(productSchema),
     defaultValues: { name: "", description: "", price: 0, brand: "", material: "", category: "other", images: "", affiliateUrl: "" },
   });
@@ -58,18 +64,19 @@ export default function SellerDashboard() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // CORRECTED: Fetch both dashboard and products data
-      const [sellerData, productsData] = await Promise.all([
+      const [sellerData, productsData, analyticsData] = await Promise.all([
         getSellerDashboard(),
-        getSellerProducts()
+        getSellerProducts(),
+        getSellerAnalytics(),
       ]);
       setSeller(sellerData);
       setProducts(productsData);
+      setAnalytics(analyticsData);
     } catch (error) {
-      // Gracefully handle cases where a seller is not yet enrolled
       if ((error as any)?.response?.status === 404 || (error as any)?.response?.data === null) {
           setSeller(null);
           setProducts([]);
+          setAnalytics(null);
       } else {
         toast({ variant: "destructive", title: "Error", description: "Failed to fetch seller data." });
       }
@@ -79,6 +86,7 @@ export default function SellerDashboard() {
   };
 
   useEffect(() => {
+    // ... existing code ...
     const currentUser = getCurrentUser();
     if (currentUser && (currentUser.role === 'seller' || currentUser.role === 'admin')) {
       verifyToken(currentUser.token).then(setUser).catch(() => navigate('/auth'));
@@ -89,6 +97,7 @@ export default function SellerDashboard() {
   }, [navigate, toast]);
 
   const handleOpenDialog = (product: Product | null) => {
+    // ... existing code ...
     if (seller?.status !== 'approved') {
         toast({ variant: "destructive", title: "Profile Not Approved", description: "Your seller profile must be approved to add products." });
         return;
@@ -99,6 +108,7 @@ export default function SellerDashboard() {
   };
 
   const onSubmit = async (data: ProductFormData) => {
+    // ... existing code ...
     try {
       if (editingProduct) {
         await updateProduct(editingProduct._id, data);
@@ -115,6 +125,7 @@ export default function SellerDashboard() {
   };
 
   const handleDelete = async (productId: string) => {
+    // ... existing code ...
     try {
       await deleteProduct(productId);
       toast({ title: "Success", description: "Product deleted." });
@@ -125,6 +136,7 @@ export default function SellerDashboard() {
   };
 
   const uploadFileHandler = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // ... existing code ...
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -135,7 +147,7 @@ export default function SellerDashboard() {
     try {
         const data = await uploadProductImage(formData);
         const currentImages = form.getValues('images');
-        const newImages = currentImages ? `${currentImages}, ${data.image}` : data.image;
+        const newImages = currentImages ? `${currentImages}, /uploads/${data.image}` : `/uploads/${data.image}`;
         form.setValue('images', newImages, { shouldValidate: true });
         toast({ title: "Success", description: "Image uploaded." });
     } catch (error: any) {
@@ -147,6 +159,7 @@ export default function SellerDashboard() {
   };
 
   const getStatusBadgeVariant = (status: string) => {
+    // ... existing code ...
     switch (status) {
       case 'approved': return 'default';
       case 'pending': return 'secondary';
@@ -157,6 +170,7 @@ export default function SellerDashboard() {
   };
 
   if (isLoading || !user) {
+    // ... existing code ...
     return (
         <div className="flex items-center justify-center min-h-screen"><LoaderCircle className="h-12 w-12 animate-spin" /></div>
     );
@@ -186,8 +200,9 @@ export default function SellerDashboard() {
 
 
        <Tabs defaultValue="products">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>
         </TabsList>
 
@@ -199,14 +214,15 @@ export default function SellerDashboard() {
                 </CardHeader>
                 <CardContent>
                 <Table>
-                    <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Price</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                    <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Price</TableHead><TableHead>Status</TableHead><TableHead>Views</TableHead><TableHead>Clicks</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                     <TableBody>
                     {products.length > 0 ? products.map((product) => (
                         <TableRow key={product._id}>
-                        {/* CORRECTED: Image now renders directly from Base64 data */}
                         <TableCell className="font-medium flex items-center gap-4"><img src={product.images[0]} alt={product.name} className="w-10 h-10 object-cover rounded-md border"/>{product.name}</TableCell>
-                        <TableCell>${product.price.toFixed(2)}</TableCell>
+                        <TableCell>₹{product.price.toFixed(2)}</TableCell>
                         <TableCell><Badge variant={getStatusBadgeVariant(product.status)} className="capitalize">{product.status}</Badge></TableCell>
+                        <TableCell>{product.viewCount}</TableCell>
+                        <TableCell>{product.clickCount}</TableCell>
                         <TableCell className="text-right">
                             <AlertDialog>
                             <DropdownMenu>
@@ -227,19 +243,67 @@ export default function SellerDashboard() {
                         </TableCell>
                         </TableRow>
                     )) : (
-                        <TableRow><TableCell colSpan={4} className="text-center h-24">No products found.</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={6} className="text-center h-24">No products found.</TableCell></TableRow>
                     )}
                     </TableBody>
                 </Table>
                 </CardContent>
             </Card>
         </TabsContent>
+
+        <TabsContent value="analytics" className="mt-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Views</CardTitle><Eye className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{analytics?.totalViews || 0}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Clicks</CardTitle><MousePointerClick className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{analytics?.totalClicks || 0}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Conversion Rate</CardTitle><TrendingUp className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{analytics?.conversionRate.toFixed(2) || 0}%</div></CardContent></Card>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-4">
+                <Card className="col-span-1 lg:col-span-4">
+                    <CardHeader><CardTitle>Product Performance</CardTitle><CardDescription>Views vs. Clicks for each product.</CardDescription></CardHeader>
+                    <CardContent>
+                        <ChartContainer config={{
+                            views: { label: "Views", color: "hsl(var(--chart-1))" },
+                            clicks: { label: "Clicks", color: "hsl(var(--chart-2))" },
+                        }} className="h-[250px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={analytics?.performanceData}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value.slice(0, 10) + '...'}/>
+                                    <YAxis />
+                                    <Tooltip content={<ChartTooltipContent indicator="dot" />} />
+                                    <Bar dataKey="views" fill="var(--color-views)" radius={4} />
+                                    <Bar dataKey="clicks" fill="var(--color-clicks)" radius={4} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </ChartContainer>
+                    </CardContent>
+                </Card>
+                 <Card className="col-span-1 lg:col-span-3">
+                    <CardHeader><CardTitle>Top 5 Products by Views</CardTitle></CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader><TableRow><TableHead>Product</TableHead><TableHead className="text-right">Views</TableHead></TableRow></TableHeader>
+                            <TableBody>
+                                {analytics?.topProducts && analytics.topProducts.length > 0 ? analytics.topProducts.map(p => (
+                                    <TableRow key={p._id}>
+                                        <TableCell className="font-medium">{p.name}</TableCell>
+                                        <TableCell className="text-right">{p.viewCount}</TableCell>
+                                    </TableRow>
+                                )) : <TableRow><TableCell colSpan={2} className="text-center">No product data available.</TableCell></TableRow>}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                 </Card>
+            </div>
+        </TabsContent>
+
          <TabsContent value="profile" className="mt-6">
             <SellerProfile seller={seller} onProfileUpdate={fetchData} />
          </TabsContent>
       </Tabs>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        {/* ... existing dialog code ... */}
         <DialogContent className="sm:max-w-[625px]">
           <DialogHeader><DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle></DialogHeader>
           <Form {...form}>
@@ -256,8 +320,8 @@ export default function SellerDashboard() {
               </div>
               <FormField control={form.control} name="images" render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Image URLs (Base64)</FormLabel>
-                    <FormControl><Textarea placeholder="Upload an image to generate data URLs." {...field} readOnly /></FormControl>
+                    <FormLabel>Image URLs</FormLabel>
+                    <FormControl><Textarea placeholder="Upload an image to generate URLs." {...field} readOnly /></FormControl>
                      <div className="flex items-center gap-2 pt-1">
                         <Input type="file" id="image-file-upload" name="image" accept="image/*" onChange={uploadFileHandler} className="hidden" />
                         <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('image-file-upload')?.click()} disabled={isUploading}>{isUploading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}Upload Image</Button>
