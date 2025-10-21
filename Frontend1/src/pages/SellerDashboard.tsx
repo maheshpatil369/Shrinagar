@@ -1,4 +1,4 @@
-// maheshpatil369/shrinagar/Shrinagar-abcbe203037457af5cdd1912b6e3260dabf070c5/Frontend1/src/pages/SellerDashboard.tsx
+// maheshpatil369/shrinagar/Shrinagar-5f116f4d15321fb5db89b637c78651e13d353027/Frontend1/src/pages/SellerDashboard.tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -9,7 +9,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 import { getCurrentUser, logout, User, verifyToken } from "../lib/auth";
 import { Product, ProductFormData, createProduct, updateProduct, deleteProduct, uploadProductImage } from "../lib/products";
-// CORRECTED: Import getSellerProducts from the right place
 import { Seller, getSellerDashboard, getSellerProducts, getSellerAnalytics, SellerAnalytics } from "../lib/seller";
 
 // UI Components
@@ -23,23 +22,22 @@ import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "../components/ui/badge";
-import { PlusCircle, MoreVertical, Edit, Trash2, LoaderCircle, Upload, CheckCircle, Clock, Info, XCircle, ShieldAlert, TrendingUp, Eye, MousePointerClick } from 'lucide-react';
+import { PlusCircle, MoreVertical, Edit, Trash2, LoaderCircle, Upload, CheckCircle, Clock, Info, XCircle, ShieldAlert, TrendingUp, Eye, MousePointerClick, LogOut } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../components/ui/dropdown-menu";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SellerProfile from "./SellerProfile";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 const productSchema = z.object({
-  // ... existing code ...
   name: z.string().min(3, { message: "Name must be at least 3 characters." }),
   description: z.string().min(10, { message: "Description must be at least 10 characters." }),
   price: z.coerce.number().positive({ message: "Price must be a positive number." }),
   brand: z.string().min(2, { message: "Brand is required." }),
   material: z.string().min(2, { message: "Material is required." }),
   category: z.enum(['ring', 'necklace', 'bracelet', 'earrings', 'watch', 'other']),
-  images: z.string().min(1, { message: "Please provide at least one image URL." }),
+  images: z.array(z.string()).min(1, { message: "Please provide at least one image." }),
   affiliateUrl: z.string().url({ message: "Please enter a valid URL." }),
 });
 
@@ -55,10 +53,9 @@ export default function SellerDashboard() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const form = useForm<ProductFormData>({
-    // ... existing code ...
+  const form = useForm<z.infer<typeof productSchema>>({
     resolver: zodResolver(productSchema),
-    defaultValues: { name: "", description: "", price: 0, brand: "", material: "", category: "other", images: "", affiliateUrl: "" },
+    defaultValues: { name: "", description: "", price: 0, brand: "", material: "", category: "other", images: [], affiliateUrl: "" },
   });
 
   const fetchData = async () => {
@@ -86,7 +83,6 @@ export default function SellerDashboard() {
   };
 
   useEffect(() => {
-    // ... existing code ...
     const currentUser = getCurrentUser();
     if (currentUser && (currentUser.role === 'seller' || currentUser.role === 'admin')) {
       verifyToken(currentUser.token).then(setUser).catch(() => navigate('/auth'));
@@ -97,18 +93,16 @@ export default function SellerDashboard() {
   }, [navigate, toast]);
 
   const handleOpenDialog = (product: Product | null) => {
-    // ... existing code ...
     if (seller?.status !== 'approved') {
         toast({ variant: "destructive", title: "Profile Not Approved", description: "Your seller profile must be approved to add products." });
         return;
     }
     setEditingProduct(product);
-    form.reset(product ? { ...product, images: product.images.join(', ') } : { name: "", description: "", price: 0, brand: "", material: "", category: "other", images: "", affiliateUrl: "" });
+    form.reset(product ? product : { name: "", description: "", price: 0, brand: "", material: "", category: "other", images: [], affiliateUrl: "" });
     setIsDialogOpen(true);
   };
 
-  const onSubmit = async (data: ProductFormData) => {
-    // ... existing code ...
+  const onSubmit = async (data: z.infer<typeof productSchema>) => {
     try {
       if (editingProduct) {
         await updateProduct(editingProduct._id, data);
@@ -125,7 +119,6 @@ export default function SellerDashboard() {
   };
 
   const handleDelete = async (productId: string) => {
-    // ... existing code ...
     try {
       await deleteProduct(productId);
       toast({ title: "Success", description: "Product deleted." });
@@ -136,7 +129,6 @@ export default function SellerDashboard() {
   };
 
   const uploadFileHandler = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    // ... existing code ...
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -147,8 +139,7 @@ export default function SellerDashboard() {
     try {
         const data = await uploadProductImage(formData);
         const currentImages = form.getValues('images');
-        const newImages = currentImages ? `${currentImages}, /uploads/${data.image}` : `/uploads/${data.image}`;
-        form.setValue('images', newImages, { shouldValidate: true });
+        form.setValue('images', [...currentImages, data.image], { shouldValidate: true });
         toast({ title: "Success", description: "Image uploaded." });
     } catch (error: any) {
         toast({ variant: "destructive", title: "Upload Error", description: error?.response?.data?.message || "Failed to upload image." });
@@ -159,7 +150,6 @@ export default function SellerDashboard() {
   };
 
   const getStatusBadgeVariant = (status: string) => {
-    // ... existing code ...
     switch (status) {
       case 'approved': return 'default';
       case 'pending': return 'secondary';
@@ -169,8 +159,12 @@ export default function SellerDashboard() {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
+  };
+
   if (isLoading || !user) {
-    // ... existing code ...
     return (
         <div className="flex items-center justify-center min-h-screen"><LoaderCircle className="h-12 w-12 animate-spin" /></div>
     );
@@ -183,7 +177,25 @@ export default function SellerDashboard() {
           <h1 className="text-3xl font-bold">Seller Portal</h1>
           <p className="text-muted-foreground">Welcome back, {user.name}!</p>
         </div>
-        <Button onClick={() => logout()} variant="outline">Logout</Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline">
+              <LogOut className="mr-2 h-4 w-4" /> Logout
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You will be returned to the login page.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleLogout}>Confirm Logout</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </header>
       
       {!seller ? (
@@ -219,7 +231,7 @@ export default function SellerDashboard() {
                     {products.length > 0 ? products.map((product) => (
                         <TableRow key={product._id}>
                         <TableCell className="font-medium flex items-center gap-4"><img src={product.images[0]} alt={product.name} className="w-10 h-10 object-cover rounded-md border"/>{product.name}</TableCell>
-                        <TableCell>₹{product.price.toFixed(2)}</TableCell>
+                        <TableCell>${product.price.toFixed(2)}</TableCell>
                         <TableCell><Badge variant={getStatusBadgeVariant(product.status)} className="capitalize">{product.status}</Badge></TableCell>
                         <TableCell>{product.viewCount}</TableCell>
                         <TableCell>{product.clickCount}</TableCell>
@@ -303,7 +315,6 @@ export default function SellerDashboard() {
       </Tabs>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        {/* ... existing dialog code ... */}
         <DialogContent className="sm:max-w-[625px]">
           <DialogHeader><DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle></DialogHeader>
           <Form {...form}>
@@ -320,13 +331,38 @@ export default function SellerDashboard() {
               </div>
               <FormField control={form.control} name="images" render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Image URLs</FormLabel>
-                    <FormControl><Textarea placeholder="Upload an image to generate URLs." {...field} readOnly /></FormControl>
-                     <div className="flex items-center gap-2 pt-1">
-                        <Input type="file" id="image-file-upload" name="image" accept="image/*" onChange={uploadFileHandler} className="hidden" />
-                        <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('image-file-upload')?.click()} disabled={isUploading}>{isUploading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}Upload Image</Button>
-                         <p className="text-xs text-muted-foreground">Upload one at a time. URLs will be added here.</p>
-                    </div>
+                    <FormLabel>Images</FormLabel>
+                    <FormControl>
+                      <div>
+                        <div className="flex items-center gap-2 pt-1">
+                            <Input type="file" id="image-file-upload" name="image" accept="image/*" onChange={uploadFileHandler} className="hidden" />
+                            <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('image-file-upload')?.click()} disabled={isUploading}>{isUploading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}Upload Image</Button>
+                             <p className="text-xs text-muted-foreground">Upload one at a time.</p>
+                        </div>
+                        {field.value.length > 0 &&
+                          <div className="mt-2 flex gap-2 flex-wrap">
+                            {field.value.map((image, index) => (
+                              <div key={index} className="relative w-20 h-20">
+                                <img src={image} alt={`upload-${index}`} className="w-full h-full object-cover rounded-md" />
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="icon"
+                                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                                  onClick={() => {
+                                    const newImages = [...field.value];
+                                    newImages.splice(index, 1);
+                                    form.setValue('images', newImages);
+                                  }}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        }
+                      </div>
+                    </FormControl>
                     <FormMessage />
                 </FormItem>
                 )} />
@@ -342,3 +378,4 @@ export default function SellerDashboard() {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-// maheshpatil369/shrinagar/Shrinagar-abcbe203037457af5cdd1912b6e3260dabf070c5/Backend/controllers/productController.js
+// maheshpatil369/shrinagar/Shrinagar-5f116f4d15321fb5db89b637c78651e13d353027/Backend/controllers/productController.js
 const asyncHandler = require('../middleware/asyncHandler.js');
 const Product = require('../models/productModel.js');
 const ProductView = require('../models/productViewModel.js'); // For accurate view tracking
@@ -8,29 +8,40 @@ const { getClientIp } = require('../utils/ipHelper.js'); // For accurate view tr
 // @route   GET /api/products
 // @access  Public
 const getProducts = asyncHandler(async (req, res) => {
-  const { keyword, category, brand, material, minPrice, maxPrice } = req.query;
-  const query = { status: 'approved' };
+  const { keyword, category, brand, material, minPrice, maxPrice, ids } = req.query;
+  let query = { status: 'approved' };
 
-  if (keyword) {
-    // Using an object that can be expanded into the query
-    const searchOr = [
-        { name: { $regex: keyword, $options: 'i' } },
-        { description: { $regex: keyword, $options: 'i' } },
-        { brand: { $regex: keyword, $options: 'i' } },
-        { category: { $regex: keyword, $options: 'i' } },
-    ];
-    query.$or = searchOr;
-  }
-  if (category) query.category = category;
-  if (brand) query.brand = brand;
-  if (material) query.material = material;
-  if (minPrice || maxPrice) {
-    query.price = {};
-    if (minPrice) query.price.$gte = Number(minPrice);
-    if (maxPrice) query.price.$lte = Number(maxPrice);
+  if (ids) {
+    const idArray = ids.split(',');
+    query = { _id: { $in: idArray } };
+  } else {
+    if (keyword) {
+      const searchOr = [
+          { name: { $regex: keyword, $options: 'i' } },
+          { description: { $regex: keyword, $options: 'i' } },
+          { brand: { $regex: keyword, $options: 'i' } },
+          { category: { $regex: keyword, $options: 'i' } },
+      ];
+      query.$or = searchOr;
+    }
+    if (category) query.category = category;
+    if (brand) query.brand = brand;
+    if (material) query.material = material;
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = Number(minPrice);
+      if (maxPrice) query.price.$lte = Number(maxPrice);
+    }
   }
 
-  const products = await Product.find(query).populate('seller', 'name');
+  const products = await Product.find(query).populate({
+    path: 'seller',
+    select: 'name sellerProfile',
+    populate: {
+      path: 'sellerProfile',
+      select: 'businessName'
+    }
+  });
   res.json(products);
 });
 
@@ -39,30 +50,48 @@ const getProducts = asyncHandler(async (req, res) => {
 // @route   GET /api/products/:id
 // @access  Public
 const getProductById = asyncHandler(async (req, res) => {
-    const product = await Product.findById(req.params.id).populate('seller', 'name email');
+    const product = await Product.findById(req.params.id).populate({
+      path: 'seller',
+      select: 'name sellerProfile',
+      populate: {
+        path: 'sellerProfile',
+        select: 'businessName'
+      }
+    });
 
-    // Only count views for approved products that are found
     if (product && product.status === 'approved') {
-        // --- Accurate View Tracking Logic ---
         const ipAddress = getClientIp(req);
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-        // Check if this IP has viewed this product in the last 24 hours
         const existingView = await ProductView.findOne({
             productId: product._id,
             ipAddress: ipAddress,
             viewedAt: { $gte: twentyFourHoursAgo },
         });
 
-        // If no recent view is found, create one and increment the count
         if (!existingView) {
             await ProductView.create({ productId: product._id, ipAddress: ipAddress, userId: req.user?._id });
             product.viewCount = (product.viewCount || 0) + 1;
             await product.save();
         }
-        // --- End View Tracking ---
         
-        res.json(product);
+        // Fetch recommendations (4 other approved products in the same category)
+        const recommendations = await Product.find({
+            category: product.category,
+            status: 'approved',
+            _id: { $ne: product._id } // Exclude the current product
+        })
+        .limit(4) // Limit the number of recommendations
+        .populate({
+            path: 'seller',
+            select: 'name sellerProfile',
+            populate: {
+                path: 'sellerProfile',
+                select: 'businessName'
+            }
+        });
+
+        res.json({ product, recommendations });
 
     } else {
         res.status(404);
@@ -103,6 +132,9 @@ const trackAffiliateClick = asyncHandler(async (req, res) => {
 // @access  Private/Seller
 const createProduct = asyncHandler(async (req, res) => {
   const { name, price, description, brand, category, material, images, affiliateUrl } = req.body;
+  
+  const productImages = Array.isArray(images) ? images : images.split(',').map(img => img.trim()).filter(Boolean);
+
   const product = new Product({
     name,
     price,
@@ -111,9 +143,9 @@ const createProduct = asyncHandler(async (req, res) => {
     category,
     description,
     material,
-    images: images.split(',').map(img => img.trim()).filter(Boolean), // Handle comma-separated string
+    images: productImages,
     affiliateUrl,
-    status: 'pending', // Always pending on creation
+    status: 'pending',
   });
   const createdProduct = await product.save();
   res.status(201).json(createdProduct);
@@ -134,10 +166,9 @@ const updateProduct = asyncHandler(async (req, res) => {
     product.brand = brand || product.brand;
     product.category = category || product.category;
     product.material = material || product.material;
-    // Handle both array and comma-separated string for images
     product.images = Array.isArray(images) ? images : images.split(',').map(img => img.trim()).filter(Boolean);
     product.affiliateUrl = affiliateUrl || product.affiliateUrl;
-    product.status = 'pending'; // Re-submit for approval on update
+    product.status = 'pending';
 
     const updatedProduct = await product.save();
     res.json(updatedProduct);
@@ -181,3 +212,4 @@ module.exports = {
     deleteProduct,
     getMyProducts,
 };
+
