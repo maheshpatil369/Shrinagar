@@ -1,5 +1,5 @@
-// maheshpatil369/shrinagar/Shrinagar-5f116f4d15321fb5db89b637c78651e13d353027/Frontend1/src/pages/SellerDashboard.tsx
-import { useEffect, useState } from "react";
+// Frontend1/src/pages/SellerDashboard.tsx
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,7 +22,8 @@ import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "../components/ui/badge";
-import { PlusCircle, MoreVertical, Edit, Trash2, LoaderCircle, Upload, CheckCircle, Clock, Info, XCircle, ShieldAlert, TrendingUp, Eye, MousePointerClick, LogOut } from 'lucide-react';
+// Correctly import X from lucide-react
+import { PlusCircle, MoreVertical, Edit, Trash2, LoaderCircle, Upload, CheckCircle, Clock, Info, XCircle, ShieldAlert, TrendingUp, Eye, MousePointerClick, LogOut, X } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,7 +38,7 @@ const productSchema = z.object({
   brand: z.string().min(2, { message: "Brand is required." }),
   material: z.string().min(2, { message: "Material is required." }),
   category: z.enum(['ring', 'necklace', 'bracelet', 'earrings', 'watch', 'other']),
-  images: z.array(z.string()).min(1, { message: "Please provide at least one image." }),
+  images: z.array(z.string()).min(1, { message: "Please provide at least one image." }), // Expecting URLs now
   affiliateUrl: z.string().url({ message: "Please enter a valid URL." }),
 });
 
@@ -70,8 +71,9 @@ export default function SellerDashboard() {
       setProducts(productsData);
       setAnalytics(analyticsData);
     } catch (error) {
-      if ((error as any)?.response?.status === 404 || (error as any)?.response?.data === null) {
-          setSeller(null);
+      // Check if the error indicates the seller profile doesn't exist yet
+      if ((error as any)?.response?.status === 404 || (error as any)?.response?.data === null || (error as any)?.message?.includes('not found')) {
+          setSeller(null); // Explicitly set seller to null if not found
           setProducts([]);
           setAnalytics(null);
       } else {
@@ -82,15 +84,26 @@ export default function SellerDashboard() {
     }
   };
 
+
   useEffect(() => {
     const currentUser = getCurrentUser();
     if (currentUser && (currentUser.role === 'seller' || currentUser.role === 'admin')) {
-      verifyToken(currentUser.token).then(setUser).catch(() => navigate('/auth'));
-      fetchData();
+      // Verify token before setting user and fetching data
+       verifyToken(currentUser.token)
+        .then(verifiedUser => {
+            setUser(verifiedUser);
+            fetchData(); // Fetch data only after successful verification
+        })
+        .catch(() => {
+            logout(); // Log out if token is invalid
+            navigate('/auth');
+        });
     } else {
+      logout(); // Ensure clean state if no user or wrong role
       navigate('/auth');
     }
-  }, [navigate, toast]);
+    // Removed toast from dependency array as it's stable
+  }, [navigate]);
 
   const handleOpenDialog = (product: Product | null) => {
     if (seller?.status !== 'approved') {
@@ -98,33 +111,49 @@ export default function SellerDashboard() {
         return;
     }
     setEditingProduct(product);
-    form.reset(product ? product : { name: "", description: "", price: 0, brand: "", material: "", category: "other", images: [], affiliateUrl: "" });
+    // Ensure images are correctly reset/populated (now expects URLs)
+    form.reset(product ? { ...product, images: product.images || [] } : { name: "", description: "", price: 0, brand: "", material: "", category: "other", images: [], affiliateUrl: "" });
     setIsDialogOpen(true);
   };
 
   const onSubmit = async (data: z.infer<typeof productSchema>) => {
+     // Prepare payload slightly differently now as images are URLs
+    const payload = {
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        category: data.category,
+        brand: data.brand,
+        material: data.material,
+        images: data.images, // Pass the array of URLs directly
+        affiliateUrl: data.affiliateUrl,
+    };
+
     try {
       if (editingProduct) {
-        await updateProduct(editingProduct._id, data);
+        // Pass the prepared payload for update
+        await updateProduct(editingProduct._id, payload);
         toast({ title: "Success", description: "Product updated and sent for re-approval." });
       } else {
-        await createProduct(data);
+         // Pass the prepared payload for create
+        await createProduct(payload as ProductFormData); // Type assertion might be needed if updateProduct expects different type
         toast({ title: "Success", description: "Product created and sent for approval." });
       }
       fetchData();
       setIsDialogOpen(false);
-    } catch (error) {
-       toast({ variant: "destructive", title: "Error", description: `Failed to ${editingProduct ? 'update' : 'create'} product.` });
+    } catch (error: any) {
+       toast({ variant: "destructive", title: "Error", description: error.response?.data?.message || `Failed to ${editingProduct ? 'update' : 'create'} product.` });
     }
   };
+
 
   const handleDelete = async (productId: string) => {
     try {
       await deleteProduct(productId);
       toast({ title: "Success", description: "Product deleted." });
-      fetchData();
-    } catch (error) {
-       toast({ variant: "destructive", title: "Error", description: "Failed to delete product." });
+      fetchData(); // Refetch data to update the list
+    } catch (error: any) {
+       toast({ variant: "destructive", title: "Error", description: error.response?.data?.message || "Failed to delete product." });
     }
   };
 
@@ -137,24 +166,28 @@ export default function SellerDashboard() {
     setIsUploading(true);
 
     try {
+        // This function now returns { message: string, image: string (URL) }
         const data = await uploadProductImage(formData);
-        const currentImages = form.getValues('images');
+        const currentImages = form.getValues('images') || [];
+        // Append the new Cloudinary URL to the array
         form.setValue('images', [...currentImages, data.image], { shouldValidate: true });
         toast({ title: "Success", description: "Image uploaded." });
     } catch (error: any) {
         toast({ variant: "destructive", title: "Upload Error", description: error?.response?.data?.message || "Failed to upload image." });
     } finally {
         setIsUploading(false);
+        // Clear the file input after upload attempt
         if(e.target) e.target.value = '';
     }
   };
 
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case 'approved': return 'default';
-      case 'pending': return 'secondary';
+      case 'approved': return 'default'; // Use default for approved (often green or primary)
+      case 'pending': return 'secondary'; // Use secondary for pending (often grey)
       case 'rejected':
-      case 'suspended': return 'destructive';
+      case 'suspended': return 'destructive'; // Use destructive for negative statuses (red)
       default: return 'outline';
     }
   };
@@ -164,9 +197,13 @@ export default function SellerDashboard() {
     navigate('/auth');
   };
 
+
   if (isLoading || !user) {
+    // Show loading state while verifying token or fetching initial data
     return (
-        <div className="flex items-center justify-center min-h-screen"><LoaderCircle className="h-12 w-12 animate-spin" /></div>
+        <div className="flex items-center justify-center min-h-screen">
+            <LoaderCircle className="h-12 w-12 animate-spin text-primary" />
+        </div>
     );
   }
 
@@ -197,7 +234,7 @@ export default function SellerDashboard() {
           </AlertDialogContent>
         </AlertDialog>
       </header>
-      
+
       {!seller ? (
          <Alert className="mb-6"><Info className="h-4 w-4" /><AlertTitle>Welcome, Seller!</AlertTitle><AlertDescription>Please complete your profile to start listing products.</AlertDescription></Alert>
       ) : seller.status === 'pending' ? (
@@ -230,6 +267,7 @@ export default function SellerDashboard() {
                     <TableBody>
                     {products.length > 0 ? products.map((product) => (
                         <TableRow key={product._id}>
+                        {/* Display the first image using its URL */}
                         <TableCell className="font-medium flex items-center gap-4"><img src={product.images[0]} alt={product.name} className="w-10 h-10 object-cover rounded-md border"/>{product.name}</TableCell>
                         <TableCell>${product.price.toFixed(2)}</TableCell>
                         <TableCell><Badge variant={getStatusBadgeVariant(product.status)} className="capitalize">{product.status}</Badge></TableCell>
@@ -245,7 +283,7 @@ export default function SellerDashboard() {
                                 </DropdownMenuContent>
                             </DropdownMenu>
                             <AlertDialogContent>
-                                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete your product.</AlertDialogDescription></AlertDialogHeader>
+                                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete your product "{product.name}".</AlertDialogDescription></AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                                     <AlertDialogAction onClick={() => handleDelete(product._id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
@@ -255,7 +293,7 @@ export default function SellerDashboard() {
                         </TableCell>
                         </TableRow>
                     )) : (
-                        <TableRow><TableCell colSpan={6} className="text-center h-24">No products found.</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={6} className="text-center h-24">No products found. Add your first product!</TableCell></TableRow>
                     )}
                     </TableBody>
                 </Table>
@@ -267,7 +305,7 @@ export default function SellerDashboard() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Views</CardTitle><Eye className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{analytics?.totalViews || 0}</div></CardContent></Card>
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Clicks</CardTitle><MousePointerClick className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{analytics?.totalClicks || 0}</div></CardContent></Card>
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Conversion Rate</CardTitle><TrendingUp className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{analytics?.conversionRate.toFixed(2) || 0}%</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Conversion Rate</CardTitle><TrendingUp className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{(analytics?.conversionRate || 0).toFixed(2)}%</div></CardContent></Card>
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-4">
                 <Card className="col-span-1 lg:col-span-4">
@@ -278,11 +316,11 @@ export default function SellerDashboard() {
                             clicks: { label: "Clicks", color: "hsl(var(--chart-2))" },
                         }} className="h-[250px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={analytics?.performanceData}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value.slice(0, 10) + '...'}/>
-                                    <YAxis />
-                                    <Tooltip content={<ChartTooltipContent indicator="dot" />} />
+                                <BarChart data={analytics?.performanceData || []} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                                    <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value.length > 15 ? value.slice(0, 15) + '...' : value}/>
+                                    <YAxis tickLine={false} axisLine={false} />
+                                    <Tooltip content={<ChartTooltipContent indicator="dot" />} cursor={{ fill: 'hsl(var(--muted))' }}/>
                                     <Bar dataKey="views" fill="var(--color-views)" radius={4} />
                                     <Bar dataKey="clicks" fill="var(--color-clicks)" radius={4} />
                                 </BarChart>
@@ -301,7 +339,7 @@ export default function SellerDashboard() {
                                         <TableCell className="font-medium">{p.name}</TableCell>
                                         <TableCell className="text-right">{p.viewCount}</TableCell>
                                     </TableRow>
-                                )) : <TableRow><TableCell colSpan={2} className="text-center">No product data available.</TableCell></TableRow>}
+                                )) : <TableRow><TableCell colSpan={2} className="text-center h-24">No product data available.</TableCell></TableRow>}
                             </TableBody>
                         </Table>
                     </CardContent>
@@ -325,9 +363,9 @@ export default function SellerDashboard() {
               </div>
                <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
                <div className="grid grid-cols-3 gap-4">
-                 <FormField control={form.control} name="price" render={({ field }) => (<FormItem><FormLabel>Price</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                 <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{['ring', 'necklace', 'bracelet', 'earrings', 'watch', 'other'].map(cat => (<SelectItem key={cat} value={cat} className="capitalize">{cat}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
-                 <FormField control={form.control} name="material" render={({ field }) => (<FormItem><FormLabel>Material</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                 <FormField control={form.control} name="price" render={({ field }) => (<FormItem><FormLabel>Price</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                 <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select category..."/></SelectTrigger></FormControl><SelectContent>{['ring', 'necklace', 'bracelet', 'earrings', 'watch', 'other'].map(cat => (<SelectItem key={cat} value={cat} className="capitalize">{cat}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
+                 <FormField control={form.control} name="material" render={({ field }) => (<FormItem><FormLabel>Material</FormLabel><FormControl><Input placeholder="e.g., Gold, Silver, Diamond" {...field} /></FormControl><FormMessage /></FormItem>)} />
               </div>
               <FormField control={form.control} name="images" render={({ field }) => (
                 <FormItem>
@@ -335,15 +373,16 @@ export default function SellerDashboard() {
                     <FormControl>
                       <div>
                         <div className="flex items-center gap-2 pt-1">
-                            <Input type="file" id="image-file-upload" name="image" accept="image/*" onChange={uploadFileHandler} className="hidden" />
+                            <Input type="file" id="image-file-upload" name="image" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={uploadFileHandler} className="hidden" />
                             <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('image-file-upload')?.click()} disabled={isUploading}>{isUploading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}Upload Image</Button>
-                             <p className="text-xs text-muted-foreground">Upload one at a time.</p>
+                             <p className="text-xs text-muted-foreground">Upload one at a time. URLs will be stored.</p>
                         </div>
-                        {field.value.length > 0 &&
+                        {field.value && field.value.length > 0 && (
                           <div className="mt-2 flex gap-2 flex-wrap">
                             {field.value.map((image, index) => (
                               <div key={index} className="relative w-20 h-20">
-                                <img src={image} alt={`upload-${index}`} className="w-full h-full object-cover rounded-md" />
+                                {/* Display image using the URL */}
+                                <img src={image} alt={`upload-${index}`} className="w-full h-full object-cover rounded-md border" />
                                 <Button
                                   type="button"
                                   variant="destructive"
@@ -360,16 +399,16 @@ export default function SellerDashboard() {
                               </div>
                             ))}
                           </div>
-                        }
+                        )}
                       </div>
                     </FormControl>
                     <FormMessage />
                 </FormItem>
                 )} />
-               <FormField control={form.control} name="affiliateUrl" render={({ field }) => (<FormItem><FormLabel>Affiliate URL</FormLabel><FormControl><Input type="url" {...field} /></FormControl><FormMessage /></FormItem>)} />
+               <FormField control={form.control} name="affiliateUrl" render={({ field }) => (<FormItem><FormLabel>Affiliate URL</FormLabel><FormControl><Input type="url" placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
                <DialogFooter>
                 <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-                <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? <LoaderCircle className="animate-spin mr-2"/> : null}{editingProduct ? 'Save Changes' : 'Create Product'}</Button>
+                <Button type="submit" disabled={form.formState.isSubmitting || isUploading}>{form.formState.isSubmitting ? <LoaderCircle className="animate-spin mr-2"/> : null}{editingProduct ? 'Update Product' : 'Create Product'}</Button>
               </DialogFooter>
             </form>
           </Form>
