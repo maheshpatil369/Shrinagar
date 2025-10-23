@@ -170,11 +170,12 @@ export default function ProductDetailPage() {
             : `${product.name} added to wishlist.`;
 
         const previousWishlist = wishlist;
+        // Optimistic UI Update
         setIsInWishlist(!isInWishlist);
         setWishlist(prevState =>
             isInWishlist
                 ? prevState.filter(p => p._id !== product._id)
-                : [...prevState, product]
+                : [...prevState, product] // Add the current product optimistically
         );
 
         try {
@@ -183,8 +184,9 @@ export default function ProductDetailPage() {
              // Re-fetch wishlist from API to ensure sync after successful action
              fetchWishlist();
         } catch (error: any) {
-            setIsInWishlist(isInWishlist); // Revert state on error
-            setWishlist(previousWishlist); // Revert list on error
+            // Revert optimistic update on error
+            setIsInWishlist(isInWishlist);
+            setWishlist(previousWishlist);
             toast({ variant: "destructive", title: "Wishlist Error", description: error.response?.data?.message || "Could not update wishlist." });
         }
     };
@@ -197,14 +199,25 @@ export default function ProductDetailPage() {
         toast({ title: "Logged in successfully!", description: "You can now proceed." });
     };
 
+    // Function to open the image modal
     const handleImageClick = (imageUrl: string) => {
         setModalImageUrl(imageUrl);
         setShowImageModal(true);
     };
 
+    // Placeholder handler for AR/VR button
+    const handleArVrClick = () => {
+        toast({
+            title: "Coming Soon!",
+            description: "AR/VR view feature is under development.",
+        });
+    };
 
     if (isLoading) return <div className="flex h-[80vh] items-center justify-center"><LoaderCircle className="h-12 w-12 animate-spin text-primary" /></div>;
     if (!product) return <div className="flex h-[80vh] flex-col items-center justify-center gap-4"><h2 className="text-2xl font-semibold">Product Not Found</h2><Button asChild><Link to="/buyer"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Shop</Link></Button></div>;
+
+    // *** FIX: Assign typed seller to a variable to help TypeScript ***
+    const sellerDetails = typeof product.seller === 'object' ? product.seller as PopulatedSeller : null;
 
     return (
         <>
@@ -271,27 +284,14 @@ export default function ProductDetailPage() {
                                         <h3 className="font-semibold mb-2">Details</h3>
                                         <div className="text-sm text-muted-foreground space-y-1 break-words">
                                             <p><span className="font-medium text-foreground">Material:</span> {product.material}</p>
-                                            <p>
-                                                <span className="font-medium text-foreground">Seller:</span>{' '}
-                                                {(() => {
-                                                    if (typeof product.seller === 'object') {
-                                                        const s = product.seller as PopulatedSeller;
-                                                        const profile = s.sellerProfile;
-                                                        // Ensure sellerProfile is an object (not a string) before accessing businessName
-                                                        if (profile && typeof profile === 'object' && 'businessName' in profile) {
-                                                            return profile.businessName;
-                                                        }
-                                                        return s.name || 'Unknown';
-                                                    }
-                                                    return 'Unknown';
-                                                })()}
-                                            </p>
+                                            {/* *** FIX: Use the sellerDetails variable *** */}
+                                            <p><span className="font-medium text-foreground">Seller:</span> {sellerDetails ? (typeof sellerDetails.sellerProfile === 'object' ? sellerDetails.sellerProfile.businessName || sellerDetails.name : sellerDetails.name) : 'Unknown'}</p>
                                         </div>
-                                    </div>
+                                        </div>
                                     <div className="flex flex-col sm:flex-row gap-2 pt-4">
                                         <Button size="lg" className="flex-1 text-base" onClick={handleAffiliateClick}><ExternalLink className="mr-2 h-5 w-5" /> Go to Seller's Site</Button>
                                         {/* --- AR/VR Button with Placeholder --- */}
-                                        <Button size="lg" variant="outline" className="flex-1 text-base" onClick={() => toast({ title: "Coming Soon!", description: "AR/VR view feature is under development." })}>
+                                        <Button size="lg" variant="outline" className="flex-1 text-base" onClick={handleArVrClick}>
                                             <View className="mr-2 h-5 w-5" /> View in AR/VR
                                         </Button>
                                         <Button size="icon" variant="outline" className="h-14 w-14 shrink-0" onClick={handleWishlistToggle} disabled={!currentUser}>
@@ -341,6 +341,8 @@ function RecommendationCard({ product }: { product: Product }) {
     );
 }
 
+// NOTE: This ProductCard component seems redundant here as it's primarily used in BuyerDashboard.
+// Consider moving it to a shared components folder if needed elsewhere or removing if only used in BuyerDashboard.
 function ProductCard({ product }: { product: Product }) {
     return (
         <Card className="overflow-hidden flex flex-col group">

@@ -1,11 +1,9 @@
-// Frontend1/src/App.tsx
+// maheshpatil369/shrinagar/Shrinagar-47183708fc2b865cb6e3d62f63fcad35ec0165db/Frontend1/src/App.tsx
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import BuyerDashboard from "./pages/BuyerDashboard";
@@ -15,52 +13,53 @@ import NotFound from "./pages/NotFound";
 import BuyerLayout from "./pages/BuyerLayout";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import UserProfile from "./pages/UserProfile";
-import { getCurrentUser, User, verifyToken } from "./lib/auth";
-import { LoaderCircle } from "lucide-react";
+import { getCurrentUser, User } from "./lib/auth"; // Import User type
+import { LoadingSpinner } from "./components/ui/LoadingSpinner"; // Import LoadingSpinner
+import { useState, useEffect } from "react";
 
 const queryClient = new QueryClient();
 
-// Higher-Order Component for protecting routes based on role
-function ProtectedRoute({ children, allowedRoles }: { children: JSX.Element, allowedRoles: string[] }) {
-  const [user, setUser] = useState<User | null>(null);
+// --- Updated ProtectedRoute ---
+// Now handles role-specific and general login protection
+function ProtectedRoute({ allowedRoles }: { allowedRoles?: User['role'][] }) {
   const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const location = useLocation();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const currentUser = getCurrentUser();
-      if (currentUser && currentUser.token) {
-        try {
-          const verifiedUser = await verifyToken(currentUser.token);
-          setUser(verifiedUser);
-        } catch (error) {
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
-      setIsLoading(false);
-    };
-    checkAuth();
+    const currentUser = getCurrentUser();
+    // No need to verify token here again, just check if user info exists
+    setUser(currentUser);
+    setIsLoading(false);
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <LoaderCircle className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+    return <LoadingSpinner fullScreen message="Checking access..." />;
   }
 
-  if (!user || !allowedRoles.includes(user.role)) {
+  // Check if user is logged in
+  if (!user) {
     // Redirect them to the /auth page, but save the current location they were
     // trying to go to when they were redirected. This allows us to send them
     // along to that page after they login, which is a nicer user experience
     // than dropping them off on the home page.
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  return children;
+  // Check if specific roles are required and if the user has one of them
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // User is logged in but doesn't have the required role
+    // Redirect to a relevant page (e.g., buyer dashboard or landing)
+    // Or potentially show a "Not Authorized" component
+    console.warn(`User role "${user.role}" not allowed for this route. Allowed: ${allowedRoles.join(', ')}`);
+    // Redirect to buyer page as a safe default for unauthorized roles
+    return <Navigate to="/buyer" replace />;
+  }
+
+  // User is logged in and has the necessary role (or no specific role was required)
+  return <Outlet />;
 }
+// --- End ProtectedRoute ---
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -72,30 +71,27 @@ const App = () => (
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
 
-          {/* Buyer-facing routes (also accessible to logged-out users via BuyerLayout checks) */}
+          {/* Buyer-facing routes within Layout */}
           <Route element={<BuyerLayout />}>
+            {/* Buyer Dashboard is public */}
             <Route path="/buyer" element={<BuyerDashboard />} />
-            <Route path="/product/:id" element={<ProductDetailPage />} />
-            <Route path="/profile" element={
-              <ProtectedRoute allowedRoles={['customer', 'seller', 'admin']}>
-                <UserProfile />
-              </ProtectedRoute>
-            } />
+
+            {/* Product Detail and Profile require login */}
+            <Route element={<ProtectedRoute />}> {/* General login check */}
+              <Route path="/product/:id" element={<ProductDetailPage />} />
+              <Route path="/profile" element={<UserProfile />} />
+            </Route>
           </Route>
 
-          {/* Seller Route */}
-          <Route path="/seller" element={
-            <ProtectedRoute allowedRoles={['seller', 'admin']}>
-              <SellerDashboard />
-            </ProtectedRoute>
-          } />
+          {/* Seller routes require 'seller' or 'admin' role */}
+          <Route element={<ProtectedRoute allowedRoles={['seller', 'admin']} />}>
+            <Route path="/seller" element={<SellerDashboard />} />
+          </Route>
 
-          {/* Admin Route */}
-          <Route path="/admin" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          } />
+          {/* Admin routes require 'admin' role */}
+          <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+          </Route>
 
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -105,3 +101,4 @@ const App = () => (
 );
 
 export default App;
+
