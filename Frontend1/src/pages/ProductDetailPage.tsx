@@ -1,4 +1,5 @@
-// maheshpatil369/shrinagar/Shrinagar-5f116f4d15321fb5db89b637c78651e13d353027/Frontend1/src/pages/ProductDetailPage.tsx
+// Frontend1/src/pages/ProductDetailPage.tsx
+import React from 'react'; // Added explicit React import for clarity
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getProductById, Product, trackAffiliateClick, PopulatedSeller } from '../lib/products';
@@ -6,19 +7,23 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, LoaderCircle, ArrowLeft, Heart, Mail, Lock, View } from 'lucide-react';
+import { ExternalLink, LoaderCircle, ArrowLeft, Heart, Mail, Lock, View, Maximize } from 'lucide-react'; // Ensure View is imported
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { addToWishlist, getWishlist, isProductInWishlist, removeFromWishlist } from '../lib/user';
 import { getCurrentUser, login } from '../lib/auth';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+// Added Dialog imports for image zoom
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'; // Removed DialogTrigger as it's not used here
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 
+
 function addRecentlyViewed(productId: string) {
     let viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+    // Add to front, remove duplicates
     viewed = [productId, ...viewed.filter((id: string) => id !== productId)];
-    if (viewed.length > 8) viewed.pop();
+    // Limit to 8 items
+    if (viewed.length > 8) viewed = viewed.slice(0, 8);
     localStorage.setItem('recentlyViewed', JSON.stringify(viewed));
 }
 
@@ -74,87 +79,129 @@ export default function ProductDetailPage() {
     const { toast } = useToast();
     const [currentUser, setCurrentUser] = useState(getCurrentUser());
 
-    const fetchWishlist = useCallback(async () => {
+    // State for image zoom modal
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
+
+     const fetchWishlist = useCallback(async () => {
         try {
-            const data = await getWishlist();
+            const data = await getWishlist(); // Handles local/API automatically
             setWishlist(data);
         } catch (error) {
-            console.error("Failed to fetch wishlist.");
+            // Avoid showing error for guests, but try loading local anyway
+            if (!getCurrentUser()) {
+                try {
+                     const localIds = JSON.parse(localStorage.getItem('shrinagar_wishlist') || '[]');
+                     // Note: We need a way to get product details from IDs for guests,
+                     // currently getWishlist does this if it can fetch /products?ids=...
+                     // If that fails too, the wishlist remains empty.
+                     setWishlist([]); // Default to empty if local fetch fails or no IDs
+                } catch (e) {
+                     console.error("Failed to parse or load local wishlist", e);
+                     setWishlist([]);
+                }
+            } else {
+                 console.error("Failed to fetch wishlist for logged in user:", error);
+                 // Optionally show a toast for logged-in users
+                 // toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch wishlist.' });
+            }
         }
-    }, []);
+    }, []); // Empty dependency array is fine here as getWishlist internally checks currentUser
 
     const fetchProduct = useCallback(async (productId: string) => {
+        setIsLoading(true);
         try {
             const { product: data, recommendations: recs } = await getProductById(productId);
             setProduct(data);
             setRecommendations(recs);
             addRecentlyViewed(productId);
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch product details.' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error fetching product', description: error.response?.data?.message || 'Could not fetch product details.' });
+            setProduct(null);
         } finally {
             setIsLoading(false);
         }
     }, [toast]);
-    
+
     useEffect(() => {
         if (id) {
-            setIsLoading(true);
-            window.scrollTo(0, 0); // Scroll to top on new product view
+            window.scrollTo(0, 0);
             fetchProduct(id);
             fetchWishlist();
+            setCurrentUser(getCurrentUser());
+        } else {
+             setIsLoading(false);
+             setProduct(null);
         }
     }, [id, fetchProduct, fetchWishlist]);
+
 
     useEffect(() => {
         if (product) {
             setIsInWishlist(isProductInWishlist(product._id, wishlist));
+        } else {
+            setIsInWishlist(false);
         }
     }, [product, wishlist]);
 
+
     const handleAffiliateClick = () => {
-        if (!currentUser) {
+         if (!currentUser) {
             setShowLoginModal(true);
             return;
         }
         if (product) {
-            trackAffiliateClick(product._id);
+            trackAffiliateClick(product._id).catch(err => console.error("Failed to track click", err));
             window.open(product.affiliateUrl, '_blank', 'noopener,noreferrer');
         }
     };
 
     const handleWishlistToggle = async () => {
         if (!product) return;
-        
+
+        if (!currentUser) {
+            setShowLoginModal(true);
+            return;
+        }
+
         const action = isInWishlist ? removeFromWishlist : addToWishlist;
-        const successMessage = isInWishlist 
-            ? `${product.name} removed from wishlist.` 
+        const successMessage = isInWishlist
+            ? `${product.name} removed from wishlist.`
             : `${product.name} added to wishlist.`;
+
+        const previousWishlist = wishlist;
+        setIsInWishlist(!isInWishlist);
+        setWishlist(prevState =>
+            isInWishlist
+                ? prevState.filter(p => p._id !== product._id)
+                : [...prevState, product]
+        );
 
         try {
             await action(product._id);
             toast({ title: "Success", description: successMessage });
-            // Manually update local state for instant UI feedback for guests
-            if (!currentUser) {
-                const currentLocalWishlist = wishlist.filter(p => p._id !== product._id);
-                if (!isInWishlist) {
-                    setWishlist([product, ...currentLocalWishlist]);
-                } else {
-                    setWishlist(currentLocalWishlist);
-                }
-            } else {
-                fetchWishlist();
-            }
+             // Re-fetch wishlist from API to ensure sync after successful action
+             fetchWishlist();
         } catch (error: any) {
-            toast({ variant: "destructive", title: "Error", description: error.response?.data?.message || "Could not update wishlist." });
+            setIsInWishlist(isInWishlist); // Revert state on error
+            setWishlist(previousWishlist); // Revert list on error
+            toast({ variant: "destructive", title: "Wishlist Error", description: error.response?.data?.message || "Could not update wishlist." });
         }
     };
+
 
     const onLoginSuccess = () => {
         setShowLoginModal(false);
         setCurrentUser(getCurrentUser());
-        fetchWishlist();
+        fetchWishlist(); // Re-fetch wishlist after login
         toast({ title: "Logged in successfully!", description: "You can now proceed." });
     };
+
+    const handleImageClick = (imageUrl: string) => {
+        setModalImageUrl(imageUrl);
+        setShowImageModal(true);
+    };
+
 
     if (isLoading) return <div className="flex h-[80vh] items-center justify-center"><LoaderCircle className="h-12 w-12 animate-spin text-primary" /></div>;
     if (!product) return <div className="flex h-[80vh] flex-col items-center justify-center gap-4"><h2 className="text-2xl font-semibold">Product Not Found</h2><Button asChild><Link to="/buyer"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Shop</Link></Button></div>;
@@ -162,62 +209,110 @@ export default function ProductDetailPage() {
     return (
         <>
             <AuthModal open={showLoginModal} onOpenChange={setShowLoginModal} onLoginSuccess={onLoginSuccess} />
+
+            {/* Image Zoom Modal */}
+            <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
+                <DialogContent className="max-w-3xl p-2 sm:p-4 bg-background/90 backdrop-blur-sm border-border">
+                    {modalImageUrl && (
+                        <img src={modalImageUrl} alt={`${product.name} enlarged view`} className="w-full h-auto object-contain rounded-lg max-h-[85vh]" />
+                    )}
+                </DialogContent>
+            </Dialog>
+
+
             <div className="container mx-auto max-w-screen-2xl p-4 md:p-8">
                 <Button asChild variant="outline" className="mb-8"><Link to="/buyer"><ArrowLeft className="mr-2 h-4 w-4" /> Back to all products</Link></Button>
                 <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
                     {/* Main Content */}
-                    <main className="lg:flex-[2] xl:flex-[3]">
+                    <main className="lg:flex-[2] xl:flex-[3] min-w-0">
                         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
                             {/* Image Carousel */}
                             <Carousel className="w-full">
                                 <CarouselContent>
-                                    {product.images.map((image, index) => (
-                                        <CarouselItem key={index}>
-                                            <div className="aspect-square border rounded-lg overflow-hidden bg-muted">
-                                                <img src={image} alt={`${product.name} view ${index + 1}`} className="w-full h-full object-cover" />
+                                    {product.images && product.images.length > 0 ? (
+                                      product.images.map((image, index) => (
+                                        <CarouselItem key={index} className="group relative">
+                                            <div className="aspect-square border rounded-lg overflow-hidden bg-muted cursor-pointer" onClick={() => handleImageClick(image)}>
+                                                <img src={image} alt={`${product.name} view ${index + 1}`} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                                                    <Maximize className="h-8 w-8 text-white" />
+                                                </div>
                                             </div>
                                         </CarouselItem>
-                                    ))}
+                                      ))
+                                    ) : (
+                                        <CarouselItem className="group relative">
+                                            <div className="aspect-square border rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                                                <span className="text-muted-foreground">No Image</span>
+                                            </div>
+                                        </CarouselItem>
+                                    )}
                                 </CarouselContent>
-                                <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2" />
-                                <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2" />
+                                {/* Only show arrows if multiple images */}
+                                {product.images && product.images.length > 1 && (
+                                  <>
+                                    <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10" />
+                                    <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10" />
+                                  </>
+                                )}
                             </Carousel>
-                            
+
                             {/* Product Details */}
                             <div className="flex flex-col justify-center">
                                 <div className="space-y-4">
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 flex-wrap">
                                         <Badge variant="secondary" className="capitalize text-sm">{product.category}</Badge>
                                         <Badge variant="outline" className="text-sm">{product.brand}</Badge>
                                     </div>
-                                    <h1 className="text-3xl md:text-4xl font-bold leading-tight">{product.name}</h1>
-                                    <p className="text-muted-foreground text-base">{product.description}</p>
+                                    <h1 className="text-3xl md:text-4xl font-bold leading-tight break-words">{product.name}</h1>
+                                    <p className="text-muted-foreground text-base break-words">{product.description}</p>
                                     <p className="text-3xl font-bold">${product.price.toFixed(2)}</p>
                                     <div className="border-t pt-4">
                                         <h3 className="font-semibold mb-2">Details</h3>
-                                        <div className="text-sm text-muted-foreground space-y-1">
+                                        <div className="text-sm text-muted-foreground space-y-1 break-words">
                                             <p><span className="font-medium text-foreground">Material:</span> {product.material}</p>
-                                            <p><span className="font-medium text-foreground">Seller:</span> {typeof product.seller === 'object' ? (product.seller as PopulatedSeller).sellerProfile?.businessName || (product.seller as PopulatedSeller).name : 'Unknown'}</p>
+                                            <p>
+                                                <span className="font-medium text-foreground">Seller:</span>{' '}
+                                                {(() => {
+                                                    if (typeof product.seller === 'object') {
+                                                        const s = product.seller as PopulatedSeller;
+                                                        const profile = s.sellerProfile;
+                                                        // Ensure sellerProfile is an object (not a string) before accessing businessName
+                                                        if (profile && typeof profile === 'object' && 'businessName' in profile) {
+                                                            return profile.businessName;
+                                                        }
+                                                        return s.name || 'Unknown';
+                                                    }
+                                                    return 'Unknown';
+                                                })()}
+                                            </p>
                                         </div>
                                     </div>
                                     <div className="flex flex-col sm:flex-row gap-2 pt-4">
                                         <Button size="lg" className="flex-1 text-base" onClick={handleAffiliateClick}><ExternalLink className="mr-2 h-5 w-5" /> Go to Seller's Site</Button>
-                                        <Button size="lg" variant="outline" className="flex-1 text-base"><View className="mr-2 h-5 w-5" /> View in AR/VR</Button>
-                                        <Button size="icon" variant="outline" className="h-14 w-14" onClick={handleWishlistToggle}>
+                                        {/* --- AR/VR Button with Placeholder --- */}
+                                        <Button size="lg" variant="outline" className="flex-1 text-base" onClick={() => toast({ title: "Coming Soon!", description: "AR/VR view feature is under development." })}>
+                                            <View className="mr-2 h-5 w-5" /> View in AR/VR
+                                        </Button>
+                                        <Button size="icon" variant="outline" className="h-14 w-14 shrink-0" onClick={handleWishlistToggle} disabled={!currentUser}>
                                             <Heart className={`h-6 w-6 transition-colors ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`} />
                                             <span className="sr-only">Add to wishlist</span>
                                         </Button>
                                     </div>
+                                    {!currentUser && <p className="text-xs text-muted-foreground text-center sm:text-left pt-1">Login to add to wishlist</p>}
                                 </div>
                             </div>
                         </div>
                     </main>
 
                     {/* Recommendations Sidebar */}
-                    <aside className="lg:flex-[1] space-y-4">
+                    <aside className="lg:flex-[1] space-y-4 min-w-0">
                         <h2 className="text-2xl font-bold">You Might Also Like</h2>
                         <div className="space-y-4">
-                            {recommendations.map(rec => <RecommendationCard key={rec._id} product={rec} />)}
+                            {recommendations.length > 0
+                                ? recommendations.map(rec => <RecommendationCard key={rec._id} product={rec} />)
+                                : <p className="text-sm text-muted-foreground">No recommendations found in this category.</p>
+                            }
                         </div>
                     </aside>
                 </div>
@@ -226,15 +321,20 @@ export default function ProductDetailPage() {
     );
 }
 
+
 function RecommendationCard({ product }: { product: Product }) {
     return (
         <Link to={`/product/${product._id}`} className="flex items-center gap-4 group p-2 rounded-lg hover:bg-muted/50 transition-colors">
             <div className="w-20 h-20 shrink-0">
-                <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover rounded-md" />
+                {product.images && product.images.length > 0 ? (
+                    <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover rounded-md border" />
+                ) : (
+                    <div className="w-full h-full bg-muted rounded-md border flex items-center justify-center text-xs text-muted-foreground">No Image</div>
+                )}
             </div>
-            <div className="flex-1">
-                <p className="font-semibold text-sm leading-tight group-hover:underline">{product.name}</p>
-                <p className="text-xs text-muted-foreground">{product.brand}</p>
+            <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm leading-tight group-hover:underline truncate">{product.name}</p>
+                <p className="text-xs text-muted-foreground truncate">{product.brand}</p>
                 <p className="font-bold text-sm mt-1">${product.price.toFixed(2)}</p>
             </div>
         </Link>
@@ -244,15 +344,19 @@ function RecommendationCard({ product }: { product: Product }) {
 function ProductCard({ product }: { product: Product }) {
     return (
         <Card className="overflow-hidden flex flex-col group">
-            <CardHeader className="p-0 relative">
+            <CardHeader className="p-0 relative aspect-square"> {/* Enforce square aspect ratio */}
                 <Link to={`/product/${product._id}`}>
-                    <img src={product.images[0]} alt={product.name} className="w-full h-48 object-cover transition-transform group-hover:scale-105" />
+                    {product.images && product.images.length > 0 ? (
+                        <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                    ) : (
+                         <div className="w-full h-full bg-muted flex items-center justify-center text-sm text-muted-foreground">No Image</div>
+                    )}
                 </Link>
             </CardHeader>
             <CardContent className="p-4 flex-grow">
                 <Link to={`/product/${product._id}`} className="space-y-1">
-                    <CardTitle className="text-lg font-semibold leading-tight mb-1 group-hover:underline">{product.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{product.brand}</p>
+                    <CardTitle className="text-lg font-semibold leading-tight mb-1 group-hover:underline line-clamp-2">{product.name}</CardTitle> {/* Allow two lines */}
+                    <p className="text-sm text-muted-foreground truncate">{product.brand}</p>
                 </Link>
             </CardContent>
             <CardFooter className="p-4 pt-0 flex justify-between items-center">

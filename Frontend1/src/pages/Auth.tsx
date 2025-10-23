@@ -1,10 +1,10 @@
-// maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Frontend1/src/pages/Auth.tsx
-import { useState } from 'react';
+// Frontend1/src/pages/Auth.tsx
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { login, signup } from '../lib/auth';
+import { login, signup, getCurrentUser, verifyToken, logout, User } from '../lib/auth'; // Import User type
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Terminal, Gem, Mail, Lock, User as UserIcon, LoaderCircle } from 'lucide-react';
@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
-  
+
   // Form States
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -25,10 +25,40 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [signupError, setSignupError] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(true); // Added state for initial token verification
 
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || null;
+
+  // --- Start: Added Token Verification Logic ---
+  useEffect(() => {
+    const checkAuth = async () => {
+      const currentUser = getCurrentUser();
+      if (currentUser?.token) {
+        try {
+          // Verify token is still valid
+          const verifiedUser = await verifyToken(currentUser.token);
+          // If valid, redirect based on role
+          switch (verifiedUser.role) {
+            case 'admin': navigate('/admin', { replace: true }); break;
+            case 'seller': navigate('/seller', { replace: true }); break;
+            default: navigate('/buyer', { replace: true }); break;
+          }
+        } catch (error) {
+          // Token is invalid or expired, logout and stay on auth page
+          logout(); // Clear invalid token
+          setIsVerifying(false);
+        }
+      } else {
+        // No token, stay on auth page
+        setIsVerifying(false);
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+  // --- End: Added Token Verification Logic ---
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,15 +67,15 @@ export default function Auth() {
     try {
       const user = await login({ email: loginEmail, password: loginPassword });
       localStorage.setItem('userInfo', JSON.stringify(user));
-      
+
       // Redirect logic
       if (from) {
         navigate(from, { replace: true });
       } else {
         switch (user.role) {
-          case 'admin': navigate('/admin'); break;
-          case 'seller': navigate('/seller'); break;
-          default: navigate('/buyer'); break;
+          case 'admin': navigate('/admin', { replace: true }); break;
+          case 'seller': navigate('/seller', { replace: true }); break;
+          default: navigate('/buyer', { replace: true }); break;
         }
       }
     } catch (err: any) {
@@ -60,6 +90,7 @@ export default function Auth() {
     setIsLoading(true);
     setSignupError(null);
     try {
+      // Ensure state variables are passed correctly
       const user = await signup({ name: signupName, email: signupEmail, password: signupPassword, role: signupRole });
       localStorage.setItem('userInfo', JSON.stringify(user));
 
@@ -68,8 +99,8 @@ export default function Auth() {
         navigate(from, { replace: true });
       } else {
         switch (user.role) {
-          case 'seller': navigate('/seller'); break;
-          default: navigate('/buyer'); break;
+          case 'seller': navigate('/seller', { replace: true }); break;
+          default: navigate('/buyer', { replace: true }); break;
         }
       }
     } catch (err: any) {
@@ -79,17 +110,31 @@ export default function Auth() {
     }
   };
 
+  // --- Start: Added Loading Indicator ---
+  if (isVerifying) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <LoaderCircle className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+  // --- End: Added Loading Indicator ---
+
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 font-inter">
         <div className={cn(
             "relative overflow-hidden rounded-lg shadow-lg bg-card text-card-foreground w-full max-w-4xl min-h-[550px] transition-all duration-700 ease-in-out",
-            isSignUp && 'right-panel-active'
-        )}>
+            // Dynamically add class based on isSignUp state
+            isSignUp ? 'right-panel-active' : ''
+        )} id="container">
             {/* Sign Up Form */}
             <div className={cn(
                 "absolute top-0 h-full w-1/2 left-0 transition-all duration-700 ease-in-out opacity-0 z-10",
-                isSignUp && "transform translate-x-full opacity-100 z-20"
+                 // Apply transform only when isSignUp is true
+                 isSignUp ? "transform translate-x-full opacity-100 z-20 animate-show" : ""
             )}>
+                 {/* Ensure value and onChange are correctly bound */}
                 <form onSubmit={handleSignup} className="h-full flex flex-col justify-center items-center px-12 text-center">
                     <h1 className="text-3xl font-bold mb-4">Create Account</h1>
                     {signupError && (
@@ -102,7 +147,7 @@ export default function Auth() {
                     </div>
                     <div className="grid gap-2 mt-4 text-left w-full">
                         <Label className="text-muted-foreground">Register as a:</Label>
-                        <RadioGroup defaultValue="customer" onValueChange={(value) => setSignupRole(value as 'customer' | 'seller')} className="flex items-center space-x-4">
+                        <RadioGroup value={signupRole} onValueChange={(value) => setSignupRole(value as 'customer' | 'seller')} className="flex items-center space-x-4">
                             <div className="flex items-center space-x-2"><RadioGroupItem value="customer" id="role-customer" /><Label htmlFor="role-customer">Buyer</Label></div>
                             <div className="flex items-center space-x-2"><RadioGroupItem value="seller" id="role-seller" /><Label htmlFor="role-seller">Seller</Label></div>
                         </RadioGroup>
@@ -114,8 +159,10 @@ export default function Auth() {
             {/* Sign In Form */}
             <div className={cn(
                 "absolute top-0 h-full w-1/2 left-0 transition-all duration-700 ease-in-out z-20",
-                isSignUp && "transform translate-x-full opacity-0"
+                 // Apply transform only when isSignUp is true
+                 isSignUp ? "transform translate-x-full opacity-0 pointer-events-none" : ""
             )}>
+                {/* Ensure value and onChange are correctly bound */}
                 <form onSubmit={handleLogin} className="h-full flex flex-col justify-center items-center px-12 text-center">
                     <h1 className="text-3xl font-bold mb-4">Sign In</h1>
                     {loginError && (
@@ -125,45 +172,86 @@ export default function Auth() {
                         <div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input id="login-email" type="email" placeholder="Email" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} disabled={isLoading} className="pl-9 bg-muted border-0" /></div>
                         <div className="relative"><Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input id="login-password" type="password" placeholder="Password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} disabled={isLoading} className="pl-9 bg-muted border-0" /></div>
                     </div>
-                    <a href="#" className="text-sm mt-4 text-muted-foreground hover:text-primary">Forgot your password?</a>
+                    {/* Add forgot password link if needed */}
+                    {/* <a href="#" className="text-sm mt-4 text-muted-foreground hover:text-primary">Forgot your password?</a> */}
                     <Button type="submit" className="mt-6 w-full max-w-xs" disabled={isLoading}>{isLoading ? <LoaderCircle className="animate-spin" /> : 'Sign In'}</Button>
                 </form>
             </div>
-            
+
             {/* Overlay Container */}
             <div className={cn(
                 "absolute top-0 left-1/2 w-1/2 h-full overflow-hidden z-50 transition-transform duration-700 ease-in-out",
-                isSignUp && "transform -translate-x-full"
+                 // Apply transform only when isSignUp is true
+                 isSignUp ? "transform -translate-x-full" : ""
             )}>
+                 {/* Updated Gradient and Text Color */}
                 <div className={cn(
-                    "bg-gradient-to-r from-pink-500 to-rose-500 text-white relative -left-full h-full w-[200%] transition-transform duration-700 ease-in-out",
-                    isSignUp && "transform translate-x-1/2"
+                    "bg-gradient-to-r from-rose-500 to-pink-500 text-white relative -left-full h-full w-[200%] transition-transform duration-700 ease-in-out",
+                    // Apply transform only when isSignUp is true
+                    isSignUp ? "transform translate-x-1/2" : "transform translate-x-0"
                 )}>
                     {/* Overlay Left */}
                     <div className={cn(
                         "absolute top-0 w-1/2 h-full flex flex-col items-center justify-center text-center px-10 transition-transform duration-700 ease-in-out",
-                        "transform -translate-x-[20%]",
-                        isSignUp && "transform translate-x-0"
+                        // Apply transform based on isSignUp
+                        isSignUp ? "transform translate-x-0" : "transform -translate-x-[20%]"
                     )}>
                         <Gem className="h-16 w-16 mb-4" />
                         <h1 className="text-3xl font-bold">Welcome Back!</h1>
-                        <p className="text-sm mt-2">To keep connected with us please login with your personal info</p>
+                        <p className="text-sm mt-2 opacity-80">Already have an account? Sign in to continue your journey.</p>
+                         {/* Updated Button Colors */}
                         <Button variant="outline" className="mt-6 bg-transparent border-white text-white hover:bg-white/10" onClick={() => setIsSignUp(false)}>Sign In</Button>
                     </div>
 
                     {/* Overlay Right */}
                     <div className={cn(
                         "absolute top-0 right-0 w-1/2 h-full flex flex-col items-center justify-center text-center px-10 transition-transform duration-700 ease-in-out",
-                        "transform translate-x-0",
-                        isSignUp && "transform translate-x-[20%]"
+                         // Apply transform based on isSignUp
+                         isSignUp ? "transform translate-x-[20%]" : "transform translate-x-0"
                     )}>
                         <Gem className="h-16 w-16 mb-4" />
-                        <h1 className="text-3xl font-bold">Hello, Friend!</h1>
-                        <p className="text-sm mt-2">Enter your personal details and start your journey with us</p>
+                        <h1 className="text-3xl font-bold">New Here?</h1>
+                        <p className="text-sm mt-2 opacity-80">Enter your details and start your journey with us.</p>
+                         {/* Updated Button Colors */}
                         <Button variant="outline" className="mt-6 bg-transparent border-white text-white hover:bg-white/10" onClick={() => setIsSignUp(true)}>Sign Up</Button>
                     </div>
                 </div>
             </div>
+            {/* Add Keyframes for animation if needed */}
+            <style>{`
+                @keyframes show {
+                  0%, 49.99% {
+                    opacity: 0;
+                    z-index: 1;
+                  }
+                  50%, 100% {
+                    opacity: 1;
+                    z-index: 5;
+                  }
+                }
+                .right-panel-active .sign-in-container {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                .right-panel-active .sign-up-container {
+                    transform: translateX(100%);
+                    opacity: 1;
+                    z-index: 5;
+                    animation: show 0.7s;
+                }
+                .right-panel-active .overlay-container {
+                    transform: translateX(-100%);
+                }
+                 .right-panel-active .overlay {
+                    transform: translateX(50%);
+                }
+                .right-panel-active .overlay-left {
+                    transform: translateX(0);
+                 }
+                 .right-panel-active .overlay-right {
+                    transform: translateX(20%);
+                }
+            `}</style>
         </div>
     </div>
   );
