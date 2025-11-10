@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { login, signup, verifyToken, getCurrentUser } from '../lib/auth';
+import { login, signup, verifyToken, getCurrentUser } from '@/lib/auth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Terminal, Gem, Mail, Lock, User as UserIcon, LoaderCircle } from 'lucide-react';
@@ -99,7 +99,7 @@ export default function Auth() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsLoading(true); // <-- This disables the button
     setSignupError(null);
     try {
       const user = await signup({ name: signupName, email: signupEmail, password: signupPassword, role: signupRole });
@@ -117,7 +117,7 @@ export default function Auth() {
     } catch (err: any) {
       setSignupError(err.response?.data?.message || err.message || 'An unexpected error occurred.');
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // <-- This re-enables the button when done
     }
   };
 
@@ -130,9 +130,6 @@ export default function Auth() {
       <style>{keyframes}</style> {/* Inject keyframes */}
       <div className={cn(
         "relative overflow-hidden rounded-lg shadow-2xl bg-card text-card-foreground w-full max-w-4xl min-h-[600px]", // Increased min-height
-        // These classes toggle based on isSignUp to trigger container shifts if needed,
-        // but the core logic relies on positioning/opacity of forms/overlay now.
-        // We might not need 'right-panel-active' class anymore depending on final CSS.
       )}>
         {/* Sign Up Form Container - Positioned Absolutely */}
         <div className={cn(
@@ -156,7 +153,15 @@ export default function Auth() {
                 <div className="flex items-center space-x-2"><RadioGroupItem value="seller" id="role-seller" /><Label htmlFor="role-seller">Seller</Label></div>
               </RadioGroup>
             </div>
-            <Button type="submit" className="mt-6 w-full max-w-xs" disabled={isLoading}>{isLoading ? <LoaderCircle className="animate-spin" /> : 'Sign Up'}</Button>
+            
+            {/* THIS IS THE BUTTON IN QUESTION:
+              The `disabled={isLoading}` prop is what makes it unclickable.
+              This is correct behavior to prevent duplicate form submissions
+              while the network request is in progress.
+            */}
+            <Button type="submit" className="mt-6 w-full max-w-xs" disabled={isLoading}>
+              {isLoading ? <LoaderCircle className="animate-spin" /> : 'Sign Up'}
+            </Button>
           </form>
         </div>
 
@@ -215,4 +220,3 @@ export default function Auth() {
     </div>
   );
 }
-
