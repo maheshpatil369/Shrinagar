@@ -2,8 +2,9 @@
 import { useEffect, useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { getCurrentUser, logout, User, verifyToken } from "@/lib/auth";
-import { Gem, User as UserIcon, LogOut, LoaderCircle, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react'; // Import icons
+// --- CORRECTED PATHS ---
+import { getCurrentUser, logout, User, verifyToken } from "../lib/auth";
+import { Gem, User as UserIcon, LogOut, LoaderCircle, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,15 +20,20 @@ import {
     Popover,
     PopoverContent,
     PopoverTrigger,
-} from "@/components/ui/popover"; // Import Popover
-import { fetchGoldPrice, GoldPriceData } from "@/lib/gold"; // Import gold API
-import { Skeleton } from "@/components/ui/skeleton"; // For loading state
-import { format } from 'date-fns'; // For formatting timestamp
+} from "@/components/ui/popover";
+import { fetchGoldPrice, GoldPriceData } from "../lib/gold";
+import { Skeleton } from "@/components/ui/skeleton";
+import { format } from 'date-fns';
+import { useAuthModal } from "../context/AuthModalContext";
+// --- END CORRECTED PATHS ---
 
 export default function BuyerLayout() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const navigate = useNavigate();
+
+  // --- NEW: Get modal controls ---
+  const { setAuthModalOpen, setPostLoginRedirect } = useAuthModal();
 
   // State for gold price popover
   const [goldPrice, setGoldPrice] = useState<GoldPriceData | null>(null);
@@ -56,31 +62,48 @@ export default function BuyerLayout() {
   useEffect(() => {
     const currentUser = getCurrentUser();
     if (currentUser) {
+      // Verify token on layout load to ensure it's still valid
       verifyToken(currentUser.token)
         .then(verifiedUser => {
           setUser(verifiedUser);
         })
         .catch(() => {
-          logout(); // Log out if token is invalid
+          // Token is invalid or expired
+          logout(); // Clear the bad token
           setUser(null);
-          navigate('/auth'); // Redirect to login if token invalid
+          // Don't navigate here, let ProtectedRoute handle it if needed
         })
         .finally(() => {
             setIsLoadingUser(false);
         });
     } else {
       setIsLoadingUser(false);
-       // Optional: redirect guests if BuyerLayout should always require login
-       // navigate('/auth');
     }
-  }, [navigate]); // Added navigate dependency
+  }, [navigate]);
 
   const handleLogout = () => {
     logout();
-    setUser(null); // Clear user state immediately
+    setUser(null);
     navigate('/'); // Redirect to landing page after logout
+    window.location.reload(); // Force reload to clear all state
+  };
+  
+  // --- NEW: Handlers to open modal ---
+  const handleLoginClick = () => {
+    setPostLoginRedirect(null); // No specific redirect, just login
+    setAuthModalOpen(true);
+  };
+  
+  const handleSignupClick = () => {
+    // This is a bit of a hack, but we can't pass a prop to the modal
+    // to tell it to open on the "signup" tab directly.
+    // For now, it will just open to the login tab.
+    // A more advanced solution would use context for this too.
+    setPostLoginRedirect(null);
+    setAuthModalOpen(true);
   };
 
+  // We still show a loading state, but not full screen
   if (isLoadingUser) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -100,7 +123,7 @@ export default function BuyerLayout() {
           <div className="flex items-center gap-2 sm:gap-4">
             {user ? (
               <>
-                {/* --- Gold Price Popover Trigger --- */}
+                {/* Gold Price Popover (remains the same) */}
                 <Popover onOpenChange={(open) => { if (open && !goldPrice) loadGoldPrice(); }}>
                     <PopoverTrigger asChild>
                          <Button variant="ghost" size="sm" className="text-amber-500 hover:bg-amber-500/10 hover:text-amber-400">
@@ -139,7 +162,6 @@ export default function BuyerLayout() {
                         </div>
                     </PopoverContent>
                 </Popover>
-                 {/* --- End Gold Price Popover --- */}
 
                 <span className="text-sm text-muted-foreground hidden lg:inline">Welcome, {user.name}!</span>
                 <Link to="/profile">
@@ -170,10 +192,11 @@ export default function BuyerLayout() {
               </>
             ) : (
               <>
-                <Button onClick={() => navigate('/auth')} variant="outline" size="sm">
+                {/* --- UPDATED: Buttons now trigger modal --- */}
+                <Button onClick={handleLoginClick} variant="outline" size="sm">
                   Login
                 </Button>
-                 <Button onClick={() => navigate('/auth')} size="sm">
+                 <Button onClick={handleSignupClick} size="sm">
                   Sign Up
                 </Button>
               </>
@@ -182,14 +205,8 @@ export default function BuyerLayout() {
         </div>
       </header>
       <main>
-        <Outlet /> {/* Renders the specific buyer page (Dashboard, Product Detail, etc.) */}
+        <Outlet /> {/* Renders the specific buyer page */}
       </main>
-       {/* Optional Footer */}
-       {/* <footer className="border-t mt-12 py-6">
-           <div className="container mx-auto text-center text-sm text-muted-foreground">
-               © {new Date().getFullYear()} Shrinagar Marketplace. All rights reserved.
-           </div>
-       </footer> */}
     </div>
   );
 }
