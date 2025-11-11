@@ -1,21 +1,22 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom"; // Added useSearchParams
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Product, getApprovedProducts, ProductFilters } from "../lib/products";
+import { Button } from "../components/ui/button"; // Path fix
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../components/ui/card"; // Path fix
+import { Badge } from "../components/ui/badge"; // Path fix
+import { Product, getApprovedProducts, ProductFilters } from "../lib/products"; // Path fix
 import { ExternalLink, LoaderCircle, Search, SlidersHorizontal, Heart, History, X, LayoutGrid, List, ShoppingCart } from 'lucide-react'; // Added layout icons
-import { useToast } from "@/hooks/use-toast";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { addToWishlist } from "../lib/user";
-import { getCurrentUser } from "../lib/auth";
+import { useToast } from "../hooks/use-toast"; // Path fix
+import { Input } from "../components/ui/input"; // Path fix
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"; // Path fix
+import { Slider } from "../components/ui/slider"; // Path fix
+import { addToWishlist } from "../lib/user"; // Path fix
+import { getCurrentUser } from "../lib/auth"; // Path fix
 import debounce from 'lodash.debounce';
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner"; // Import the spinner
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet"; // For mobile filters
+import { Label } from "../components/ui/label"; // Path fix
+import { Skeleton } from "../components/ui/skeleton"; // Path fix
+import { LoadingSpinner } from "../components/ui/LoadingSpinner"; // Path fix
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "../components/ui/sheet"; // Path fix
+import Rating from "../components/ui/Rating"; // --- NEW: Import Rating Component ---
 
 // Interface for ProductCard props
 interface ProductCardProps {
@@ -61,6 +62,8 @@ function ProductCard({ product, onAddToWishlist, currentUser, layout }: ProductC
                 </div>
                 <div className="p-4 flex flex-col flex-grow">
                     <CardTitle className="text-lg font-semibold leading-tight mb-1 group-hover:underline line-clamp-2">{product.name}</CardTitle>
+                    {/* --- NEW: Added Rating --- */}
+                    <Rating value={product.rating} text={`(${product.numReviews} reviews)`} className="mb-2" />
                     <p className="text-sm text-muted-foreground mb-2 line-clamp-3 flex-grow">{product.description}</p>
                     <div className="flex justify-between items-center mt-auto pt-2">
                         <p className="text-lg font-bold">${product.price.toFixed(2)}</p>
@@ -109,6 +112,8 @@ function ProductCard({ product, onAddToWishlist, currentUser, layout }: ProductC
             <CardContent className="p-4 flex-grow flex flex-col items-center text-center">
                 <CardTitle className="text-base font-medium leading-tight mb-1">{product.name}</CardTitle>
                 <p className="text-sm font-semibold">${product.price.toFixed(2)}</p>
+                {/* --- NEW: Added Rating --- */}
+                <Rating value={product.rating} text={`(${product.numReviews})`} className="justify-center mt-1" />
             </CardContent>
         </Card>
     );
@@ -299,7 +304,7 @@ export default function BuyerDashboard() {
                 sorted.sort((a, b) => a.price - b.price);
                 break;
             case 'price-desc':
-                sorted.sort((a, b) => b.price - a.price);
+                sorted.sort((a, b) => b.price - b.price);
                 break;
             case 'name-asc':
                 sorted.sort((a, b) => a.name.localeCompare(b.name));
@@ -338,7 +343,9 @@ export default function BuyerDashboard() {
                               <SheetTitle className="text-lg font-semibold">Filters</SheetTitle>
                            </SheetHeader>
                            <FilterSidebar filters={filters} onFilterChange={handleFilterChange} uniqueBrands={uniqueBrands} uniqueMaterials={uniqueMaterials} />
-                           <SheetClose className="mt-6 w-full">Apply Filters</SheetClose>
+                           <SheetClose asChild className="mt-6 w-full">
+                                <Button>Apply Filters</Button>
+                           </SheetClose>
                       </SheetContent>
                   </Sheet>
              </div>

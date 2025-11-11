@@ -1,6 +1,34 @@
 // Backend/models/productModel.js
 const mongoose = require('mongoose');
 
+// --- NEW: Schema for individual reviews ---
+const reviewSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    name: {
+      // Store user's name to avoid extra population
+      type: String,
+      required: true,
+    },
+    rating: {
+      type: Number,
+      required: true,
+    },
+    comment: {
+      type: String,
+      required: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+// --- End of new schema ---
+
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -60,6 +88,19 @@ const productSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    // --- NEW: Fields for ratings and reviews ---
+    reviews: [reviewSchema],
+    rating: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    numReviews: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    // --- End of new fields ---
   },
   {
     timestamps: true,

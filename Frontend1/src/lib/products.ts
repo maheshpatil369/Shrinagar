@@ -3,10 +3,8 @@ import { api } from './api';
 import { User } from './auth';
 
 const getAuthHeaders = () => {
-    // ... (getAuthHeaders function remains the same) ...
     const userInfoItem = localStorage.getItem('userInfo');
     if (!userInfoItem) {
-        // Return empty headers if not logged in, rely on API interceptor to handle 401
         return {};
     }
     try {
@@ -32,6 +30,16 @@ export type PopulatedSeller = Omit<User, 'sellerProfile'> & {
     sellerProfile?: SellerProfile | string;
 };
 
+// --- NEW: Review interface ---
+export interface Review {
+  _id: string;
+  user: string;
+  name: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
 export interface Product {
     _id: string;
     name: string;
@@ -48,6 +56,11 @@ export interface Product {
     clickCount: number;
     createdAt?: string; 
     updatedAt?: string;
+    // --- NEW: Added rating fields ---
+    rating: number;
+    numReviews: number;
+    reviews: Review[];
+    // --- End new fields ---
 }
 
 // Updated ProductFormData type
@@ -133,3 +146,13 @@ export const deleteProduct = async (id: string): Promise<{ message: string }> =>
     const { data } = await api.delete(`/products/${id}`, getAuthHeaders());
     return data;
 };
+
+// --- NEW: Function to create a product review ---
+export const createProductReview = async (
+  productId: string,
+  review: { rating: number; comment: string }
+): Promise<{ message: string }> => {
+  const { data } = await api.post(`/products/${productId}/reviews`, review, getAuthHeaders());
+  return data;
+};
+// --- End new function ---

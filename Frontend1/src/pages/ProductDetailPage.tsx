@@ -1,18 +1,23 @@
 // Frontend1/src/pages/ProductDetailPage.tsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-// --- All imports are now relative from 'pages' directory ---
-import { getProductById, Product, trackAffiliateClick, PopulatedSeller } from '../lib/products';
-import { useToast } from '../hooks/use-toast';
-import { Button } from '../components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
-import { ExternalLink, LoaderCircle, ArrowLeft, Heart, View, Maximize } from 'lucide-react';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../components/ui/carousel";
-import { addToWishlist, getWishlist, isProductInWishlist, removeFromWishlist } from '../lib/user';
-import { Dialog, DialogContent } from '../components/ui/dialog';
-import { useAuthModal } from '../context/AuthModalContext';
-import { useUser } from '../context/UserContext'; // --- Only useUser for auth state ---
+// --- All imports are now using alias + file extension ---
+import { getProductById, Product, trackAffiliateClick, PopulatedSeller, createProductReview, Review } from '@/lib/products.ts';
+import { useToast } from '@/hooks/use-toast.ts';
+import { Button } from '@/components/ui/button.tsx';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card.tsx';
+import { Badge } from '@/components/ui/badge.tsx';
+import { ExternalLink, LoaderCircle, ArrowLeft, Heart, View, Maximize, Share2, Star } from 'lucide-react';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel.tsx";
+import { addToWishlist, getWishlist, isProductInWishlist, removeFromWishlist } from '@/lib/user.ts';
+import { Dialog, DialogContent } from '@/components/ui/dialog.tsx';
+import { useAuthModal } from '@/context/AuthModalContext.tsx';
+import { useUser } from '@/context/UserContext.tsx';
+import Rating from '@/components/ui/Rating.tsx';
+import { Textarea } from '@/components/ui/textarea.tsx';
+import { Label } from '@/components/ui/label.tsx';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils.ts'; // Import cn utility
 
 function addRecentlyViewed(productId: string) {
     let viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
@@ -38,6 +43,16 @@ export default function ProductDetailPage() {
 
     const [showImageModal, setShowImageModal] = useState(false);
     const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
+    
+    // --- NEW: State for review form ---
+    const [reviewRating, setReviewRating] = useState(0);
+    const [reviewComment, setReviewComment] = useState("");
+    const [isReviewLoading, setIsReviewLoading] = useState(false);
+    // ---
+
+    // --- NEW: State for active gallery image ---
+    const [activeImage, setActiveImage] = useState<string | null>(null);
+    // ---
 
      const fetchWishlist = useCallback(async () => {
         // Only fetch wishlist if user is logged in
@@ -61,6 +76,11 @@ export default function ProductDetailPage() {
             setProduct(data);
             setRecommendations(recs);
             addRecentlyViewed(productId);
+            // --- NEW: Set active image on product load ---
+            if (data.images && data.images.length > 0) {
+                setActiveImage(data.images[0]);
+            }
+            // ---
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error fetching product', description: error.response?.data?.message || 'Could not fetch product details.' });
             setProduct(null);
@@ -68,9 +88,6 @@ export default function ProductDetailPage() {
             setIsLoading(false);
         }
     }, [toast]);
-
-    // --- REMOVED all old user state logic (getCurrentUser, setCurrentUser) ---
-    // The rogue useEffect that caused the bug is GONE.
 
     useEffect(() => {
         if (id) {
@@ -106,7 +123,10 @@ export default function ProductDetailPage() {
         }
     };
 
-    const handleWishlistToggle = async () => {
+    const handleWishlistToggle = async (e?: React.MouseEvent) => {
+        // Stop propagation if event is passed (from icon button)
+        e?.stopPropagation(); 
+
         if (!product) return;
 
         if (!user) { // Check global user
@@ -144,6 +164,71 @@ export default function ProductDetailPage() {
         setShowImageModal(true);
     };
 
+    // --- NEW: Share handler ---
+    const handleShare = async (e?: React.MouseEvent) => {
+        // Stop propagation if event is passed (from icon button)
+        e?.stopPropagation(); 
+
+        if (!product) return;
+        const shareUrl = `${window.location.origin}/product/${product._id}`;
+        const shareData = {
+            title: product.name,
+            text: `Check out this amazing jewelry: ${product.name}`,
+            url: shareUrl,
+        };
+
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                console.error('Share failed:', err);
+                // Don't toast on user-cancelled share
+            }
+        } else {
+            // Fallback: Copy to clipboard
+            try {
+                // Use the document.execCommand fallback as per instructions
+                const textArea = document.createElement("textarea");
+                textArea.value = shareUrl;
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                toast({ title: "Link Copied!", description: "Product link copied to your clipboard." });
+            } catch (err) {
+                console.error('Clipboard copy failed:', err);
+                toast({ variant: "destructive", title: "Error", description: "Could not copy link." });
+            }
+        }
+    };
+
+    // --- NEW: Review submit handler ---
+    const handleReviewSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!product || !user) return; // Should be impossible if form is visible
+        if (reviewRating === 0 || !reviewComment) {
+            toast({ variant: "destructive", title: "Error", description: "Please select a rating and write a comment." });
+            return;
+        }
+
+        setIsReviewLoading(true);
+        try {
+            await createProductReview(product._id, {
+                rating: reviewRating,
+                comment: reviewComment,
+            });
+            toast({ title: "Review Submitted!", description: "Thank you for your feedback." });
+            setReviewRating(0);
+            setReviewComment("");
+            fetchProduct(product._id); // Refetch product to show new review
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Submission Failed", description: error.response?.data?.message || "Could not submit review." });
+        } finally {
+            setIsReviewLoading(false);
+        }
+    };
+
     const handleArVrClick = () => {
         toast({
             title: "Coming Soon!",
@@ -155,6 +240,7 @@ export default function ProductDetailPage() {
     if (!product) return <div className="flex h-[80vh] flex-col items-center justify-center gap-4"><h2 className="text-2xl font-semibold">Product Not Found</h2><Button asChild><Link to="/buyer"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Shop</Link></Button></div>;
 
     const sellerDetails = typeof product.seller === 'object' ? product.seller as PopulatedSeller : null;
+    const userHasReviewed = product.reviews.find(r => r.user === user?._id);
 
     return (
         <>
@@ -174,35 +260,57 @@ export default function ProductDetailPage() {
                     {/* Main Content */}
                     <main className="lg:flex-[2] xl:flex-[3] min-w-0">
                         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-                            {/* Image Carousel */}
-                            <Carousel className="w-full">
-                                <CarouselContent>
+                            
+                            {/* --- NEW: Image Gallery Layout --- */}
+                            <div className="flex gap-4">
+                                {/* Thumbnails */}
+                                <div className="flex flex-col gap-3 w-20 shrink-0">
                                     {product.images && product.images.length > 0 ? (
-                                      product.images.map((image, index) => (
-                                        <CarouselItem key={index} className="group relative">
-                                            <div className="aspect-square border rounded-lg overflow-hidden bg-muted cursor-pointer" onClick={() => handleImageClick(image)}>
-                                                <img src={image} alt={`${product.name} view ${index + 1}`} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                                                    <Maximize className="h-8 w-8 text-white" />
-                                                </div>
+                                        product.images.map((image, index) => (
+                                            <div
+                                                key={index}
+                                                className={cn(
+                                                    "aspect-square border rounded-lg overflow-hidden bg-muted cursor-pointer transition-all",
+                                                    activeImage === image ? "border-primary ring-2 ring-primary ring-offset-2" : "border-border hover:border-muted-foreground"
+                                                )}
+                                                onMouseEnter={() => setActiveImage(image)}
+                                            >
+                                                <img src={image} alt={`${product.name} view ${index + 1}`} className="w-full h-full object-cover" />
                                             </div>
-                                        </CarouselItem>
-                                      ))
+                                        ))
                                     ) : (
-                                        <CarouselItem className="group relative">
-                                            <div className="aspect-square border rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-                                                <span className="text-muted-foreground">No Image</span>
-                                            </div>
-                                        </CarouselItem>
+                                        <div className="aspect-square border rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                                            <span className="text-xs text-muted-foreground p-1">No Image</span>
+                                        </div>
                                     )}
-                                </CarouselContent>
-                                {product.images && product.images.length > 1 && (
-                                  <>
-                                    <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10" />
-                                    <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10" />
-                                  </>
-                                )}
-                            </Carousel>
+                                </div>
+                                
+                                {/* Main Image */}
+                                <div className="flex-1 relative group">
+                                    {activeImage ? (
+                                        <div className="aspect-square border rounded-lg overflow-hidden bg-muted cursor-pointer" onClick={() => handleImageClick(activeImage)}>
+                                            <img src={activeImage} alt="Main product view" className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                                                <Maximize className="h-8 w-8 text-white" />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="aspect-square border rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                                            <span className="text-muted-foreground">No Image</span>
+                                        </div>
+                                    )}
+                                    {/* Overlay Buttons */}
+                                    <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                                        <Button variant="outline" size="icon" className="h-9 w-9 bg-background/80 hover:bg-background rounded-full shadow" onClick={handleWishlistToggle}>
+                                            <Heart className={`h-4 w-4 ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`} />
+                                        </Button>
+                                        <Button variant="outline" size="icon" className="h-9 w-9 bg-background/80 hover:bg-background rounded-full shadow" onClick={handleShare}>
+                                            <Share2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* --- END: Image Gallery Layout --- */}
 
                             {/* Product Details */}
                             <div className="flex flex-col justify-center">
@@ -212,6 +320,7 @@ export default function ProductDetailPage() {
                                         <Badge variant="outline" className="text-sm">{product.brand}</Badge>
                                     </div>
                                     <h1 className="text-3xl md:text-4xl font-bold leading-tight break-words">{product.name}</h1>
+                                    <Rating value={product.rating} text={`${product.numReviews} reviews`} />
                                     <p className="text-muted-foreground text-base break-words">{product.description}</p>
                                     <p className="text-3xl font-bold">${product.price.toFixed(2)}</p>
                                     <div className="border-t pt-4">
@@ -220,24 +329,108 @@ export default function ProductDetailPage() {
                                             <p><span className="font-medium text-foreground">Material:</span> {product.material}</p>
                                             <p><span className="font-medium text-foreground">Seller:</span> {sellerDetails ? (typeof sellerDetails.sellerProfile === 'object' ? sellerDetails.sellerProfile.businessName || sellerDetails.name : sellerDetails.name) : 'Unknown'}</p>
                                         </div>
-                                        </div>
+                                    </div>
+                                    
+                                    {/* --- UPDATED: Main action buttons (reverted to AR/VR) --- */}
                                     <div className="flex flex-col sm:flex-row gap-2 pt-4">
                                         <Button size="lg" className="flex-1 text-base" onClick={handleAffiliateClick}><ExternalLink className="mr-2 h-5 w-5" /> Go to Seller's Site</Button>
                                         <Button size="lg" variant="outline" className="flex-1 text-base" onClick={handleArVrClick}>
-                                            <View className="mr-2 h-5 w-5" /> View in AR/VR
+                                            <View className="mr-2 h-5 w-5" /> AR/VR View
                                         </Button>
-                                        <Button size="icon" variant="outline" className="h-14 w-14 shrink-0" onClick={handleWishlistToggle}>
-                                            <Heart className={`h-6 w-6 transition-colors ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`} />
-                                            <span className="sr-only">Add to wishlist</span>
-                                        </Button>
+                                        {/* Wishlist and Share buttons are now on the image overlay */}
                                     </div>
+                                    
                                     {!user && <p className="text-xs text-muted-foreground text-center sm:text-left pt-1">Login to add to wishlist or visit seller</p>}
                                 </div>
                             </div>
                         </div>
+
+                        {/* --- Reviews Section (Unchanged) --- */}
+                        <div className="mt-12 lg:mt-16">
+                            <h2 className="text-3xl font-bold mb-6">Reviews</h2>
+                            <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+                                {/* Review Form */}
+                                <div>
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle>Write a Customer Review</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            {user ? (
+                                                userHasReviewed ? (
+                                                    <p className="text-muted-foreground">You have already reviewed this product.</p>
+                                                ) : (
+                                                    <form onSubmit={handleReviewSubmit} className="space-y-4">
+                                                        <div>
+                                                            <Label htmlFor="rating" className="mb-2 block">Your Rating</Label>
+                                                            <div className="flex items-center gap-1">
+                                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                                    <Star
+                                                                        key={star}
+                                                                        className={cn(
+                                                                            "h-6 w-6 cursor-pointer transition-colors",
+                                                                            reviewRating >= star ? "fill-amber-400 text-amber-400" : "fill-muted text-muted-foreground/50"
+                                                                        )}
+                                                                        onClick={() => setReviewRating(star)}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <Label htmlFor="comment">Your Review</Label>
+                                                            <Textarea
+                                                                id="comment"
+                                                                placeholder="Tell us what you think..."
+                                                                value={reviewComment}
+                                                                onChange={(e) => setReviewComment(e.target.value)}
+                                                                disabled={isReviewLoading}
+                                                                className="mt-2 min-h-[100px]"
+                                                            />
+                                                        </div>
+                                                        <Button type="submit" disabled={isReviewLoading}>
+                                                            {isReviewLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                                                            Submit Review
+                                                        </Button>
+                                                    </form>
+                                                )
+                                            ) : (
+                                                <p className="text-muted-foreground">
+                                                    Please{" "}
+                                                    <Button variant="link" className="p-0 h-auto" onClick={() => { setPostLoginRedirect(window.location.pathname); setAuthModalOpen(true); }}>
+                                                        log in
+                                                    </Button>
+                                                    {" "}to write a review.
+                                                </p>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                </div>
+
+                                {/* Review List */}
+                                <div className="space-y-6">
+                                    {product.reviews.length === 0 ? (
+                                        <p className="text-muted-foreground">No reviews yet.</p>
+                                    ) : (
+                                        product.reviews.map((review) => (
+                                            <div key={review._id} className="pb-4 border-b last:border-b-0">
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <h4 className="font-semibold">{review.name}</h4>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {format(new Date(review.createdAt), 'dd MMM yyyy')}
+                                                    </span>
+                                                </div>
+                                                <Rating value={review.rating} />
+                                                <p className="text-sm text-muted-foreground mt-2">{review.comment}</p>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                        {/* --- End Reviews Section --- */}
                     </main>
 
-                    {/* Recommendations Sidebar */}
+                    {/* Recommendations Sidebar (Unchanged as requested) */}
                     <aside className="lg:flex-[1] space-y-4 min-w-0">
                         <h2 className="text-2xl font-bold">You Might Also Like</h2>
                         <div className="space-y-4">

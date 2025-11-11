@@ -10,6 +10,7 @@ const {
   deleteProduct,
   getMyProducts,
   trackAffiliateClick,
+  createProductReview, // --- Add new controller ---
 } = require('../controllers/productController.js');
 const { protect, authorize } = require('../middleware/authMiddleware.js');
 
@@ -27,5 +28,7 @@ router
   .put(protect, authorize('seller'), updateProduct)
   .delete(protect, authorize('seller'), deleteProduct);
 
-module.exports = router;
+// --- NEW: Customer Review Route (Protected) ---
+router.route('/:id/reviews').post(protect, createProductReview);
 
+module.exports = router;
