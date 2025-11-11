@@ -1,21 +1,23 @@
-// maheshpatil369/shrinagar/Shrinagar-47183708fc2b865cb6e3d62f63fcad35ec0165db/Frontend1/src/App.tsx
+// maheshpatil369/shrinagar/Shrinagar-6e22f891610c62129c74fbcf4b4106b1b9c85b42/Frontend1/src/App.tsx
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
-import Landing from "./pages/Landing";
-import Auth from "./pages/Auth";
-import BuyerDashboard from "./pages/BuyerDashboard";
-import SellerDashboard from "./pages/SellerDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
-import NotFound from "./pages/NotFound";
-import BuyerLayout from "./pages/BuyerLayout";
-import ProductDetailPage from "./pages/ProductDetailPage";
-import UserProfile from "./pages/UserProfile";
-import { getCurrentUser, User } from "./lib/auth"; // Import User type
-import { LoadingSpinner } from "./components/ui/LoadingSpinner"; // Import LoadingSpinner
+// 1. REMOVE BrowserRouter from this import
+import { Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
+import Landing from "@/pages/Landing";
+import Auth from "@/pages/Auth";
+import BuyerDashboard from "@/pages/BuyerDashboard";
+import SellerDashboard from "@/pages/SellerDashboard";
+import AdminDashboard from "@/pages/AdminDashboard";
+import NotFound from "@/pages/NotFound";
+import BuyerLayout from "@/pages/BuyerLayout";
+import ProductDetailPage from "@/pages/ProductDetailPage";
+import UserProfile from "@/pages/UserProfile";
+import { getCurrentUser, User } from "@/lib/auth"; // Import User type
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner"; // Import LoadingSpinner
 import { useState, useEffect } from "react";
+// import AuthModal from "@/components/AuthModal"; // <-- REMOVED
 
 const queryClient = new QueryClient();
 
@@ -66,39 +68,41 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/auth" element={<Auth />} />
+      {/*
+        AuthModal is now rendered in main.tsx
+      */}
+      {/* <AuthModal /> */} {/* <-- REMOVED */}
+      {/* 2. REMOVE BrowserRouter tag from here */}
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/auth" element={<Auth />} />
 
-          {/* Buyer-facing routes within Layout */}
-          <Route element={<BuyerLayout />}>
-            {/* Buyer Dashboard is public */}
-            <Route path="/buyer" element={<BuyerDashboard />} />
+        {/* Buyer-facing routes within Layout */}
+        <Route element={<BuyerLayout />}>
+          {/* Buyer Dashboard is public */}
+          <Route path="/buyer" element={<BuyerDashboard />} />
 
-            {/* Product Detail and Profile require login */}
-            <Route element={<ProtectedRoute />}> {/* General login check */}
-              <Route path="/product/:id" element={<ProductDetailPage />} />
-              <Route path="/profile" element={<UserProfile />} />
-            </Route>
+          {/* Product Detail and Profile require login */}
+          <Route element={<ProtectedRoute />}> {/* General login check */}
+            <Route path="/product/:id" element={<ProductDetailPage />} />
+            <Route path="/profile" element={<UserProfile />} />
           </Route>
+        </Route>
 
-          {/* Seller routes require 'seller' or 'admin' role */}
-          <Route element={<ProtectedRoute allowedRoles={['seller', 'admin']} />}>
-            <Route path="/seller" element={<SellerDashboard />} />
-          </Route>
+        {/* Seller routes require 'seller' or 'admin' role */}
+        <Route element={<ProtectedRoute allowedRoles={['seller', 'admin']} />}>
+          <Route path="/seller" element={<SellerDashboard />} />
+        </Route>
 
-          {/* Admin routes require 'admin' role */}
-          <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
-            <Route path="/admin" element={<AdminDashboard />} />
-          </Route>
+        {/* Admin routes require 'admin' role */}
+        <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+          <Route path="/admin" element={<AdminDashboard />} />
+        </Route>
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </TooltipProvider>
   </QueryClientProvider>
 );
 
 export default App;
-
