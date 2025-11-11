@@ -1,3 +1,4 @@
+// Frontend1/src/pages/Landing.tsx
 import { useEffect, useState, useCallback } from 'react'; // Import useCallback from React
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { useToast } from '@/hooks/use-toast';
 import { addToWishlist } from '@/lib/user';
 import { getCurrentUser } from '@/lib/auth';
+import { ThemeToggle } from '@/components/ThemeToggle'; // Import the new ThemeToggle component
 
 // --- Header Component ---
 function Header() {
@@ -31,6 +33,8 @@ function Header() {
                     <Button variant="ghost" size="icon"><SearchIcon className="h-5 w-5" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => navigate('/profile')}><Heart className="h-5 w-5" /></Button>
                     {/* <Button variant="ghost" size="icon"><ShoppingCart className="h-5 w-5" /></Button> */}
+                    {/* Add the ThemeToggle component here */}
+                    <ThemeToggle />
                     <Button onClick={() => navigate('/auth')} size="sm">Login</Button>
                 </div>
             </div>
@@ -444,4 +448,3 @@ const Landing = () => {
 };
 
 export default Landing;
-

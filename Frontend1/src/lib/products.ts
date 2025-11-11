@@ -1,4 +1,5 @@
 // Frontend1/src/lib/products.ts
+// This is the correct version of your file, restored to fix the MOCK_PRODUCTS error.
 import { api } from './api';
 import { User } from './auth';
 
@@ -30,7 +31,6 @@ export type PopulatedSeller = Omit<User, 'sellerProfile'> & {
     sellerProfile?: SellerProfile | string;
 };
 
-// --- NEW: Review interface ---
 export interface Review {
   _id: string;
   user: string;
@@ -56,11 +56,9 @@ export interface Product {
     clickCount: number;
     createdAt?: string; 
     updatedAt?: string;
-    // --- NEW: Added rating fields ---
     rating: number;
     numReviews: number;
     reviews: Review[];
-    // --- End new fields ---
 }
 
 // Updated ProductFormData type
@@ -128,16 +126,12 @@ export const getMyProducts = async (): Promise<Product[]> => {
     return data;
 };
 
-// createProduct now correctly typed to accept ProductFormData with string[] images
 export const createProduct = async (productData: ProductFormData): Promise<Product> => {
-    // No need to split/join images here, backend expects array
     const { data } = await api.post('/products', productData, getAuthHeaders());
     return data;
 };
 
-// updateProduct now correctly typed to accept Partial<ProductFormData> with string[] images
 export const updateProduct = async (id: string, productData: Partial<ProductFormData>): Promise<Product> => {
-    // No need to split/join images here, backend expects array
     const { data } = await api.put(`/products/${id}`, productData, getAuthHeaders());
     return data;
 };
@@ -147,7 +141,6 @@ export const deleteProduct = async (id: string): Promise<{ message: string }> =>
     return data;
 };
 
-// --- NEW: Function to create a product review ---
 export const createProductReview = async (
   productId: string,
   review: { rating: number; comment: string }
@@ -155,4 +148,3 @@ export const createProductReview = async (
   const { data } = await api.post(`/products/${productId}/reviews`, review, getAuthHeaders());
   return data;
 };
-// --- End new function ---

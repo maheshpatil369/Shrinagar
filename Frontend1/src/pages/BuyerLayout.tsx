@@ -25,6 +25,7 @@ import { fetchGoldPrice, GoldPriceData } from "../lib/gold";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from 'date-fns';
 import { useAuthModal } from "../context/AuthModalContext";
+import { ThemeToggle } from "@/components/ThemeToggle"; // Import the new ThemeToggle component
 // --- END CORRECTED PATHS ---
 
 export default function BuyerLayout() {
@@ -189,10 +190,14 @@ export default function BuyerLayout() {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+                {/* Add the ThemeToggle component here */}
+                <ThemeToggle />
               </>
             ) : (
               <>
                 {/* --- UPDATED: Buttons now trigger modal --- */}
+                {/* Add the ThemeToggle component here */}
+                <ThemeToggle />
                 <Button onClick={handleLoginClick} variant="outline" size="sm">
                   Login
                 </Button>

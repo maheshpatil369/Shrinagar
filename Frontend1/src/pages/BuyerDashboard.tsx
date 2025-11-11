@@ -1,74 +1,95 @@
+// Frontend1/src/pages/BuyerDashboard.tsx
+// This file is now fixed to use `getApprovedProducts` and the correct sidebar logic.
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom"; // Added useSearchParams
-import { Button } from "../components/ui/button"; // Path fix
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../components/ui/card"; // Path fix
-import { Badge } from "../components/ui/badge"; // Path fix
-import { Product, getApprovedProducts, ProductFilters } from "../lib/products"; // Path fix
-import { ExternalLink, LoaderCircle, Search, SlidersHorizontal, Heart, History, X, LayoutGrid, List, ShoppingCart } from 'lucide-react'; // Added layout icons
-import { useToast } from "../hooks/use-toast"; // Path fix
-import { Input } from "../components/ui/input"; // Path fix
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"; // Path fix
-import { Slider } from "../components/ui/slider"; // Path fix
-import { addToWishlist } from "../lib/user"; // Path fix
-import { getCurrentUser } from "../lib/auth"; // Path fix
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+// --- FIX: Importing the REAL function `getApprovedProducts` ---
+import { Product, getApprovedProducts, ProductFilters } from "../lib/products";
+import { ExternalLink, LoaderCircle, Search, SlidersHorizontal, Heart, X, LayoutGrid, List, ShoppingCart, AlertCircle } from 'lucide-react';
+import { useToast } from "../hooks/use-toast";
+import { Input } from "../components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Slider } from "../components/ui/slider";
+import { addToWishlist } from "../lib/user";
+import { getCurrentUser } from "../lib/auth";
+import { Skeleton } from "../components/ui/skeleton";
+import { LoadingSpinner } from "../components/ui/LoadingSpinner";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "../components/ui/sheet";
+import Rating from "../components/ui/Rating";
+import { useAuthModal } from '@/context/AuthModalContext';
 import debounce from 'lodash.debounce';
-import { Label } from "../components/ui/label"; // Path fix
-import { Skeleton } from "../components/ui/skeleton"; // Path fix
-import { LoadingSpinner } from "../components/ui/LoadingSpinner"; // Path fix
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "../components/ui/sheet"; // Path fix
-import Rating from "../components/ui/Rating"; // --- NEW: Import Rating Component ---
+// --- FIX: Added missing Label import ---
+import { Label } from "../components/ui/label";
 
-// Interface for ProductCard props
+// --- FIX: Backend URL for constructing correct image paths ---
+const BACKEND_URL = import.meta.env.VITE_API_URL 
+                    ? import.meta.env.VITE_API_URL.replace('/api', '') 
+                    : 'http://localhost:8000';
+
+// Helper to clean up image paths
+const getImageUrl = (imagePath: string) => {
+    if (!imagePath) return 'https://placehold.co/600x600/e2e8f0/a0aec0?text=No+Image'; // Return placeholder if no image
+    if (imagePath.startsWith('http')) return imagePath; // Already a full URL (e.g., cloudinary)
+    
+    // This handles paths like '/uploads/image.png' or 'uploads/image.png'
+    // and prevents double slashes
+    return `${BACKEND_URL}/${imagePath.replace(/^\//, '')}`;
+}
+
+
+// --- Reusable ProductCard Component ---
 interface ProductCardProps {
     product: Product;
     onAddToWishlist: (e: React.MouseEvent, product: Product) => void;
-    currentUser: any; // Simplified type for checking login status
-    layout: 'grid' | 'list'; // Added layout prop
+    currentUser: any;
+    layout: 'grid' | 'list';
 }
 
-// Reusable ProductCard Component - Modified for grid/list and hover effects
 function ProductCard({ product, onAddToWishlist, currentUser, layout }: ProductCardProps) {
     const navigate = useNavigate();
+    const { toast } = useToast();
+    const { setAuthModalOpen, setPostLoginRedirect } = useAuthModal();
 
     const handleCardClick = () => {
         navigate(`/product/${product._id}`);
     };
 
-    // Placeholder Add to Cart
-    const handleAddToCart = (e: React.MouseEvent) => {
-         e.preventDefault();
-         e.stopPropagation();
-         // Implement cart logic here
-         alert(`Added ${product.name} to cart (placeholder)`);
+    const handleAffiliateClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!currentUser) {
+            toast({ variant: "destructive", title: "Login Required" });
+            setPostLoginRedirect(window.location.pathname);
+            setAuthModalOpen(true);
+            return;
+        }
+        window.open(product.affiliateUrl, '_blank', 'noopener,noreferrer');
     };
-
-     // Placeholder Quick View
-     const handleQuickView = (e: React.MouseEvent) => {
-         e.preventDefault();
-         e.stopPropagation();
-         // Implement quick view modal logic here
-         alert(`Quick view for ${product.name} (placeholder)`);
-     };
 
      if (layout === 'list') {
          return (
             <Card className="overflow-hidden group cursor-pointer w-full flex flex-col sm:flex-row" onClick={handleCardClick}>
                 <div className="relative aspect-square sm:w-48 shrink-0">
                      {product.images && product.images.length > 0 ? (
-                        <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover"/>
+                        // --- FIX: Use getImageUrl helper ---
+                        <img src={getImageUrl(product.images[0])} alt={product.name} className="w-full h-full object-cover"/>
                      ) : (
                         <div className="w-full h-full bg-muted flex items-center justify-center text-sm text-muted-foreground">No Image</div>
                      )}
                 </div>
                 <div className="p-4 flex flex-col flex-grow">
                     <CardTitle className="text-lg font-semibold leading-tight mb-1 group-hover:underline line-clamp-2">{product.name}</CardTitle>
-                    {/* --- NEW: Added Rating --- */}
                     <Rating value={product.rating} text={`(${product.numReviews} reviews)`} className="mb-2" />
                     <p className="text-sm text-muted-foreground mb-2 line-clamp-3 flex-grow">{product.description}</p>
-                    <div className="flex justify-between items-center mt-auto pt-2">
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mt-auto pt-2">
                         <p className="text-lg font-bold">${product.price.toFixed(2)}</p>
                         <div className="flex items-center gap-2">
-                             <Button variant="outline" size="sm" onClick={handleAddToCart}>Add To Cart</Button>
+                             <Button variant="outline" size="sm" onClick={handleAffiliateClick}>
+                                 <ExternalLink className="h-4 w-4 mr-2" />
+                                 Visit Site
+                             </Button>
                              {currentUser && (
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-500" onClick={(e) => onAddToWishlist(e, product)}>
                                     <Heart className="h-4 w-4" />
@@ -86,51 +107,63 @@ function ProductCard({ product, onAddToWishlist, currentUser, layout }: ProductC
         <Card className="overflow-hidden group cursor-pointer h-full flex flex-col" onClick={handleCardClick}>
             <CardHeader className="p-0 relative aspect-square">
                  {product.images && product.images.length > 0 ? (
+                    // --- FIX: Use getImageUrl helper ---
                     <img
-                        src={product.images[0]}
+                        src={getImageUrl(product.images[0])}
                         alt={product.name}
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                  ) : (
                     <div className="w-full h-full bg-muted flex items-center justify-center text-sm text-muted-foreground">No Image</div>
                  )}
-                 {/* Hover Actions */}
                  <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                     <Button variant="outline" size="icon" className="h-8 w-8 bg-background/80 hover:bg-background rounded-full shadow" onClick={handleQuickView}>
-                        <Search className="h-4 w-4" />
-                     </Button>
                      {currentUser && (
                         <Button variant="outline" size="icon" className="h-8 w-8 bg-background/80 hover:bg-background rounded-full shadow" onClick={(e) => onAddToWishlist(e, product)}>
                             <Heart className="h-4 w-4" />
                         </Button>
                      )}
-                     <Button variant="outline" size="icon" className="h-8 w-8 bg-background/80 hover:bg-background rounded-full shadow" onClick={handleAddToCart}>
-                        <ShoppingCart className="h-4 w-4" />
-                     </Button>
                 </div>
             </CardHeader>
             <CardContent className="p-4 flex-grow flex flex-col items-center text-center">
                 <CardTitle className="text-base font-medium leading-tight mb-1">{product.name}</CardTitle>
                 <p className="text-sm font-semibold">${product.price.toFixed(2)}</p>
-                {/* --- NEW: Added Rating --- */}
                 <Rating value={product.rating} text={`(${product.numReviews})`} className="justify-center mt-1" />
             </CardContent>
+            <CardFooter className="p-3 pt-0">
+                 <Button variant="outline" size="sm" className="w-full" onClick={handleAffiliateClick}>
+                     <ExternalLink className="h-4 w-4 mr-2" />
+                     Visit Seller
+                 </Button>
+            </CardFooter>
         </Card>
     );
 }
 
-// Filter Sidebar Component
-function FilterSidebar({ filters, onFilterChange, uniqueBrands, uniqueMaterials }: {
+// --- FilterSidebar Component ---
+function FilterSidebar({ filters, onFilterChange, onPriceChange, uniqueBrands, uniqueMaterials }: {
     filters: ProductFilters;
-    onFilterChange: (key: keyof ProductFilters, value: string | number | undefined) => void;
+    onFilterChange: (key: keyof ProductFilters, value: string | undefined) => void;
+    onPriceChange: (values: number[]) => void;
     uniqueBrands: string[];
     uniqueMaterials: string[];
 }) {
-    const handlePriceChange = (value: number[]) => {
-      onFilterChange('minPrice', value[0]);
-      onFilterChange('maxPrice', value[1]);
-    };
+    
+    // This local state is for the slider's immediate feedback
+    const [localMinPrice, setLocalMinPrice] = useState(filters.minPrice ?? 0);
+    const [localMaxPrice, setLocalMaxPrice] = useState(filters.maxPrice ?? 50000);
 
+    // Update local slider state if filters change from URL
+    useEffect(() => {
+        setLocalMinPrice(filters.minPrice ?? 0);
+        setLocalMaxPrice(filters.maxPrice ?? 50000);
+    }, [filters.minPrice, filters.maxPrice]);
+    
+    const handlePriceSliderChange = (values: number[]) => {
+        setLocalMinPrice(values[0]);
+        setLocalMaxPrice(values[1]);
+        onPriceChange(values); // This calls the debounced function from parent
+    };
+    
     return (
         <div className="space-y-6">
             <div>
@@ -141,7 +174,7 @@ function FilterSidebar({ filters, onFilterChange, uniqueBrands, uniqueMaterials 
                         placeholder="Search jewelry..."
                         className="pl-9"
                         value={filters.keyword || ''}
-                        onChange={e => onFilterChange('keyword', e.target.value || undefined)} // Pass undefined if empty
+                        onChange={e => onFilterChange('keyword', e.target.value || undefined)}
                     />
                 </div>
             </div>
@@ -191,49 +224,107 @@ function FilterSidebar({ filters, onFilterChange, uniqueBrands, uniqueMaterials 
             <div>
                 <Label className="text-sm font-medium">Price Range</Label>
                 <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>${filters.minPrice ?? 0}</span>
-                    <span>${filters.maxPrice ?? 50000}</span>
+                    <span>${localMinPrice}</span>
+                    <span>${localMaxPrice}</span>
                 </div>
                 <Slider
                     defaultValue={[0, 50000]}
                     max={50000}
                     step={100}
                     className="mt-2"
-                    value={[filters.minPrice ?? 0, filters.maxPrice ?? 50000]}
-                    onValueChange={handlePriceChange} // Debounced update happens in parent
+                    value={[localMinPrice, localMaxPrice]}
+                    onValueChange={handlePriceSliderChange}
                 />
             </div>
         </div>
     );
 }
 
-
+// --- Main Dashboard Component ---
 export default function BuyerDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filters, setFilters] = useState<ProductFilters>(() => {
-      // Initialize filters from URL search params
-      const params = new URLSearchParams(window.location.search);
-      return {
-          keyword: params.get('keyword') || undefined,
-          category: params.get('category') || undefined,
-          brand: params.get('brand') || undefined,
-          material: params.get('material') || undefined,
-          minPrice: Number(params.get('minPrice')) || 0,
-          maxPrice: Number(params.get('maxPrice')) || 50000,
-      };
-  });
-  const [layout, setLayout] = useState<'grid' | 'list'>('grid'); // State for layout
-  const [sortOption, setSortOption] = useState<string>('default'); // State for sorting
+  const [error, setError] = useState<string | null>(null);
+  
   const [searchParams, setSearchParams] = useSearchParams();
-
   const { toast } = useToast();
   const currentUser = getCurrentUser();
+  const { setAuthModalOpen, setPostLoginRedirect } = useAuthModal();
 
-  // Memoize derived lists to prevent recalculations unless products change
+  const [layout, setLayout] = useState<'grid' | 'list'>('grid');
+  
+  // Read filters and sort option directly from URL search params
+  const filters = useMemo((): ProductFilters => ({
+      keyword: searchParams.get('keyword') || undefined,
+      category: searchParams.get('category') || undefined,
+      brand: searchParams.get('brand') || undefined,
+      material: searchParams.get('material') || undefined,
+      minPrice: Number(searchParams.get('minPrice')) || undefined,
+      maxPrice: Number(searchParams.get('maxPrice')) || undefined,
+  }), [searchParams]);
+  
+  const sortOption = searchParams.get('sort') || 'default';
+
+  // Debounced function to update URL
+  const debouncedUpdateUrlParams = useCallback(
+    debounce((newFilters: ProductFilters) => {
+        const newParams = new URLSearchParams(searchParams);
+        Object.entries(newFilters).forEach(([key, value]) => {
+            if (value !== undefined && value !== '' && value !== 0 && !(key === 'maxPrice' && value === 50000)) {
+                newParams.set(key, String(value));
+            } else {
+                newParams.delete(key);
+            }
+        });
+        setSearchParams(newParams, { replace: true });
+    }, 500),
+  [setSearchParams, searchParams]);
+  
+  // Fetch products when filters in URL (searchParams) change
+  useEffect(() => {
+    setIsLoading(true);
+    
+    // --- FIX: Using the correct function `getApprovedProducts` ---
+    getApprovedProducts(filters)
+      .then(approvedProducts => {
+        setProducts(approvedProducts);
+        setError(null);
+      })
+      .catch(error => {
+        console.error("Failed to fetch products:", error);
+        setError("Could not fetch jewelry. Please try refreshing.");
+        toast({ variant: "destructive", title: "Error", description: "Could not fetch jewelry." });
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [filters, toast]); // Re-run fetch when filters object (derived from searchParams) changes
+
+  // Handlers to update URL
+  const handleFilterChange = (key: keyof ProductFilters, value: string | undefined) => {
+    const newFilters = { ...filters, [key]: value };
+    debouncedUpdateUrlParams(newFilters);
+  };
+
+  const handlePriceChange = (values: number[]) => {
+     const newFilters = { ...filters, minPrice: values[0], maxPrice: values[1] };
+     debouncedUpdateUrlParams(newFilters);
+  };
+  
+  const handleSortChange = (value: string) => {
+      const newParams = new URLSearchParams(searchParams);
+      if (value === 'default') {
+          newParams.delete('sort');
+      } else {
+          newParams.set('sort', value);
+      }
+      setSearchParams(newParams, { replace: true });
+  };
+
+  // Memoized values for sidebar and sorting
   const uniqueBrands = useMemo(() => {
-    const brands = products.map(p => p.brand).filter(Boolean); // Filter out potential undefined/null
-    return [...new Set(brands)].sort(); // Sort alphabetically
+    const brands = products.map(p => p.brand).filter(Boolean);
+    return [...new Set(brands)].sort();
   }, [products]);
 
   const uniqueMaterials = useMemo(() => {
@@ -241,84 +332,47 @@ export default function BuyerDashboard() {
     return [...new Set(materials)].sort();
   }, [products]);
 
-
-  // Debounced fetch function
-  const debouncedFetchProducts = useCallback(
-    debounce(async (currentFilters: ProductFilters) => {
-      setIsLoading(true);
-      try {
-        const approvedProducts = await getApprovedProducts(currentFilters);
-        setProducts(approvedProducts);
-
-        // Update URL search params
-        const newParams = new URLSearchParams();
-        Object.entries(currentFilters).forEach(([key, value]) => {
-          if (value !== undefined && value !== '' && !(key === 'minPrice' && value === 0) && !(key === 'maxPrice' && value === 50000)) {
-            newParams.set(key, String(value));
-          }
-        });
-        setSearchParams(newParams, { replace: true }); // Use replace to avoid history pollution
-
-      } catch (error) {
-        toast({ variant: "destructive", title: "Error", description: "Could not fetch jewelry." });
-      } finally {
-        setIsLoading(false);
+  const sortedProducts = useMemo(() => {
+      let sorted = [...products];
+      // Note: Filtering logic is now handled by the backend via `getApprovedProducts(filters)`
+      // We only need to handle client-side *sorting* here.
+      
+      switch (sortOption) {
+          case 'price-asc':
+              sorted.sort((a, b) => a.price - b.price);
+              break;
+          case 'price-desc':
+              sorted.sort((a, b) => b.price - b.price);
+              break;
+          case 'name-asc':
+              sorted.sort((a, b) => a.name.localeCompare(b.name));
+              break;
+          case 'name-desc':
+               sorted.sort((a, b) => b.name.localeCompare(a.name));
+               break;
+          default:
+              break;
       }
-    }, 500), // Adjust debounce delay as needed (e.g., 500ms)
-  [toast, setSearchParams]); // setSearchParams is stable
+      return sorted;
+  }, [products, sortOption]);
 
-  // Effect to trigger fetch when filters change
-  useEffect(() => {
-    debouncedFetchProducts(filters);
-    // Cancel the debounce on unmount
-    return () => debouncedFetchProducts.cancel();
-  }, [filters, debouncedFetchProducts]);
-
-
-  const handleFilterChange = (key: keyof ProductFilters, value: string | number | undefined) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  };
 
    const handleAddToWishlist = async (e: React.MouseEvent, product: Product) => {
         e.preventDefault();
         e.stopPropagation();
         if (!currentUser) {
             toast({ variant: "destructive", title: "Login Required", description: "Please log in to add items to your wishlist." });
-            // Consider navigating to /auth or showing a login modal from BuyerLayout
+            setPostLoginRedirect(window.location.pathname);
+            setAuthModalOpen(true);
             return;
         }
         try {
             await addToWishlist(product._id);
             toast({ title: "Success", description: `${product.name} added to your wishlist!` });
-            // Consider updating a local wishlist state in BuyerLayout context if needed
         } catch (error: any) {
             toast({ variant: "destructive", title: "Error", description: error.response?.data?.message || "Could not add to wishlist." });
         }
     };
-
-    // Sorting logic based on sortOption
-    const sortedProducts = useMemo(() => {
-        let sorted = [...products];
-        switch (sortOption) {
-            case 'price-asc':
-                sorted.sort((a, b) => a.price - b.price);
-                break;
-            case 'price-desc':
-                sorted.sort((a, b) => b.price - b.price);
-                break;
-            case 'name-asc':
-                sorted.sort((a, b) => a.name.localeCompare(b.name));
-                break;
-            case 'name-desc':
-                 sorted.sort((a, b) => b.name.localeCompare(a.name));
-                 break;
-            // Add more cases like 'trending', 'newest' if needed
-            default: // 'default' or any other case
-                // Keep original order or implement default sort (e.g., by relevance if available)
-                break;
-        }
-        return sorted;
-    }, [products, sortOption]);
 
 
   return (
@@ -328,7 +382,13 @@ export default function BuyerDashboard() {
              <h2 className="text-xl font-semibold mb-4 hidden md:block">Filters</h2>
              {/* Desktop Sidebar */}
              <div className="hidden md:block">
-                 <FilterSidebar filters={filters} onFilterChange={handleFilterChange} uniqueBrands={uniqueBrands} uniqueMaterials={uniqueMaterials} />
+                 <FilterSidebar 
+                    filters={filters} 
+                    onFilterChange={handleFilterChange} 
+                    onPriceChange={handlePriceChange}
+                    uniqueBrands={uniqueBrands} 
+                    uniqueMaterials={uniqueMaterials} 
+                />
              </div>
              {/* Mobile Filter Button/Sheet */}
              <div className="md:hidden mb-4">
@@ -342,7 +402,13 @@ export default function BuyerDashboard() {
                            <SheetHeader className="mb-6 border-b pb-4">
                               <SheetTitle className="text-lg font-semibold">Filters</SheetTitle>
                            </SheetHeader>
-                           <FilterSidebar filters={filters} onFilterChange={handleFilterChange} uniqueBrands={uniqueBrands} uniqueMaterials={uniqueMaterials} />
+                           <FilterSidebar 
+                                filters={filters} 
+                                onFilterChange={handleFilterChange} 
+                                onPriceChange={handlePriceChange}
+                                uniqueBrands={uniqueBrands} 
+                                uniqueMaterials={uniqueMaterials} 
+                            />
                            <SheetClose asChild className="mt-6 w-full">
                                 <Button>Apply Filters</Button>
                            </SheetClose>
@@ -356,7 +422,7 @@ export default function BuyerDashboard() {
              <div className="flex items-center justify-between mb-6 border-b pb-4">
                  <h1 className="text-2xl font-bold">Shop</h1>
                  <div className="flex items-center gap-2">
-                     <Select value={sortOption} onValueChange={setSortOption}>
+                     <Select value={sortOption} onValueChange={handleSortChange}>
                         <SelectTrigger className="w-[180px] text-xs h-9">
                             <SelectValue placeholder="Default Sorting" />
                         </SelectTrigger>
@@ -366,7 +432,6 @@ export default function BuyerDashboard() {
                             <SelectItem value="price-desc">Price: High to Low</SelectItem>
                              <SelectItem value="name-asc">Name: A to Z</SelectItem>
                              <SelectItem value="name-desc">Name: Z to A</SelectItem>
-                            {/* Add more options like popularity, newest */}
                         </SelectContent>
                     </Select>
 
@@ -382,7 +447,6 @@ export default function BuyerDashboard() {
              </div>
 
             {isLoading ? (
-                // Use LoadingSpinner or Skeletons
                  layout === 'grid' ? (
                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                          {[...Array(12)].map((_, i) => <Skeleton key={i} className="h-80 w-full rounded-lg" />)}
@@ -392,6 +456,12 @@ export default function BuyerDashboard() {
                          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-40 w-full rounded-lg" />)}
                      </div>
                  )
+            ) : error ? (
+                 <div className="text-center py-20 border rounded-lg">
+                    <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold">Error</h2>
+                    <p className="text-muted-foreground mt-2">{error}</p>
+                </div>
             ) : sortedProducts.length === 0 ? (
                 <div className="text-center py-20 border rounded-lg">
                     <h2 className="text-xl font-semibold">No Jewelry Found</h2>
