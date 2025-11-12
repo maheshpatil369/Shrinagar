@@ -1,11 +1,10 @@
 // Frontend1/src/pages/BuyerDashboard.tsx
-// This file is now fixed to use `getApprovedProducts` and the correct sidebar logic.
+// This file has been updated to use relative ../ paths and a full-width layout
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
-// --- FIX: Importing the REAL function `getApprovedProducts` ---
 import { Product, getApprovedProducts, ProductFilters } from "../lib/products";
 import { ExternalLink, LoaderCircle, Search, SlidersHorizontal, Heart, X, LayoutGrid, List, ShoppingCart, AlertCircle } from 'lucide-react';
 import { useToast } from "../hooks/use-toast";
@@ -18,15 +17,12 @@ import { Skeleton } from "../components/ui/skeleton";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "../components/ui/sheet";
 import Rating from "../components/ui/Rating";
-import { useAuthModal } from '@/context/AuthModalContext';
+import { useAuthModal } from '../context/AuthModalContext';
 import debounce from 'lodash.debounce';
-// --- FIX: Added missing Label import ---
 import { Label } from "../components/ui/label";
 
-// --- FIX: Backend URL for constructing correct image paths ---
-const BACKEND_URL = import.meta.env.VITE_API_URL 
-                    ? import.meta.env.VITE_API_URL.replace('/api', '') 
-                    : 'http://localhost:8000';
+// You may need to update this URL to match your environment.
+const BACKEND_URL = 'http://localhost:8000';
 
 // Helper to clean up image paths
 const getImageUrl = (imagePath: string) => {
@@ -68,13 +64,23 @@ function ProductCard({ product, onAddToWishlist, currentUser, layout }: ProductC
         window.open(product.affiliateUrl, '_blank', 'noopener,noreferrer');
     };
 
+    // --- NEW: Image Error Handler ---
+    const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+        e.currentTarget.src = 'https://placehold.co/600x600/e2e8f0/a0aec0?text=No+Image';
+    };
+
      if (layout === 'list') {
+         // --- List View Card ---
          return (
             <Card className="overflow-hidden group cursor-pointer w-full flex flex-col sm:flex-row" onClick={handleCardClick}>
                 <div className="relative aspect-square sm:w-48 shrink-0">
                      {product.images && product.images.length > 0 ? (
-                        // --- FIX: Use getImageUrl helper ---
-                        <img src={getImageUrl(product.images[0])} alt={product.name} className="w-full h-full object-cover"/>
+                        <img 
+                            src={getImageUrl(product.images[0])} 
+                            alt={product.name} 
+                            className="w-full h-full object-cover"
+                            onError={handleImageError} // <-- ADDED
+                        />
                      ) : (
                         <div className="w-full h-full bg-muted flex items-center justify-center text-sm text-muted-foreground">No Image</div>
                      )}
@@ -102,16 +108,17 @@ function ProductCard({ product, onAddToWishlist, currentUser, layout }: ProductC
          );
      }
 
-    // Default Grid Layout
+    // --- Grid View Card (Updated Style) ---
     return (
         <Card className="overflow-hidden group cursor-pointer h-full flex flex-col" onClick={handleCardClick}>
             <CardHeader className="p-0 relative aspect-square">
+                <Badge className="absolute top-2 left-2 z-10 bg-green-600 hover:bg-green-600 text-white shadow">Best Seller</Badge>
                  {product.images && product.images.length > 0 ? (
-                    // --- FIX: Use getImageUrl helper ---
                     <img
                         src={getImageUrl(product.images[0])}
                         alt={product.name}
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        onError={handleImageError} // <-- ADDED
                     />
                  ) : (
                     <div className="w-full h-full bg-muted flex items-center justify-center text-sm text-muted-foreground">No Image</div>
@@ -124,13 +131,13 @@ function ProductCard({ product, onAddToWishlist, currentUser, layout }: ProductC
                      )}
                 </div>
             </CardHeader>
-            <CardContent className="p-4 flex-grow flex flex-col items-center text-center">
-                <CardTitle className="text-base font-medium leading-tight mb-1">{product.name}</CardTitle>
-                <p className="text-sm font-semibold">${product.price.toFixed(2)}</p>
-                <Rating value={product.rating} text={`(${product.numReviews})`} className="justify-center mt-1" />
+            <CardContent className="p-4 flex-grow flex flex-col">
+                <CardTitle className="text-base font-medium leading-tight mb-1 line-clamp-2">{product.name}</CardTitle>
+                <Rating value={product.rating} text={`(${product.numReviews})`} className="mt-1" />
+                <p className="text-lg font-bold text-primary mt-2">${product.price.toFixed(2)}</p>
             </CardContent>
             <CardFooter className="p-3 pt-0">
-                 <Button variant="outline" size="sm" className="w-full" onClick={handleAffiliateClick}>
+                 <Button variant="default" size="sm" className="w-full" onClick={handleAffiliateClick}>
                      <ExternalLink className="h-4 w-4 mr-2" />
                      Visit Seller
                  </Button>
@@ -148,11 +155,9 @@ function FilterSidebar({ filters, onFilterChange, onPriceChange, uniqueBrands, u
     uniqueMaterials: string[];
 }) {
     
-    // This local state is for the slider's immediate feedback
     const [localMinPrice, setLocalMinPrice] = useState(filters.minPrice ?? 0);
     const [localMaxPrice, setLocalMaxPrice] = useState(filters.maxPrice ?? 50000);
 
-    // Update local slider state if filters change from URL
     useEffect(() => {
         setLocalMinPrice(filters.minPrice ?? 0);
         setLocalMaxPrice(filters.maxPrice ?? 50000);
@@ -161,7 +166,7 @@ function FilterSidebar({ filters, onFilterChange, onPriceChange, uniqueBrands, u
     const handlePriceSliderChange = (values: number[]) => {
         setLocalMinPrice(values[0]);
         setLocalMaxPrice(values[1]);
-        onPriceChange(values); // This calls the debounced function from parent
+        onPriceChange(values);
     };
     
     return (
@@ -243,17 +248,16 @@ function FilterSidebar({ filters, onFilterChange, onPriceChange, uniqueBrands, u
 // --- Main Dashboard Component ---
 export default function BuyerDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [allBrands, setAllBrands] = useState<string[]>([]);
+  const [allMaterials, setAllMaterials] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const currentUser = getCurrentUser();
   const { setAuthModalOpen, setPostLoginRedirect } = useAuthModal();
-
   const [layout, setLayout] = useState<'grid' | 'list'>('grid');
   
-  // Read filters and sort option directly from URL search params
   const filters = useMemo((): ProductFilters => ({
       keyword: searchParams.get('keyword') || undefined,
       category: searchParams.get('category') || undefined,
@@ -265,7 +269,6 @@ export default function BuyerDashboard() {
   
   const sortOption = searchParams.get('sort') || 'default';
 
-  // Debounced function to update URL
   const debouncedUpdateUrlParams = useCallback(
     debounce((newFilters: ProductFilters) => {
         const newParams = new URLSearchParams(searchParams);
@@ -280,11 +283,24 @@ export default function BuyerDashboard() {
     }, 500),
   [setSearchParams, searchParams]);
   
-  // Fetch products when filters in URL (searchParams) change
+  useEffect(() => {
+    const loadFilterOptions = async () => {
+      try {
+        const allItems = await getApprovedProducts({});
+        const brands = [...new Set(allItems.map(p => p.brand).filter(Boolean))].sort();
+        const materials = [...new Set(allItems.map(p => p.material).filter(Boolean))].sort();
+        setAllBrands(brands);
+        setAllMaterials(materials);
+      } catch (err) {
+        console.error("Failed to load filter options", err);
+        toast({ variant: "destructive", title: "Error", description: "Could not load filter options." });
+      }
+    };
+    loadFilterOptions();
+  }, [toast]);
+
   useEffect(() => {
     setIsLoading(true);
-    
-    // --- FIX: Using the correct function `getApprovedProducts` ---
     getApprovedProducts(filters)
       .then(approvedProducts => {
         setProducts(approvedProducts);
@@ -298,9 +314,8 @@ export default function BuyerDashboard() {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [filters, toast]); // Re-run fetch when filters object (derived from searchParams) changes
+  }, [filters, toast]);
 
-  // Handlers to update URL
   const handleFilterChange = (key: keyof ProductFilters, value: string | undefined) => {
     const newFilters = { ...filters, [key]: value };
     debouncedUpdateUrlParams(newFilters);
@@ -321,22 +336,8 @@ export default function BuyerDashboard() {
       setSearchParams(newParams, { replace: true });
   };
 
-  // Memoized values for sidebar and sorting
-  const uniqueBrands = useMemo(() => {
-    const brands = products.map(p => p.brand).filter(Boolean);
-    return [...new Set(brands)].sort();
-  }, [products]);
-
-  const uniqueMaterials = useMemo(() => {
-    const materials = products.map(p => p.material).filter(Boolean);
-    return [...new Set(materials)].sort();
-  }, [products]);
-
   const sortedProducts = useMemo(() => {
       let sorted = [...products];
-      // Note: Filtering logic is now handled by the backend via `getApprovedProducts(filters)`
-      // We only need to handle client-side *sorting* here.
-      
       switch (sortOption) {
           case 'price-asc':
               sorted.sort((a, b) => a.price - b.price);
@@ -374,56 +375,18 @@ export default function BuyerDashboard() {
         }
     };
 
-
   return (
-    <div className="container mx-auto max-w-screen-2xl p-4 md:px-8 flex flex-col md:flex-row gap-8">
-        {/* --- Sidebar --- */}
-        <aside className="w-full md:w-64 lg:w-72 shrink-0">
-             <h2 className="text-xl font-semibold mb-4 hidden md:block">Filters</h2>
-             {/* Desktop Sidebar */}
-             <div className="hidden md:block">
-                 <FilterSidebar 
-                    filters={filters} 
-                    onFilterChange={handleFilterChange} 
-                    onPriceChange={handlePriceChange}
-                    uniqueBrands={uniqueBrands} 
-                    uniqueMaterials={uniqueMaterials} 
-                />
-             </div>
-             {/* Mobile Filter Button/Sheet */}
-             <div className="md:hidden mb-4">
-                  <Sheet>
-                      <SheetTrigger asChild>
-                          <Button variant="outline" className="w-full justify-center">
-                              <SlidersHorizontal className="mr-2 h-4 w-4" /> Filters
-                          </Button>
-                      </SheetTrigger>
-                      <SheetContent side="left" className="w-[300px] sm:w-[400px] overflow-y-auto">
-                           <SheetHeader className="mb-6 border-b pb-4">
-                              <SheetTitle className="text-lg font-semibold">Filters</SheetTitle>
-                           </SheetHeader>
-                           <FilterSidebar 
-                                filters={filters} 
-                                onFilterChange={handleFilterChange} 
-                                onPriceChange={handlePriceChange}
-                                uniqueBrands={uniqueBrands} 
-                                uniqueMaterials={uniqueMaterials} 
-                            />
-                           <SheetClose asChild className="mt-6 w-full">
-                                <Button>Apply Filters</Button>
-                           </SheetClose>
-                      </SheetContent>
-                  </Sheet>
-             </div>
-        </aside>
-
+    // --- LAYOUT CHANGE: Removed flex-col md:flex-row ---
+    <div className="container mx-auto max-w-screen-2xl p-4 md:px-8">
+        
         {/* --- Main Product Grid --- */}
-        <main className="flex-1 min-w-0">
-             <div className="flex items-center justify-between mb-6 border-b pb-4">
+        <main className="w-full">
+             {/* --- LAYOUT CHANGE: Added Filter Button here --- */}
+             <div className="flex flex-wrap items-center justify-between mb-6 border-b pb-4 gap-4">
                  <h1 className="text-2xl font-bold">Shop</h1>
                  <div className="flex items-center gap-2">
                      <Select value={sortOption} onValueChange={handleSortChange}>
-                        <SelectTrigger className="w-[180px] text-xs h-9">
+                        <SelectTrigger className="w-[160px] text-xs h-9">
                             <SelectValue placeholder="Default Sorting" />
                         </SelectTrigger>
                         <SelectContent>
@@ -443,19 +406,40 @@ export default function BuyerDashboard() {
                          <List className="h-4 w-4" />
                          <span className="sr-only">List View</span>
                      </Button>
+
+                    {/* --- LAYOUT CHANGE: Filter button moved here --- */}
+                    <Sheet>
+                      <SheetTrigger asChild>
+                          <Button variant="outline" className="h-9 px-3">
+                              <SlidersHorizontal className="mr-0 sm:mr-2 h-4 w-4" />
+                              <span className="hidden sm:inline">Filters</span>
+                          </Button>
+                      </SheetTrigger> 
+                      <SheetContent side="right" className="w-[300px] sm:w-[400px] overflow-y-auto">
+                           <SheetHeader className="mb-6 border-b pb-4">
+                              <SheetTitle className="text-xl font-semibold">Filters</SheetTitle>
+                           </SheetHeader>
+                           <FilterSidebar 
+                                filters={filters} 
+                                onFilterChange={handleFilterChange} 
+                                onPriceChange={handlePriceChange}
+                                uniqueBrands={allBrands}
+                                uniqueMaterials={allMaterials}
+                            />
+                           <SheetClose asChild className="mt-6 w-full">
+                                <Button>Apply Filters</Button>
+                           </SheetClose>
+                      </SheetContent>
+                  </Sheet>
+
                  </div>
              </div>
 
             {isLoading ? (
-                 layout === 'grid' ? (
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                         {[...Array(12)].map((_, i) => <Skeleton key={i} className="h-80 w-full rounded-lg" />)}
-                     </div>
-                 ) : (
-                      <div className="space-y-4">
-                         {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-40 w-full rounded-lg" />)}
-                     </div>
-                 )
+                 // --- LAYOUT CHANGE: Added xl:grid-cols-5 for full width ---
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                     {[...Array(10)].map((_, i) => <Skeleton key={i} className="h-96 w-full rounded-lg" />)}
+                 </div>
             ) : error ? (
                  <div className="text-center py-20 border rounded-lg">
                     <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
@@ -468,7 +452,8 @@ export default function BuyerDashboard() {
                     <p className="text-muted-foreground mt-2">Try adjusting your filters.</p>
                 </div>
             ) : layout === 'grid' ? (
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                 // --- LAYOUT CHANGE: Added xl:grid-cols-5 for full width ---
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                     {sortedProducts.map((product) => (
                        <ProductCard key={product._id} product={product} onAddToWishlist={handleAddToWishlist} currentUser={currentUser} layout="grid" />
                     ))}
@@ -481,6 +466,9 @@ export default function BuyerDashboard() {
                 </div>
             )}
         </main>
+
+        {/* --- LAYOUT CHANGE: The <aside> element is no longer here --- */}
+
     </div>
   );
 }

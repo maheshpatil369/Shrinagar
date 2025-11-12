@@ -3,9 +3,9 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from 'date-fns';
 
-import { getCurrentUser, logout, User } from "@/lib/auth";
-import { Product } from "@/lib/products";
-import { Seller } from "@/lib/seller";
+import { getCurrentUser, logout, User } from "../lib/auth";
+import { Product } from "../lib/products";
+import { Seller } from "../lib/seller";
 import {
     getAdminDashboardStats,
     getPendingApprovals,
@@ -17,23 +17,25 @@ import {
     adminGetAllSellers,
     adminGetAllProducts,
     getAdminChartData,
-} from "@/lib/admin";
+} from "../lib/admin";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { Input } from "../components/ui/input";
+import { useToast } from "../hooks/use-toast";
+import { Badge } from "../components/ui/badge";
 import { ShieldCheck, LoaderCircle, Users, Package, BarChart2, Clock, Eye, CheckCircle, XCircle, ShieldAlert, History, Search } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../components/ui/dialog";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../components/ui/carousel";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "../components/ui/chart"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts"
+import { cn } from "../lib/utils"; // <-- IMPORT cn
+import { ThemeToggle } from "../components/ThemeToggle";
 
 
 type ViewingSellerDetails = {
@@ -58,7 +60,7 @@ const chartConfig = {
     label: "Products",
     color: "hsl(var(--chart-2))",
   },
-} satisfies import("@/components/ui/chart").ChartConfig;
+} satisfies import("../components/ui/chart").ChartConfig;
 
 export default function AdminDashboard() {
   const [user, setUser] = useState<User | null>(null);
@@ -169,13 +171,18 @@ export default function AdminDashboard() {
       }
   };
   
-  const getStatusBadgeVariant = (status: string) => {
+  // --- NEW: Function to return color classes for badges ---
+  const getStatusBadgeClass = (status: string) => {
     switch (status) {
-      case 'approved': return 'default';
-      case 'pending': return 'secondary';
+      case 'approved':
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-300 dark:border-green-700 border";
+      case 'pending':
+        return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700 border";
       case 'rejected':
-      case 'suspended': return 'destructive';
-      default: return 'outline';
+      case 'suspended':
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border-red-300 dark:border-red-700 border";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 border";
     }
   };
 
@@ -218,6 +225,7 @@ export default function AdminDashboard() {
           <p className="text-muted-foreground">Welcome, {user.name}!</p>
         </div>
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-white"><ShieldCheck className="mr-2 h-4 w-4" />Admin Access</Badge>
           <Button onClick={() => logout()} variant="outline">Logout</Button>
         </div>
@@ -231,11 +239,12 @@ export default function AdminDashboard() {
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-6">
+            {/* --- UPDATED: Added colorful borders and icons --- */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-                <Card className="cursor-pointer hover:bg-muted/50" onClick={() => { setMainTab("management"); setManagementTab("users"); }}><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Users</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats?.totalUsers}</div></CardContent></Card>
-                <Card className="cursor-pointer hover:bg-muted/50" onClick={() => { setMainTab("management"); setManagementTab("sellers"); }}><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Sellers</CardTitle><Package className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats?.totalSellers}</div></CardContent></Card>
-                <Card className="cursor-pointer hover:bg-muted/50" onClick={() => { setMainTab("management"); setManagementTab("products"); }}><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Products</CardTitle><BarChart2 className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats?.totalProducts}</div></CardContent></Card>
-                <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setMainTab("approvals")}><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Pending Approvals</CardTitle><Clock className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats?.pendingApprovals}</div></CardContent></Card>
+                <Card className="cursor-pointer hover:bg-muted/50 border-l-4 border-blue-500" onClick={() => { setMainTab("management"); setManagementTab("users"); }}><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Users</CardTitle><Users className="h-4 w-4 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats?.totalUsers}</div></CardContent></Card>
+                <Card className="cursor-pointer hover:bg-muted/50 border-l-4 border-purple-500" onClick={() => { setMainTab("management"); setManagementTab("sellers"); }}><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Sellers</CardTitle><Package className="h-4 w-4 text-purple-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats?.totalSellers}</div></CardContent></Card>
+                <Card className="cursor-pointer hover:bg-muted/50 border-l-4 border-green-500" onClick={() => { setMainTab("management"); setManagementTab("products"); }}><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Products</CardTitle><BarChart2 className="h-4 w-4 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats?.totalProducts}</div></CardContent></Card>
+                <Card className="cursor-pointer hover:bg-muted/50 border-l-4 border-amber-500" onClick={() => setMainTab("approvals")}><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Pending Approvals</CardTitle><Clock className="h-4 w-4 text-amber-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats?.pendingApprovals}</div></CardContent></Card>
             </div>
 
             <Card>
@@ -406,7 +415,8 @@ export default function AdminDashboard() {
                                         <TableRow key={s._id}>
                                             <TableCell>{s.businessName}</TableCell>
                                             <TableCell>{s.user.name}</TableCell>
-                                            <TableCell><Badge variant={getStatusBadgeVariant(s.status)} className="capitalize">{s.status}</Badge></TableCell>
+                                            {/* --- UPDATED: Using new color function --- */}
+                                            <TableCell><Badge className={cn("capitalize", getStatusBadgeClass(s.status))}>{s.status}</Badge></TableCell>
                                             <TableCell className="text-right space-x-2">
                                                 <Button variant="ghost" size="sm" onClick={() => handleViewSeller(s._id)}><Eye className="h-4 w-4 mr-1"/>Details</Button>
 
@@ -434,10 +444,10 @@ export default function AdminDashboard() {
                                                    <AlertDialog>
                                                     <AlertDialogTrigger asChild><Button size="sm" variant="secondary"><ShieldAlert className="h-4 w-4" /></Button></AlertDialogTrigger>
                                                     <AlertDialogContent>
-                                                      <AlertDialogHeader><AlertDialogTitle>Suspend Seller?</AlertDialogTitle><AlertDialogDescription>This will suspend {s.businessName}'s account.</AlertDialogDescription></AlertDialogHeader>
-                                                      <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleSellerStatusUpdate(s._id, 'suspended')}>Confirm Suspend</AlertDialogAction></AlertDialogFooter>
+                                                        <AlertDialogHeader><AlertDialogTitle>Suspend Seller?</AlertDialogTitle><AlertDialogDescription>This will suspend {s.businessName}'s account.</AlertDialogDescription></AlertDialogHeader>
+                                                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleSellerStatusUpdate(s._id, 'suspended')}>Confirm Suspend</AlertDialogAction></AlertDialogFooter>
                                                     </AlertDialogContent>
-                                                  </AlertDialog>
+                                                   </AlertDialog>
                                                 )}
                                             </TableCell>
                                         </TableRow>
@@ -483,7 +493,8 @@ export default function AdminDashboard() {
                                             {/* @ts-ignore */}
                                             <TableCell>{p.seller.name}</TableCell>
                                             <TableCell>${p.price.toFixed(2)}</TableCell>
-                                            <TableCell><Badge variant={getStatusBadgeVariant(p.status)} className="capitalize">{p.status}</Badge></TableCell>
+                                            {/* --- UPDATED: Using new color function --- */}
+                                            <TableCell><Badge className={cn("capitalize", getStatusBadgeClass(p.status))}>{p.status}</Badge></TableCell>
                                             <TableCell className="text-right space-x-2">
                                                 <Button variant="ghost" size="sm" onClick={() => setViewingProductDetails(p)}><Eye className="h-4 w-4 mr-1"/>Review</Button>
                                                 {p.status !== 'rejected' && (
@@ -522,7 +533,8 @@ export default function AdminDashboard() {
             <DialogHeader>
                 <DialogTitle>{viewingSellerDetails?.seller.businessName}</DialogTitle>
                 <DialogDescription>
-                    Review seller's profile, products, and history. Status: <Badge variant={getStatusBadgeVariant(viewingSellerDetails?.seller.status || '')}>{viewingSellerDetails?.seller.status}</Badge>
+                    Review seller's profile, products, and history. Status: {/* --- UPDATED: Using new color function --- */}
+                    <Badge className={cn("capitalize", getStatusBadgeClass(viewingSellerDetails?.seller.status || ''))}>{viewingSellerDetails?.seller.status}</Badge>
                 </DialogDescription>
             </DialogHeader>
             {viewingSellerDetails && (
@@ -535,23 +547,23 @@ export default function AdminDashboard() {
                     <ScrollArea className="flex-grow mt-4 pr-6">
                         <TabsContent value="profile">
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                                <div><h4 className="font-semibold">Owner</h4><p className="text-muted-foreground">{viewingSellerDetails.seller.user.name} ({viewingSellerDetails.seller.user.email})</p></div>
-                                <div><h4 className="font-semibold">GST Number</h4><p className="text-muted-foreground">{viewingSellerDetails.seller.gstNumber}</p></div>
-                                <div><h4 className="font-semibold">PAN Number</h4><p className="text-muted-foreground">{viewingSellerDetails.seller.panNumber}</p></div>
-                                <div><h4 className="font-semibold">Address</h4><p className="text-muted-foreground">{`${viewingSellerDetails.seller.address.street}, ${viewingSellerDetails.seller.address.city}, ${viewingSellerDetails.seller.address.state} - ${viewingSellerDetails.seller.address.pincode}`}</p></div>
-                                <div className="col-span-full"><h4 className="font-semibold mb-2">Verification Documents</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <Card>
-                                            <CardHeader><CardTitle className="text-base">GST Certificate</CardTitle></CardHeader>
-                                            <CardContent>{viewingSellerDetails.seller.verificationDocuments?.gstCertificate ? <img src={viewingSellerDetails.seller.verificationDocuments.gstCertificate} alt="GST Certificate" className="rounded-md border"/> : <p className="text-muted-foreground">Not Provided</p>}</CardContent>
-                                        </Card>
-                                        <Card>
-                                            <CardHeader><CardTitle className="text-base">PAN Card</CardTitle></CardHeader>
-                                            <CardContent>{viewingSellerDetails.seller.verificationDocuments?.panCard ? <img src={viewingSellerDetails.seller.verificationDocuments.panCard} alt="PAN Card" className="rounded-md border"/> : <p className="text-muted-foreground">Not Provided</p>}</CardContent>
-                                        </Card>
-                                    </div>
+                                 <div><h4 className="font-semibold">Owner</h4><p className="text-muted-foreground">{viewingSellerDetails.seller.user.name} ({viewingSellerDetails.seller.user.email})</p></div>
+                                 <div><h4 className="font-semibold">GST Number</h4><p className="text-muted-foreground">{viewingSellerDetails.seller.gstNumber}</p></div>
+                                 <div><h4 className="font-semibold">PAN Number</h4><p className="text-muted-foreground">{viewingSellerDetails.seller.panNumber}</p></div>
+                                 <div><h4 className="font-semibold">Address</h4><p className="text-muted-foreground">{`${viewingSellerDetails.seller.address.street}, ${viewingSellerDetails.seller.address.city}, ${viewingSellerDetails.seller.address.state} - ${viewingSellerDetails.seller.address.pincode}`}</p></div>
+                                 <div className="col-span-full"><h4 className="font-semibold mb-2">Verification Documents</h4>
+                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                         <Card>
+                                             <CardHeader><CardTitle className="text-base">GST Certificate</CardTitle></CardHeader>
+                                             <CardContent>{viewingSellerDetails.seller.verificationDocuments?.gstCertificate ? <img src={viewingSellerDetails.seller.verificationDocuments.gstCertificate} alt="GST Certificate" className="rounded-md border"/> : <p className="text-muted-foreground">Not Provided</p>}</CardContent>
+                                         </Card>
+                                         <Card>
+                                             <CardHeader><CardTitle className="text-base">PAN Card</CardTitle></CardHeader>
+                                             <CardContent>{viewingSellerDetails.seller.verificationDocuments?.panCard ? <img src={viewingSellerDetails.seller.verificationDocuments.panCard} alt="PAN Card" className="rounded-md border"/> : <p className="text-muted-foreground">Not Provided</p>}</CardContent>
+                                         </Card>
+                                     </div>
+                                 </div>
                                 </div>
-                            </div>
                         </TabsContent>
                         <TabsContent value="products">
                            <Table>
@@ -561,7 +573,8 @@ export default function AdminDashboard() {
                                         <TableRow key={p._id}>
                                             <TableCell><div className="flex items-center gap-4"><img src={p.images[0]} alt={p.name} className="w-10 h-10 object-cover rounded-md border"/><span>{p.name}</span></div></TableCell>
                                             <TableCell>${p.price.toFixed(2)}</TableCell>
-                                            <TableCell><Badge variant={getStatusBadgeVariant(p.status)}>{p.status}</Badge></TableCell>
+                                            {/* --- UPDATED: Using new color function --- */}
+                                            <TableCell><Badge className={cn("capitalize", getStatusBadgeClass(p.status))}>{p.status}</Badge></TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
@@ -616,7 +629,8 @@ export default function AdminDashboard() {
                     <DialogTitle>{viewingProductDetails?.name}</DialogTitle>
                     <DialogDescription>
                         Reviewing product from {/* @ts-ignore */}
-                        <strong>{viewingProductDetails?.seller?.businessName}</strong>. Status: <Badge variant={getStatusBadgeVariant(viewingProductDetails?.status || '')}>{viewingProductDetails?.status}</Badge>
+                        <strong>{viewingProductDetails?.seller?.businessName}</strong>. Status: {/* --- UPDATED: Using new color function --- */}
+                        <Badge className={cn("capitalize", getStatusBadgeClass(viewingProductDetails?.status || ''))}>{viewingProductDetails?.status}</Badge>
                     </DialogDescription>
                 </DialogHeader>
                 {viewingProductDetails && (
@@ -653,4 +667,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
