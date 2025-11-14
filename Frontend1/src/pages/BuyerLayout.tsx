@@ -69,10 +69,8 @@ export default function BuyerLayout() {
           setUser(verifiedUser);
         })
         .catch(() => {
-          // Token is invalid or expired
-          logout(); // Clear the bad token
+          logout(); 
           setUser(null);
-          // Don't navigate here, let ProtectedRoute handle it if needed
         })
         .finally(() => {
             setIsLoadingUser(false);
@@ -114,7 +112,7 @@ export default function BuyerLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background"> {/* RESTORED: Changed bg-white back to bg-background to respect dark/light theme */}
       <header className="sticky top-0 z-40 w-full border-b bg-background">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 md:px-8">
             <Link to="/buyer" className="flex items-center gap-2">
