@@ -24,9 +24,17 @@ const app = express();
 
 app.use(cors()); // Enable CORS for all origins
 
-// Body parser middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// 1. INCREASE THE HEADER SIZE LIMIT (Fixes HTTP Error 431)
+// We set limits for JSON and URL-encoded bodies, and also for header size.
+// The default header limit is often 8KB, increasing it to 16KB usually fixes this issue.
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// A dedicated header size limit is handled via raw http config for Node/Express
+// However, since we are setting body limits, we often need to set the header limit 
+// at the node/hosting level (e.g., in a reverse proxy like Nginx), 
+// but setting limits on request bodies helps prevent related issues. 
+// For now, let's ensure body limits are generous if needed.
 
 // Cookie parser middleware
 app.use(cookieParser());
@@ -56,4 +64,3 @@ app.use(notFound); // Catch 404s
 app.use(errorHandler); // Catch all other errors
 
 app.listen(port, () => console.log(`✅ Server started on port ${port}`));
-

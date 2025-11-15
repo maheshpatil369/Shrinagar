@@ -226,15 +226,17 @@ export default function AdminDashboard() {
   };
 
   const handleViewSeller = async (sellerId: string) => {
+    console.log(`[DEBUG] Attempting to fetch details for seller ID: ${sellerId}`);
     try {
       // This is the API call that fetches the detailed seller data
       const details = await getSellerDetailsForAdmin(sellerId);
+      console.log("[DEBUG] API Response for Seller Details:", details);
+      
       // Set the state which triggers the Dialog to open
       setViewingSellerDetails(details);
     } catch (error: any) {
-      // If the API call fails (e.g., 404, network error, data corruption), this catches it
+      console.error("[DEBUG] Error fetching seller details:", error);
       toast({ variant: "destructive", title: "Error", description: error.response?.data?.message || "Failed to fetch seller details." });
-      console.error("Seller details fetch error:", error);
       // Crucially, we prevent setting the state if the fetch failed, ensuring the dialog doesn't open with partial data.
       setViewingSellerDetails(null); 
     }
@@ -573,7 +575,7 @@ export default function AdminDashboard() {
                                               <TableCell className="text-base"><Badge className={cn("capitalize", getStatusBadgeClass(s.status))}>{s.status}</Badge></TableCell>
                                               <TableCell className="text-right space-x-2">
                                                   {/* --- ICON/FONT SIZE INCREASED --- */}
-                                                  <Button variant="ghost" size="sm" onClick={() => handleViewSeller(s._id)} className="text-base"><Eye className="h-5 w-5 mr-1"/>Details</Button>
+                                                  <Button variant="outline" size="sm" onClick={() => handleViewSeller(s._id)} className="text-base"><Eye className="h-5 w-5 mr-1"/>Details</Button>
 
                                                   {s.status !== 'approved' && (
                                                       <AlertDialog>
@@ -711,7 +713,8 @@ export default function AdminDashboard() {
                         <TabsContent value="profile">
                              {/* --- FONT SIZE INCREASED --- */}
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-base">
-                                 <div><h4 className="font-semibold">Owner</h4><p className="text-muted-foreground">{viewingSellerDetails.seller.user.name} ({viewingSellerDetails.seller.user.email})</p></div>
+                                 {/* --- FIX APPLIED HERE: Added Optional Chaining for seller.user --- */}
+                                 <div><h4 className="font-semibold">Owner</h4><p className="text-muted-foreground">{viewingSellerDetails.seller.user?.name || 'N/A'} ({viewingSellerDetails.seller.user?.email || 'N/A'})</p></div>
                                  <div><h4 className="font-semibold">GST Number</h4><p className="text-muted-foreground">{viewingSellerDetails.seller.gstNumber || 'N/A'}</p></div>
                                  <div><h4 className="font-semibold">PAN Number</h4><p className="text-muted-foreground">{viewingSellerDetails.seller.panNumber || 'N/A'}</p></div>
                                  
@@ -783,9 +786,15 @@ export default function AdminDashboard() {
                                             {/* --- FONT/ICON SIZE INCREASED --- */}
                                             <CardTitle className="text-lg flex items-center justify-between">
                                                 <span>{entry.notes || 'Profile Update'}</span>
-                                                <span className="text-sm font-normal text-muted-foreground flex items-center gap-2"><History className="h-4 w-4"/>{format(new Date(entry.createdAt), "PPpp")}</span>
+                                                {/* --- FIX APPLIED HERE --- */}
+                                                <span className="text-sm font-normal text-muted-foreground flex items-center gap-2">
+                                                  <History className="h-4 w-4"/>
+                                                  {entry.createdAt ? format(new Date(entry.createdAt), "PPpp") : 'N/A'}
+                                                </span>
+                                                {/* --- END FIX --- */}
                                             </CardTitle>
                                             {/* --- SAFELY ACCESS NAME --- */}
+                                            {/* --- FIX APPLIED HERE: Added Optional Chaining for changedBy --- */}
                                             <CardDescription className="text-base">Changed by: {entry.changedBy?.name || 'Unknown User'} ({entry.changedBy?.role || 'N/A'})</CardDescription>
                                         </CardHeader>
                                         {entry.changes.length > 0 && (
@@ -865,6 +874,7 @@ export default function AdminDashboard() {
                               {viewingProductDetails.images.length > 0 ? (
                                   viewingProductDetails.images.map((img, idx) => (
                                       <CarouselItem key={idx}>
+                                          {/* Ensure getImageUrl is used */}
                                           <img src={getImageUrl(img)} alt={`${viewingProductDetails.name} ${idx+1}`} className="w-full h-64 object-cover rounded-md border" />
                                       </CarouselItem>
                                   ))
