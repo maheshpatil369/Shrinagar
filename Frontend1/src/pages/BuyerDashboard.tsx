@@ -1,5 +1,3 @@
-// Frontend1/src/pages/BuyerDashboard.tsx
-// This file has been updated to use relative ../ paths and a full-width layout
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
@@ -20,19 +18,10 @@ import Rating from "../components/ui/Rating";
 import { useAuthModal } from '../context/AuthModalContext';
 import debounce from 'lodash.debounce';
 import { Label } from "../components/ui/label";
+// Import getImageUrl from utils and remove local helper/const
+import { getImageUrl } from "../lib/utils";
 
-// You may need to update this URL to match your environment.
-const BACKEND_URL = 'http://localhost:8000';
-
-// Helper to clean up image paths
-const getImageUrl = (imagePath: string) => {
-    if (!imagePath) return 'https://placehold.co/600x600/e2e8f0/a0aec0?text=No+Image'; // Return placeholder if no image
-    if (imagePath.startsWith('http')) return imagePath; // Already a full URL (e.g., cloudinary)
-    
-    // This handles paths like '/uploads/image.png' or 'uploads/image.png'
-    // and prevents double slashes
-    return `${BACKEND_URL}/${imagePath.replace(/^\//, '')}`;
-}
+// --- Removed redundant BACKEND_URL and local getImageUrl helper ---
 
 
 // --- Reusable ProductCard Component ---
@@ -66,7 +55,8 @@ function ProductCard({ product, onAddToWishlist, currentUser, layout }: ProductC
 
     // --- NEW: Image Error Handler ---
     const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-        e.currentTarget.src = 'https://placehold.co/600x600/e2e8f0/a0aec0?text=No+Image';
+        // Use the default placeholder from getImageUrl in case of an error
+        e.currentTarget.src = getImageUrl('');
     };
 
      if (layout === 'list') {
@@ -79,7 +69,7 @@ function ProductCard({ product, onAddToWishlist, currentUser, layout }: ProductC
                             src={getImageUrl(product.images[0])} 
                             alt={product.name} 
                             className="w-full h-full object-cover"
-                            onError={handleImageError} // <-- ADDED
+                            onError={handleImageError} 
                         />
                      ) : (
                         <div className="w-full h-full bg-muted flex items-center justify-center text-sm text-muted-foreground">No Image</div>
@@ -118,7 +108,7 @@ function ProductCard({ product, onAddToWishlist, currentUser, layout }: ProductC
                         src={getImageUrl(product.images[0])}
                         alt={product.name}
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        onError={handleImageError} // <-- ADDED
+                        onError={handleImageError} 
                     />
                  ) : (
                     <div className="w-full h-full bg-muted flex items-center justify-center text-sm text-muted-foreground">No Image</div>
@@ -343,7 +333,7 @@ export default function BuyerDashboard() {
               sorted.sort((a, b) => a.price - b.price);
               break;
           case 'price-desc':
-              sorted.sort((a, b) => b.price - b.price);
+              sorted.sort((a, b) => b.price - a.price);
               break;
           case 'name-asc':
               sorted.sort((a, b) => a.name.localeCompare(b.name));
@@ -370,8 +360,10 @@ export default function BuyerDashboard() {
         try {
             await addToWishlist(product._id);
             toast({ title: "Success", description: `${product.name} added to your wishlist!` });
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Error", description: error.response?.data?.message || "Could not add to wishlist." });
+        } catch (error) {
+            // FIX: Safely access error message, defaulting to a generic message if not an Axios error
+            const errorMessage = (error as any).response?.data?.message || (error instanceof Error ? error.message : "Could not add to wishlist due to an unexpected error.");
+            toast({ variant: "destructive", title: "Error", description: errorMessage });
         }
     };
 
