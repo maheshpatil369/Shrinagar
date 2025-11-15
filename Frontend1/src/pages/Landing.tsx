@@ -23,32 +23,69 @@ import { Gem, ArrowRight, ShoppingCart, Heart, Search as SearchIcon, User, Faceb
 // Dark Grey/Black: #1A1A1A or black
 
 // --- Header Component (Restored to original dark theme) ---
+// --- Header Component (Updated as per requirement) ---
 function Header() {
     const navigate = useNavigate();
+    const currentUser = getCurrentUser();  
+
     return (
-        // Original dark theme classes
-        <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black text-white">
+        <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#2A292B] text-white">
             <div className="container mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4 sm:px-6 lg:px-8">
+
+                {/* Logo */}
                 <Link to="/" className="flex items-center gap-2 mr-6">
-                    <Gem className="h-6 w-6 text-[#ADC9A8]" /> {/* Mint green gem color */}
+                    <Gem className="h-6 w-6 text-white" />
                     <span className="font-bold text-xl tracking-widest">SHRINGAR</span>
                 </Link>
+
+                {/* Navigation */}
                 <nav className="hidden md:flex gap-6 items-center text-sm font-medium text-white/70">
                     <Link to="/" className="hover:text-white transition-colors">Home</Link>
                     <Link to="/buyer" className="hover:text-white transition-colors">Shop</Link>
                     <Link to="/seller" className="hover:text-white transition-colors">Sell</Link>
                     <Link to="/profile" className="hover:text-white transition-colors">Account</Link>
                 </nav>
+
+                {/* Right side icons */}
                 <div className="flex items-center gap-3">
-                    <ThemeToggle />
-                    <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" onClick={() => navigate('/buyer')}><SearchIcon className="h-5 w-5" /></Button>
-                    <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" onClick={() => navigate('/profile')}><Heart className="h-5 w-5" /></Button>
-                    <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" onClick={() => navigate('/auth')}><User className="h-5 w-5" /></Button>
+
+                    {/* Wishlist */}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-white hover:bg-white/10"
+                        onClick={() => navigate('/profile')}
+                    >
+                        <Heart className="h-5 w-5" />
+                    </Button>
+
+                    {/* Login or Profile */}
+                    {currentUser ? (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-white hover:bg-white/10"
+                            onClick={() => navigate('/profile')}
+                        >
+                            <User className="h-5 w-5" />
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-white hover:bg-white/10"
+                            onClick={() => navigate('/auth')}
+                        >
+                            <User className="h-5 w-5" />
+                        </Button>
+                    )}
                 </div>
             </div>
         </header>
     );
 }
+
+
 
 // --- Hero Section (Restored to original dark theme) ---
 function HeroSection() {
@@ -66,7 +103,7 @@ function HeroSection() {
             
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 text-center">
                 <h1 className="text-5xl sm:text-7xl md:text-8xl font-light mb-2 tracking-widest">SHRINGAR</h1>
-                <p className="text-xl font-light text-[#ADC9A8] mb-8">JEWELRY SHOP</p>
+                <p className="text-xl font-light text-[#fdfdfd] mb-8">JEWELRY SHOP</p>
                 <Button
                     onClick={() => navigate('/buyer')}
                     size="lg"
@@ -88,134 +125,162 @@ function NewCollectionsSection() {
         { id: '3', name: 'Elegant Gold Set', price: 450, image: '/assets/3-4new.webp', rating: 4.0, reviews: 50 },
         { id: '4', name: 'Luxury Diamond Ring', price: 250, image: '/assets/4-4new.webp', rating: 3.5, reviews: 8 },
     ];
-    
+
     return (
-        // Original Mint Green/Light background
-        <section className="bg-[#ADC9A8] py-8 md:py-10">
-            <div className="container mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
+        <section className="bg-[#ffffff] py-12">
+            {/* NEW: soft shadow + rounded edges + bigger left-right padding */}
+            <div className="max-w-screen-2xl mx-auto px-8 md:px-14 lg:px-20 py-8 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl md:text-2xl font-semibold tracking-wider text-black">NEW COLLECTIONS</h2>
-                    <Button variant="link" className="text-black hover:text-black/70 hover:no-underline font-normal">View More <ArrowRight className="h-4 w-4 ml-2" /></Button>
+                    <h2 className="text-xl md:text-2xl font-semibold tracking-wider text-black">
+                        NEW COLLECTIONS
+                    </h2>
+                    <Button 
+                        variant="link" 
+                        className="text-black hover:text-black/70 hover:no-underline font-normal"
+                    >
+                        View More <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
                 </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     {products.map((product) => (
                         <div key={product.id} className="text-center cursor-pointer group">
-                            <div className="aspect-square overflow-hidden mb-2 border border-black/10 bg-white shadow-lg rounded-md">
+
+                            <div className="aspect-square overflow-hidden mb-3 
+                                border border-black/10 bg-white shadow-md rounded-lg 
+                                transition-all duration-300 group-hover:shadow-xl">
                                 <img 
-                                    src={product.image} 
-                                    alt={product.name} 
+                                    src={product.image}
+                                    alt={product.name}
                                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                                 />
                             </div>
+
                             <p className="text-sm font-medium text-black">{product.name}</p>
+
                             <div className="flex items-center justify-center text-xs mt-1">
                                 <Rating value={product.rating} text={product.reviews.toString()} />
                             </div>
+
                         </div>
                     ))}
                 </div>
+
             </div>
         </section>
     );
 }
 
-// --- Categories & Side Image Section (Pixel-Perfect: Screenshot Reproduction) ---
+
+// --- Categories & Side Image Section (Updated Text Sizes) ---
 function CategoriesSection() {
     const categories = [
         { name: 'Rings', subtitle: 'Our Latest Rings Collection', image: '/assets/category1.webp', link: '/buyer?category=rings' },
         { name: 'Bracelets', subtitle: 'Elegant Wrist Wear', image: '/assets/category4.gif', link: '/buyer?category=bracelets' },
-        { name: 'Earrings', subtitle: 'Studs and Drop Earrings', image: '/assets/category2.jpg', link: '/buyer?category=earrings' }, 
+        { name: 'Earrings', subtitle: 'Studs and Drop Earrings', image: '/assets/category2.jpg', link: '/buyer?category=earrings' },
         { name: 'Necklaces & Pendants', subtitle: 'Chains and Drops', image: '/assets/category2.gif', link: '/buyer?category=necklaces' },
         { name: 'Watches', subtitle: 'Luxury Timepieces', image: '/assets/img222.gif', link: '/buyer?category=watches' },
-        { name: 'Men\'s Jewelry', subtitle: 'Rings, Bracelets, and more', image: '/assets/5of6.png', link: '/buyer?category=mens-jewelry' },
+        { name: `Men's Jewelry`, subtitle: 'Rings, Bracelets, and more', image: '/assets/5of6.png', link: '/buyer?category=mens-jewelry' },
     ];
 
-    const [activeImage, setActiveImage] = useState(categories[0].image);
-    const [activeSubtitle, setActiveSubtitle] = useState(categories[0].subtitle);
+    const [activeIndex, setActiveIndex] = useState(0);
 
+    // Auto-slide every 2 seconds
     useEffect(() => {
-        setActiveImage(categories[0].image);
-        setActiveSubtitle(categories[0].subtitle);
+        const interval = setInterval(() => {
+            setActiveIndex((prev) => (prev + 1) % categories.length);
+        }, 2000);
+
+        return () => clearInterval(interval);
     }, []);
 
-    return (
-        // Pixel-perfect recreation of the screenshot for the categories block
-        <section className="bg-[#ADC9A8] py-16">
-            <div className="container mx-auto max-w-screen-2xl grid grid-cols-1 lg:grid-cols-3 gap-12 px-6">
+    const activeImage = categories[activeIndex].image;
+    const activeSubtitle = categories[activeIndex].subtitle;
 
-                {/* LEFT — TEXT LIST (like screenshot) */}
+    return (
+        <section className="bg-[#ffffff] py-16">
+            <div className="max-w-screen-2xl mx-auto px-8 md:px-14 lg:px-20 grid grid-cols-1 lg:grid-cols-3 gap-12">
+
+                {/* LEFT TEXT BLOCK */}
                 <div className="space-y-6 pt-4">
-                    <h2 className="text-[22px] font-bold text-black tracking-wide">
+                    <h2 className="text-[28px] font-bold text-black tracking-wide">
                         Categories
                     </h2>
 
-                    <p className="text-[14px] text-black/70 leading-relaxed">
+                    <p className="text-[16px] text-black/70 leading-relaxed">
                         Discover Our Collection of Jewellery by Categories
                     </p>
 
-                    <div className="flex flex-col gap-[10px]">
-                        {categories.map(cat => (
+                    <div className="flex flex-col gap-[14px]">
+                        {categories.map((cat, i) => (
                             <Link
                                 key={cat.name}
                                 to={cat.link}
-                                onMouseEnter={() => {
-                                    setActiveImage(cat.image);
-                                    setActiveSubtitle(cat.subtitle);
-                                }}
-                                onMouseLeave={() => {
-                                    setActiveImage(categories[0].image);
-                                    setActiveSubtitle(categories[0].subtitle);
-                                }}
-                                className="text-[18px] text-black/80 hover:text-black tracking-wide transition-colors"
+                                onMouseEnter={() => setActiveIndex(i)}
+                                className="text-[22px] text-black/80 hover:text-black transition-colors font-medium tracking-wide"
                             >
                                 {cat.name}
                             </Link>
                         ))}
+                    </div>
 
+                    {/* NEW — VIEW ALL COLLECTIONS BUTTON */}
+                    <div className="pt-4">
                         <Link
                             to="/buyer"
-                            className="mt-4 text-[18px] font-bold text-black tracking-wide hover:text-black/70 block"
+                            className="inline-block bg-black text-white px-6 py-3 rounded-full text-lg font-semibold shadow-md hover:bg-[#DAA268] hover:text-black transition-all"
                         >
-                            ALL CATEGORIES
+                            VIEW ALL COLLECTIONS →
                         </Link>
                     </div>
                 </div>
 
-                {/* RIGHT — IMAGE + ORANGE FRAME (pixel-perfect) */}
-                <div className="relative lg:col-span-2 flex justify-center lg:justify-end pr-10">
+                {/* RIGHT — IMAGE + FRAME */}
+              {/* RIGHT — IMAGE + BACKGROUND FRAME */}
+<div className="relative lg:col-span-2 flex justify-center lg:justify-end pr-6 translate-x-0 -translate-y-0">
 
-                    {/* ORANGE BORDER FRAME (positioned behind image) */}
-                    <div
-                        className="absolute top-10 right-[140px] lg:right-[150px] 
-                            w-[310px] h-[350px] lg:w-[360px] lg:h-[430px]
-                            border-[10px] border-[#DAA268] rounded-sm z-0"
-                        aria-hidden
-                    />
+    {/* ⭐ FILLED BACKGROUND FRAME — Top Right */}
+    <div
+        className="
+            absolute 
+            -top-10    /* move upward */
+            right-2    /* align to right side */
+            w-[420px]  /* width */
+            h-[520px]  /* height */
+            bg-[#F3D4A2]   /* fill color */
+            rounded-sm
+            z-0
+        "
+    />
 
-                    {/* MAIN IMAGE (on top of the frame) */}
-                    <div className="relative w-[310px] h-[350px] lg:w-[360px] lg:h-[430px] rounded-sm overflow-hidden shadow-xl bg-white z-10">
-                        <img
-                            src={activeImage}
-                            alt={activeSubtitle}
-                            className="w-full h-full object-cover"
-                        />
+    {/* IMAGE CARD */}
+    <div className="relative w-[380px] h-[420px] lg:w-[420px] lg:h-[500px]
+        rounded-sm overflow-hidden shadow-xl bg-white z-10 transition-all duration-500">
 
-                        {/* Subtitle Label (Top-Left) */}
-                        <div className="absolute top-4 left-4 bg-black/50 px-3 py-1 rounded">
-                            <span className="text-white text-[10px] tracking-wide font-bold">
-                                {activeSubtitle.toUpperCase()}
-                            </span>
-                        </div>
+        <img
+            src={activeImage}
+            alt={activeSubtitle}
+            className="w-full h-full object-cover transition-all duration-700"
+        />
 
-                        {/* Counter (Top-Right) */}
-                        <div className="absolute top-4 right-4 bg-black/50 px-3 py-1 rounded">
-                            <span className="text-white text-[10px] tracking-wide font-bold">
-                                {categories.findIndex(c => c.image === activeImage) + 1} of {categories.length}
-                            </span>
-                        </div>
-                    </div>
-                </div>
+        {/* Subtitle top-left */}
+        <div className="absolute top-4 left-4 bg-black/50 px-3 py-1 rounded">
+            <span className="text-white text-[12px] tracking-wide font-semibold">
+                {activeSubtitle.toUpperCase()}
+            </span>
+        </div>
+
+        {/* Counter top-right */}
+        <div className="absolute top-4 right-4 bg-black/50 px-3 py-1 rounded">
+            <span className="text-white text-[12px] tracking-wide font-semibold">
+                {activeIndex + 1} of {categories.length}
+            </span>
+        </div>
+
+    </div>
+</div>
+
 
             </div>
         </section>
@@ -315,7 +380,7 @@ function TrendingSection() {
 
     return (
         // Original Mint Green/Light background
-        <section className="bg-[#ADC9A8] py-8">
+        <section className="bg-[#ffffff] py-8">
             <div className="container mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
                  <h2 className="text-xl md:text-2xl font-semibold tracking-wider mb-4 text-black">BEST SELLERS</h2>
                 {isLoading ? (
@@ -347,7 +412,7 @@ function ShringarStrikeSection() {
     ];
 
     return (
-        <section className="bg-[#ADC9A8] py-16">
+        <section className="bg-[#ffffff] py-16">
             
             {/* TITLE + SUBTITLE */}
             <div className="text-center mb-10">
@@ -380,26 +445,25 @@ function ShringarStrikeSection() {
     );
 }
 
-
-
-
 // --- SHRINGAR Info Section (Original Mint Green/Light background) ---
 function ShringarInfoSection() {
     return (
-        <section className="bg-[#ADC9A8] py-20">
+        <section className="bg-[#ffffff] py-20">
 
-            <div className="w-full max-w-screen-2xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div className="w-full max-w-screen-2xl mx-auto px-8 md:px-14 lg:px-20 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
-                {/* LEFT — IMAGE WITH FRAME (shifted 4px right) */}
-                <div className="relative flex justify-center translate-x-[40px]">
+                {/* LEFT — IMAGE WITH BACKGROUND BORDER FRAME */}
+                <div className="relative flex justify-center">
 
-                    {/* OUTER FRAME — offset border like screenshot */}
-                    <div className="absolute -top-6 -left-6 w-[88%] h-[92%] border-[4px] border-[#2E4A45] rounded-lg"></div>
+                    {/* ⭐ GOLD BACKGROUND FRAME (behind image) */}
+                    <div
+                        className="absolute -top-8 -left-8 w-[90%] h-[90%] border-[6px] border-[#C49A6C] rounded-sm z-0"
+                    />
 
-                    {/* MAIN IMAGE BOX */}
-                    <div className="w-full max-w-2xl overflow-hidden rounded-lg shadow-xl border border-black/30">
+                    {/* MAIN IMAGE (no border) */}
+                    <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-lg shadow-xl">
                         <img
-                            src="/assets/image_8097fc.png"
+                            src="/assets/gemgarden.png"
                             alt="Jewelry presentation"
                             className="w-full h-[450px] object-cover"
                         />
@@ -437,67 +501,112 @@ function ShringarInfoSection() {
 }
 
 
-
-// --- About Section (Original Mint Green/Light background) ---
 function AboutSection() {
-     const navigate = useNavigate();
+    const navigate = useNavigate();
+
     return (
-        // Original Mint Green/Light background
-        <section className="bg-[#ADC9A8] py-8">
-            <div className="container mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
-                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                    <div className="text-black">
-                         <h2 className="text-3xl font-bold mb-4 tracking-wider">About</h2>
-                         <p className="text-black/70 mb-4">
-                            We are committed to preserving the heritage of traditional Indian jewelry while ensuring contemporary relevance. Our pieces are sourced directly from master artisans, guaranteeing **authenticity, quality, and ethical sourcing**. We blend classic design elements with modern craftsmanship to create heirlooms for the next generation.
-                         </p>
-                         <Button variant="link" className="text-black hover:text-black/70 hover:no-underline font-normal" onClick={() => navigate('/about')}>Read Our Story <ArrowRight className="h-4 w-4 ml-2" /></Button>
-                    </div>
-                    <div className="relative aspect-[4/3] overflow-hidden rounded-lg shadow-2xl">
-                        <img 
-                            src="/assets/screencapture-localhost-8080-2025-11-12-18_58_51.jpg"
-                            alt="Jewelry collage" 
-                            className="w-full h-full object-cover object-top"
+        <section className="bg-[#ffffff] py-20">
+            <div className="w-full max-w-screen-2xl mx-auto px-8 md:px-14 lg:px-20 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+
+                {/* LEFT — TEXT */}
+                <div className="space-y-6 text-black">
+                    <h2 className="text-4xl font-bold tracking-wide">
+                        ABOUT
+                    </h2>
+
+                    <p className="text-lg text-black/70 leading-relaxed">
+                        We are committed to preserving the heritage of traditional Indian
+                        jewelry while ensuring contemporary relevance. Our pieces are
+                        sourced directly from master artisans, guaranteeing authenticity,
+                        quality, and ethical craftsmanship.
+                    </p>
+
+                    <p className="text-black/80 leading-relaxed">
+                        We blend classic design elements with modern craftsmanship to
+                        create heirloom pieces for the next generation.
+                    </p>
+
+                    <Button
+                        variant="default"
+                        className="bg-black hover:bg-black/80 text-white rounded-full px-6 py-3 text-lg"
+                        onClick={() => navigate('/about')}
+                    >
+                        Read Our Story
+                    </Button>
+                </div>
+
+                {/* RIGHT — IMAGE with GOLD BACKGROUND FRAME */}
+                <div className="relative flex justify-center">
+
+                    {/* ⭐ GOLD BORDER (Behind image, background only) */}
+                    <div
+                        className="absolute -top-8 -left-8 w-[90%] h-[90%] border-[6px] border-[#C49A6C] rounded-sm z-0"
+                    />
+
+                    {/* MAIN IMAGE (No border) */}
+                    <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-lg shadow-xl">
+                        <img
+                            src="/assets/about.png"
+                            alt="Jewelry collage"
+                            className="w-full h-[450px] object-cover object-top"
                         />
-                        <div className="absolute inset-0 bg-black/10"></div>
                     </div>
-                 </div>
+                </div>
             </div>
         </section>
     );
 }
+
+
+
+
 
 // --- Gifts Section (Restored to original dark theme) ---
 function GiftsSection() {
     const navigate = useNavigate();
+
     return (
-        // Original dark theme classes
-        <section className="bg-[#1A1A1A] text-white py-8 md:py-10">
-            <div className="container mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                <div className="lg:w-full">
-                    <img 
-                        src="/assets/giftimg.jpg" 
-                        alt="A beautifully wrapped gift box" 
-                        className="w-full h-auto object-cover rounded-lg shadow-2xl"
-                    />
-                </div>
-                <div className="lg:w-full space-y-6">
-                    <h2 className="text-4xl font-bold tracking-wider">Gifts</h2>
-                    <p className="text-white/80 text-lg">
-                        Find the perfect present for every occasion. Our curated gift collection offers timeless elegance and cherished memories. Personalize your message and packaging for an unforgettable experience.
-                    </p>
-                    <Button 
-                        size="lg" 
+        <section className="relative bg-[#ffffff] py-0">
+
+            {/* FULL WIDTH GIFT IMAGE WITH MATCHING BORDER */}
+            <div className="w-full h-[600px] overflow-hidden border-[28px] border-[#ffffff]">
+                <img
+                    src="/assets/giftimg.jpg"
+                    alt="Gift box"
+                    className="w-full h-full object-cover"
+                />
+            </div>
+
+            {/* RIGHT SIDE TEXT OVERLAY (same as screenshot) */}
+            <div className="absolute inset-0 flex items-center justify-end pr-16">
+                <div className="text-right max-w-md text-white space-y-4">
+{/* 
+                    <h2 className="text-4xl font-bold tracking-wide">
+                        Gifts
+                    </h2> */}
+
+                    {/* <p className="text-white/80 text-lg leading-relaxed">
+                        Looking for the perfect gift?  
+                        Discover our premium collection of jewelry gifts  
+                        crafted for unforgettable moments.
+                    </p> */}
+
+                    {/* <Button
+                        size="lg"
                         className="bg-[#ADC9A8] text-black hover:bg-[#ADC9A8]/80 px-8 py-3 text-lg rounded-full font-bold"
                         onClick={() => navigate('/buyer?tag=gifts')}
                     >
-                        Browse Gifts
-                    </Button>
+                        Shop Gifts
+                    </Button> */}
+
                 </div>
             </div>
+
         </section>
     );
 }
+
+
 
 // --- Footer Component (Restored to original dark theme) ---
 function Footer() {
@@ -509,7 +618,7 @@ function Footer() {
                     {/* Brand/Contact Info */}
                     <div className="lg:col-span-2 space-y-3">
                          <Link to="/" className="flex items-center gap-2 mb-2">
-                            <Gem className="h-7 w-7 text-[#ADC9A8]" />
+                            <Gem className="h-7 w-7 text-[#ffffff]" />
                             <span className="font-bold text-2xl tracking-widest">SHRINGAR</span>
                         </Link>
                         <p className="text-sm text-white/70">Email: support@shringar.com</p>
@@ -561,7 +670,7 @@ function Footer() {
 const Landing = () => {
   return (
     // Sets the entire page background to white
-    <div className="min-h-screen bg-white"> 
+<div className="min-h-screen bg-[#ffffff]">
         <Header />
         <main>
             <HeroSection />
