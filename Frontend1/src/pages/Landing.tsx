@@ -1,44 +1,31 @@
-// Frontend1/src/pages/Landing.tsx
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-// Using alias for library/utility imports
 import { getTrendingProducts, Product } from '@/lib/products';
 import { useToast } from '@/hooks/use-toast';
 import { addToWishlist } from '@/lib/user';
 import { getCurrentUser } from '@/lib/auth';
 import { cn } from '@/lib/utils';
-// Using relative paths for component imports (as the alias seems to fail here)
 import { Button } from '../components/ui/button';
 import { CardTitle } from '../components/ui/card';
 import { Skeleton } from '../components/ui/skeleton';
-import { ThemeToggle } from '../components/ThemeToggle';
 import Rating from '../components/ui/Rating';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../components/ui/carousel';
 
-// FIXED: Added necessary Lucide icons
 import { Gem, ArrowRight, ShoppingCart, Heart, Search as SearchIcon, User, Facebook, Twitter } from 'lucide-react';
 
-// --- Theme Colors ---
-// Mint Green: #ADC9A8
-// Dark Grey/Black: #1A1A1A or black
-
-// --- Header Component (Restored to original dark theme) ---
-// --- Header Component (Updated as per requirement) ---
 function Header() {
     const navigate = useNavigate();
-    const currentUser = getCurrentUser();  
+    const currentUser = getCurrentUser();
 
     return (
         <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#2A292B] text-white">
             <div className="container mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
-                {/* Logo */}
                 <Link to="/" className="flex items-center gap-2 mr-6">
                     <Gem className="h-6 w-6 text-white" />
                     <span className="font-bold text-xl tracking-widest">SHRINGAR</span>
                 </Link>
 
-                {/* Navigation */}
                 <nav className="hidden md:flex gap-6 items-center text-sm font-medium text-white/70">
                     <Link to="/" className="hover:text-white transition-colors">Home</Link>
                     <Link to="/buyer" className="hover:text-white transition-colors">Shop</Link>
@@ -46,10 +33,8 @@ function Header() {
                     <Link to="/profile" className="hover:text-white transition-colors">Account</Link>
                 </nav>
 
-                {/* Right side icons */}
                 <div className="flex items-center gap-3">
 
-                    {/* Wishlist */}
                     <Button
                         variant="ghost"
                         size="icon"
@@ -59,7 +44,6 @@ function Header() {
                         <Heart className="h-5 w-5" />
                     </Button>
 
-                    {/* Login or Profile */}
                     {currentUser ? (
                         <Button
                             variant="ghost"
@@ -85,29 +69,22 @@ function Header() {
     );
 }
 
-
-
-// --- Hero Section (Restored to original dark theme) ---
 function HeroSection() {
     const navigate = useNavigate();
     return (
-        // Original dark theme classes
         <section className="relative h-screen flex items-center justify-center overflow-hidden bg-black text-white">
-            {/* Main Image: Full screen, object-bottom to show hands/jewelry */}
             <img
                 src="/assets/profile1stimg.png"
                 alt="Elegant Jewelry Model"
-                // Using opacity 0.7 to achieve the slightly lighter black background as seen in the image
                 className="absolute inset-0 w-full h-full object-cover object-bottom opacity-70"
             />
-            
+
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 text-center">
                 <h1 className="text-5xl sm:text-7xl md:text-8xl font-light mb-2 tracking-widest">SHRINGAR</h1>
                 <p className="text-xl font-light text-[#fdfdfd] mb-8">JEWELRY SHOP</p>
                 <Button
                     onClick={() => navigate('/buyer')}
                     size="lg"
-                    // Original button style
                     className="bg-white text-black hover:bg-white/80 px-8 py-3 text-lg rounded-full transition-transform hover:scale-105 font-bold"
                 >
                     SHOP NOW
@@ -117,7 +94,6 @@ function HeroSection() {
     );
 }
 
-// --- New Collections Section (Original Mint Green/Light background) ---
 function NewCollectionsSection() {
     const products = [
         { id: '1', name: 'Delicate New Set', price: 1500, image: '/assets/1-4new.jpg', rating: 4.5, reviews: 25 },
@@ -128,15 +104,14 @@ function NewCollectionsSection() {
 
     return (
         <section className="bg-[#ffffff] py-12">
-            {/* NEW: soft shadow + rounded edges + bigger left-right padding */}
             <div className="max-w-screen-2xl mx-auto px-8 md:px-14 lg:px-20 py-8 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
 
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl md:text-2xl font-semibold tracking-wider text-black">
                         NEW COLLECTIONS
                     </h2>
-                    <Button 
-                        variant="link" 
+                    <Button
+                        variant="link"
                         className="text-black hover:text-black/70 hover:no-underline font-normal"
                     >
                         View More <ArrowRight className="h-4 w-4 ml-2" />
@@ -147,10 +122,10 @@ function NewCollectionsSection() {
                     {products.map((product) => (
                         <div key={product.id} className="text-center cursor-pointer group">
 
-                            <div className="aspect-square overflow-hidden mb-3 
-                                border border-black/10 bg-white shadow-md rounded-lg 
+                            <div className="aspect-square overflow-hidden mb-3
+                                border border-black/10 bg-white shadow-md rounded-lg
                                 transition-all duration-300 group-hover:shadow-xl">
-                                <img 
+                                <img
                                     src={product.image}
                                     alt={product.name}
                                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -172,8 +147,6 @@ function NewCollectionsSection() {
     );
 }
 
-
-// --- Categories & Side Image Section (Updated Text Sizes) ---
 function CategoriesSection() {
     const categories = [
         { name: 'Rings', subtitle: 'Our Latest Rings Collection', image: '/assets/category1.webp', link: '/buyer?category=rings' },
@@ -186,7 +159,6 @@ function CategoriesSection() {
 
     const [activeIndex, setActiveIndex] = useState(0);
 
-    // Auto-slide every 2 seconds
     useEffect(() => {
         const interval = setInterval(() => {
             setActiveIndex((prev) => (prev + 1) % categories.length);
@@ -202,7 +174,6 @@ function CategoriesSection() {
         <section className="bg-[#ffffff] py-16">
             <div className="max-w-screen-2xl mx-auto px-8 md:px-14 lg:px-20 grid grid-cols-1 lg:grid-cols-3 gap-12">
 
-                {/* LEFT TEXT BLOCK */}
                 <div className="space-y-6 pt-4">
                     <h2 className="text-[28px] font-bold text-black tracking-wide">
                         Categories
@@ -225,7 +196,6 @@ function CategoriesSection() {
                         ))}
                     </div>
 
-                    {/* NEW — VIEW ALL COLLECTIONS BUTTON */}
                     <div className="pt-4">
                         <Link
                             to="/buyer"
@@ -236,50 +206,44 @@ function CategoriesSection() {
                     </div>
                 </div>
 
-                {/* RIGHT — IMAGE + FRAME */}
-              {/* RIGHT — IMAGE + BACKGROUND FRAME */}
-<div className="relative lg:col-span-2 flex justify-center lg:justify-end pr-6 translate-x-0 -translate-y-0">
+                <div className="relative lg:col-span-2 flex justify-center lg:justify-end pr-6 translate-x-0 -translate-y-0">
 
-    {/* ⭐ FILLED BACKGROUND FRAME — Top Right */}
-    <div
-        className="
-            absolute 
-            -top-10    /* move upward */
-            right-2    /* align to right side */
-            w-[420px]  /* width */
-            h-[520px]  /* height */
-            bg-[#F3D4A2]   /* fill color */
-            rounded-sm
-            z-0
-        "
-    />
+                    <div
+                        className="
+                            absolute
+                            -top-10
+                            right-2
+                            w-[420px]
+                            h-[520px]
+                            bg-[#F3D4A2]
+                            rounded-sm
+                            z-0
+                        "
+                    />
 
-    {/* IMAGE CARD */}
-    <div className="relative w-[380px] h-[420px] lg:w-[420px] lg:h-[500px]
-        rounded-sm overflow-hidden shadow-xl bg-white z-10 transition-all duration-500">
+                    <div className="relative w-[380px] h-[420px] lg:w-[420px] lg:h-[500px]
+                        rounded-sm overflow-hidden shadow-xl bg-white z-10 transition-all duration-500">
 
-        <img
-            src={activeImage}
-            alt={activeSubtitle}
-            className="w-full h-full object-cover transition-all duration-700"
-        />
+                        <img
+                            src={activeImage}
+                            alt={activeSubtitle}
+                            className="w-full h-full object-cover transition-all duration-700"
+                        />
 
-        {/* Subtitle top-left */}
-        <div className="absolute top-4 left-4 bg-black/50 px-3 py-1 rounded">
-            <span className="text-white text-[12px] tracking-wide font-semibold">
-                {activeSubtitle.toUpperCase()}
-            </span>
-        </div>
+                        <div className="absolute top-4 left-4 bg-black/50 px-3 py-1 rounded">
+                            <span className="text-white text-[12px] tracking-wide font-semibold">
+                                {activeSubtitle.toUpperCase()}
+                            </span>
+                        </div>
 
-        {/* Counter top-right */}
-        <div className="absolute top-4 right-4 bg-black/50 px-3 py-1 rounded">
-            <span className="text-white text-[12px] tracking-wide font-semibold">
-                {activeIndex + 1} of {categories.length}
-            </span>
-        </div>
+                        <div className="absolute top-4 right-4 bg-black/50 px-3 py-1 rounded">
+                            <span className="text-white text-[12px] tracking-wide font-semibold">
+                                {activeIndex + 1} of {categories.length}
+                            </span>
+                        </div>
 
-    </div>
-</div>
+                    </div>
+                </div>
 
 
             </div>
@@ -287,7 +251,6 @@ function CategoriesSection() {
     );
 }
 
-// --- Trending Products Section (Original Mint Green/Light background) ---
 function TrendingSection() {
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -298,15 +261,13 @@ function TrendingSection() {
         const fetchTrending = async () => {
             setIsLoading(true);
             try {
-                // Mock data for display purposes
                 const mockProducts = [
                     { _id: 't1', name: 'Diamond Solitaire Ring', price: 5999.00, images: ['/assets/2-4new.webp'], rating: 4.8 },
                     { _id: 't2', name: 'Antique Gold Necklace', price: 12500.00, images: ['/assets/4-4new.webp'], rating: 4.5 },
                     { _id: 't3', name: 'Pearl Drop Earrings', price: 850.00, images: ['/assets/1-4new.jpg'], rating: 4.9 },
                     { _id: 't4', name: 'Modern Silver Bracelet', price: 299.00, images: ['/assets/3-4new.webp'], rating: 4.2 },
-                ] as unknown as Product[];
-                setProducts(mockProducts); 
-                // In a real app, use: const data = await getTrendingProducts(); setProducts(data.slice(0, 4)); 
+                ];
+                setProducts(mockProducts as unknown as Product[]);
             } catch (error) {
                 console.error("Failed to fetch trending products:", error);
             } finally {
@@ -324,7 +285,6 @@ function TrendingSection() {
             return;
         }
         try {
-            // Placeholder: await addToWishlist(product._id);
             toast({ title: "Success", description: `${product.name} added to your wishlist!` });
         } catch (error: any) {
             toast({ variant: "destructive", title: "Error", description: error.response?.data?.message || "Could not add to wishlist." });
@@ -342,7 +302,6 @@ function TrendingSection() {
         const navigate = useNavigate();
 
         const handleCardClick = () => {
-            // Placeholder navigate(`/product/${product._id}`);
             console.log(`Navigating to product ${product._id}`);
         };
 
@@ -353,7 +312,6 @@ function TrendingSection() {
         };
 
         return (
-            // Card style on light background
             <div className="p-3 text-center cursor-pointer group bg-white shadow-lg rounded-lg transition-all hover:shadow-xl" onClick={handleCardClick}>
                  <div className="relative aspect-square overflow-hidden mb-2">
                      {product.images && product.images.length > 0 ? (
@@ -379,7 +337,6 @@ function TrendingSection() {
 
 
     return (
-        // Original Mint Green/Light background
         <section className="bg-[#ffffff] py-8">
             <div className="container mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
                  <h2 className="text-xl md:text-2xl font-semibold tracking-wider mb-4 text-black">BEST SELLERS</h2>
@@ -413,8 +370,7 @@ function ShringarStrikeSection() {
 
     return (
         <section className="bg-[#ffffff] py-16">
-            
-            {/* TITLE + SUBTITLE */}
+
             <div className="text-center mb-10">
                 <h2 className="text-4xl md:text-5xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-yellow-600 to-amber-800">
                     SHRINGAR STRIKE
@@ -424,7 +380,6 @@ function ShringarStrikeSection() {
                 </p>
             </div>
 
-            {/* FULL-WIDTH GRID LIKE SCREENSHOT */}
             <div className="w-full px-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {images.map((img, index) => (
@@ -445,22 +400,18 @@ function ShringarStrikeSection() {
     );
 }
 
-// --- SHRINGAR Info Section (Original Mint Green/Light background) ---
 function ShringarInfoSection() {
     return (
         <section className="bg-[#ffffff] py-20">
 
             <div className="w-full max-w-screen-2xl mx-auto px-8 md:px-14 lg:px-20 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
-                {/* LEFT — IMAGE WITH BACKGROUND BORDER FRAME */}
                 <div className="relative flex justify-center">
 
-                    {/* ⭐ GOLD BACKGROUND FRAME (behind image) */}
                     <div
                         className="absolute -top-8 -left-8 w-[90%] h-[90%] border-[6px] border-[#C49A6C] rounded-sm z-0"
                     />
 
-                    {/* MAIN IMAGE (no border) */}
                     <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-lg shadow-xl">
                         <img
                             src="/assets/gemgarden.png"
@@ -470,7 +421,6 @@ function ShringarInfoSection() {
                     </div>
                 </div>
 
-                {/* RIGHT — TEXT BLOCK */}
                 <div className="space-y-6 pr-4">
                     <h2 className="text-4xl font-bold tracking-wide text-black">
                         GEM GARDEN
@@ -482,12 +432,12 @@ function ShringarInfoSection() {
                     </p>
 
                     <p className="text-black/80 leading-relaxed">
-                        Gem Garden presents leading global brands of jewelry known 
+                        Gem Garden presents leading global brands of jewelry known
                         for their unique style and high quality craftsmanship.
                     </p>
 
-                    <Button 
-                        variant="default" 
+                    <Button
+                        variant="default"
                         className="bg-black hover:bg-black/80 text-white rounded-full px-6 py-3 text-lg"
                     >
                         SHOP COLLECTIONS
@@ -508,7 +458,6 @@ function AboutSection() {
         <section className="bg-[#ffffff] py-20">
             <div className="w-full max-w-screen-2xl mx-auto px-8 md:px-14 lg:px-20 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
-                {/* LEFT — TEXT */}
                 <div className="space-y-6 text-black">
                     <h2 className="text-4xl font-bold tracking-wide">
                         ABOUT
@@ -535,15 +484,12 @@ function AboutSection() {
                     </Button>
                 </div>
 
-                {/* RIGHT — IMAGE with GOLD BACKGROUND FRAME */}
                 <div className="relative flex justify-center">
 
-                    {/* ⭐ GOLD BORDER (Behind image, background only) */}
                     <div
                         className="absolute -top-8 -left-8 w-[90%] h-[90%] border-[6px] border-[#C49A6C] rounded-sm z-0"
                     />
 
-                    {/* MAIN IMAGE (No border) */}
                     <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-lg shadow-xl">
                         <img
                             src="/assets/about.png"
@@ -558,17 +504,12 @@ function AboutSection() {
 }
 
 
-
-
-
-// --- Gifts Section (Restored to original dark theme) ---
 function GiftsSection() {
     const navigate = useNavigate();
 
     return (
         <section className="relative bg-[#ffffff] py-0">
 
-            {/* FULL WIDTH GIFT IMAGE WITH MATCHING BORDER */}
             <div className="w-full h-[600px] overflow-hidden border-[28px] border-[#ffffff]">
                 <img
                     src="/assets/giftimg.jpg"
@@ -577,28 +518,8 @@ function GiftsSection() {
                 />
             </div>
 
-            {/* RIGHT SIDE TEXT OVERLAY (same as screenshot) */}
             <div className="absolute inset-0 flex items-center justify-end pr-16">
                 <div className="text-right max-w-md text-white space-y-4">
-{/* 
-                    <h2 className="text-4xl font-bold tracking-wide">
-                        Gifts
-                    </h2> */}
-
-                    {/* <p className="text-white/80 text-lg leading-relaxed">
-                        Looking for the perfect gift?  
-                        Discover our premium collection of jewelry gifts  
-                        crafted for unforgettable moments.
-                    </p> */}
-
-                    {/* <Button
-                        size="lg"
-                        className="bg-[#ADC9A8] text-black hover:bg-[#ADC9A8]/80 px-8 py-3 text-lg rounded-full font-bold"
-                        onClick={() => navigate('/buyer?tag=gifts')}
-                    >
-                        Shop Gifts
-                    </Button> */}
-
                 </div>
             </div>
 
@@ -607,15 +528,11 @@ function GiftsSection() {
 }
 
 
-
-// --- Footer Component (Restored to original dark theme) ---
 function Footer() {
     return (
-        // Original dark theme classes
         <footer className="bg-black text-white pt-8 pb-4">
             <div className="container mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-8">
-                    {/* Brand/Contact Info */}
                     <div className="lg:col-span-2 space-y-3">
                          <Link to="/" className="flex items-center gap-2 mb-2">
                             <Gem className="h-7 w-7 text-[#ffffff]" />
@@ -625,7 +542,6 @@ function Footer() {
                         <p className="text-sm text-white/70">Phone: +91 123 456 7890</p>
                     </div>
 
-                    {/* Links - My Account */}
                     <div>
                         <h4 className="font-semibold mb-3">My Account</h4>
                         <ul className="space-y-2 text-sm text-white/70">
@@ -635,7 +551,6 @@ function Footer() {
                         </ul>
                     </div>
 
-                     {/* Links - Information */}
                      <div>
                         <h4 className="font-semibold mb-3">Information</h4>
                         <ul className="space-y-2 text-sm text-white/70">
@@ -645,7 +560,6 @@ function Footer() {
                         </ul>
                     </div>
 
-                    {/* Social/Policy */}
                     <div className="col-span-2 md:col-span-1">
                         <h4 className="font-semibold mb-3">Connect</h4>
                          <div className="flex gap-3">
@@ -666,10 +580,8 @@ function Footer() {
 }
 
 
-// --- Main Landing Component (Ensuring white background) ---
 const Landing = () => {
   return (
-    // Sets the entire page background to white
 <div className="min-h-screen bg-[#ffffff]">
         <Header />
         <main>

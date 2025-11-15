@@ -1,8 +1,6 @@
-// Frontend1/src/pages/BuyerLayout.tsx
 import { useEffect, useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-// --- CORRECTED PATHS ---
 import { getCurrentUser, logout, User, verifyToken } from "../lib/auth";
 import { Gem, User as UserIcon, LogOut, LoaderCircle, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react';
 import {
@@ -25,18 +23,14 @@ import { fetchGoldPrice, GoldPriceData } from "../lib/gold";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from 'date-fns';
 import { useAuthModal } from "../context/AuthModalContext";
-import { ThemeToggle } from "@/components/ThemeToggle"; // Import the new ThemeToggle component
-// --- END CORRECTED PATHS ---
 
 export default function BuyerLayout() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const navigate = useNavigate();
 
-  // --- NEW: Get modal controls ---
   const { setAuthModalOpen, setPostLoginRedirect } = useAuthModal();
 
-  // State for gold price popover
   const [goldPrice, setGoldPrice] = useState<GoldPriceData | null>(null);
   const [loadingGold, setLoadingGold] = useState(false);
   const [goldError, setGoldError] = useState<string | null>(null);
@@ -63,13 +57,12 @@ export default function BuyerLayout() {
   useEffect(() => {
     const currentUser = getCurrentUser();
     if (currentUser) {
-      // Verify token on layout load to ensure it's still valid
       verifyToken(currentUser.token)
         .then(verifiedUser => {
           setUser(verifiedUser);
         })
         .catch(() => {
-          logout(); 
+          logout();
           setUser(null);
         })
         .finally(() => {
@@ -83,26 +76,20 @@ export default function BuyerLayout() {
   const handleLogout = () => {
     logout();
     setUser(null);
-    navigate('/'); // Redirect to landing page after logout
-    window.location.reload(); // Force reload to clear all state
+    navigate('/');
+    window.location.reload();
   };
-  
-  // --- NEW: Handlers to open modal ---
+
   const handleLoginClick = () => {
-    setPostLoginRedirect(null); // No specific redirect, just login
-    setAuthModalOpen(true);
-  };
-  
-  const handleSignupClick = () => {
-    // This is a bit of a hack, but we can't pass a prop to the modal
-    // to tell it to open on the "signup" tab directly.
-    // For now, it will just open to the login tab.
-    // A more advanced solution would use context for this too.
     setPostLoginRedirect(null);
     setAuthModalOpen(true);
   };
 
-  // We still show a loading state, but not full screen
+  const handleSignupClick = () => {
+    setPostLoginRedirect(null);
+    setAuthModalOpen(true);
+  };
+
   if (isLoadingUser) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -112,7 +99,7 @@ export default function BuyerLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background"> {/* RESTORED: Changed bg-white back to bg-background to respect dark/light theme */}
+    <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 w-full border-b bg-background">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 md:px-8">
             <Link to="/buyer" className="flex items-center gap-2">
@@ -122,7 +109,6 @@ export default function BuyerLayout() {
           <div className="flex items-center gap-2 sm:gap-4">
             {user ? (
               <>
-                {/* Gold Price Popover (remains the same) */}
                 <Popover onOpenChange={(open) => { if (open && !goldPrice) loadGoldPrice(); }}>
                     <PopoverTrigger asChild>
                          <Button variant="ghost" size="sm" className="text-amber-500 hover:bg-amber-500/10 hover:text-amber-400">
@@ -188,14 +174,10 @@ export default function BuyerLayout() {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-                {/* Add the ThemeToggle component here */}
-                <ThemeToggle />
+
               </>
             ) : (
               <>
-                {/* --- UPDATED: Buttons now trigger modal --- */}
-                {/* Add the ThemeToggle component here */}
-                <ThemeToggle />
                 <Button onClick={handleLoginClick} variant="outline" size="sm">
                   Login
                 </Button>
@@ -208,7 +190,7 @@ export default function BuyerLayout() {
         </div>
       </header>
       <main>
-        <Outlet /> {/* Renders the specific buyer page */}
+        <Outlet />
       </main>
     </div>
   );

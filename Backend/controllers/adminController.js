@@ -1,304 +1,250 @@
-// maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Backend/controllers/adminController.js
-
 const asyncHandler = require('../middleware/asyncHandler.js');
+const Seller = require('../models/sellerModel.js');
 const User = require('../models/userModel.js');
 const Product = require('../models/productModel.js');
-const Seller = require('../models/sellerModel.js');
+const Notification = require('../models/notificationModel.js');
 const SellerHistory = require('../models/sellerHistoryModel.js');
-const Notification = require('../models/notificationModel.js'); // Import Notification model
 
-// ===================================================================
-// @desc    Get dashboard stats
+// @desc    Get details for a specific seller (for admin modal view)
+// @route   GET /api/admin/sellers/details/:id
+// @access  Private/Admin
+const getSellerDetailsForAdmin = asyncHandler(async (req, res) => {
+    const sellerId = req.params.id;
+
+    // 1. Fetch Seller with populated User object
+    const seller = await Seller.findById(sellerId)
+        .populate('user', 'name email role') // FIX: Populate the linked user (owner) details
+        .lean();
+
+    if (!seller) {
+        res.status(404);
+        throw new Error('Seller not found');
+    }
+
+    // 2. Fetch Seller's Products
+    const products = await Product.find({ seller: sellerId })
+        .select('name price status images category brand material');
+
+    // 3. Fetch Seller's History, populating the 'changedBy' field (the admin/user who made the change)
+    const history = await SellerHistory.find({ seller: sellerId })
+        .populate('changedBy', 'name role') // FIX: Populate the admin/user who made the history entry
+        .sort({ createdAt: -1 });
+
+    res.json({
+        seller: seller,
+        products: products,
+        history: history,
+    });
+});
+
+// @desc    Get summary statistics for Admin Dashboard
 // @route   GET /api/admin/stats
 // @access  Private/Admin
-// ===================================================================
-const getDashboardStats = asyncHandler(async (req, res) => {
-    // Use countDocuments for efficient counting without fetching all data
-    const totalUsers = await User.countDocuments();
-    const totalSellers = await Seller.countDocuments();
-    const totalProducts = await Product.countDocuments();
-
-    const pendingSellersCount = await Seller.countDocuments({ status: 'pending' });
-    const pendingProductsCount = await Product.countDocuments({ status: 'pending' });
-
+const getAdminDashboardStats = asyncHandler(async (req, res) => {
+    const totalUsers = await User.countDocuments({});
+    const totalSellers = await Seller.countDocuments({ status: 'approved' });
+    const totalProducts = await Product.countDocuments({ status: 'approved' });
+    const pendingSellers = await Seller.countDocuments({ status: 'pending' });
+    const pendingProducts = await Product.countDocuments({ status: 'pending' });
+    
     res.json({
         totalUsers,
         totalSellers,
         totalProducts,
-        pendingApprovals: pendingSellersCount + pendingProductsCount,
+        pendingApprovals: pendingSellers + pendingProducts,
     });
 });
 
-// ===================================================================
-// @desc    Get chart data for dashboard
+// @desc    Get chart data (users and products over time)
 // @route   GET /api/admin/chart-data
 // @access  Private/Admin
-// ===================================================================
-const getChartData = asyncHandler(async (req, res) => {
-    const { period = 'week' } = req.query;
-    let startDate = new Date();
-    let groupByFormat = "%Y-%m-%d"; // Daily
+const getAdminChartData = asyncHandler(async (req, res) => {
+    const { period } = req.query;
 
-    switch (period) {
-        case 'year':
-            startDate.setFullYear(startDate.getFullYear() - 1);
-            groupByFormat = "%Y-%m"; // Monthly
-            break;
-        case 'month':
-            startDate.setMonth(startDate.getMonth() - 1);
-            break;
-        case 'week':
-        default:
-            startDate.setDate(startDate.getDate() - 7);
-            break;
-    }
+    let matchCriteria = {};
+    const now = new Date();
+    
+    if (period === 'week') {
+        const oneWeekAgo = new Date(now.setDate(now.getDate() - 7));
+        matchCriteria = { createdAt: { $gte: oneWeekAgo } };
+    } else if (period === 'month') {
+        const oneMonthAgo = new Date(now.setMonth(now.getMonth() - 1));
+        matchCriteria = { createdAt: { $gte: oneMonthAgo } };
+    } 
+    // If period is 'all_time', no matchCriteria is needed (fetches all data)
 
-    const usersData = await User.aggregate([
-        { $match: { createdAt: { $gte: startDate } } },
-        { $group: { _id: { $dateToString: { format: groupByFormat, date: "$createdAt" } }, count: { $sum: 1 } } },
-        { $sort: { _id: 1 } },
-    ]);
-
-    const productsData = await Product.aggregate([
-        { $match: { createdAt: { $gte: startDate } } },
-        { $group: { _id: { $dateToString: { format: groupByFormat, date: "$createdAt" } }, count: { $sum: 1 } } },
-        { $sort: { _id: 1 } },
-    ]);
-
-    // Combine data
-    const combinedData = {};
-    usersData.forEach(item => {
-        if (!combinedData[item._id]) combinedData[item._id] = { date: item._id, users: 0, products: 0 };
-        combinedData[item._id].users = item.count;
-    });
-    productsData.forEach(item => {
-        if (!combinedData[item._id]) combinedData[item._id] = { date: item._id, users: 0, products: 0 };
-        combinedData[item._id].products = item.count;
-    });
-
-    res.json(Object.values(combinedData).sort((a, b) => new Date(a.date) - new Date(b.date)));
-});
-
-// ===================================================================
-// @desc    Get all pending sellers and products for the approval inbox
-// @route   GET /api/admin/approvals
-// @access  Private/Admin
-// ===================================================================
-const getPendingApprovals = asyncHandler(async (req, res) => {
-    const pendingSellers = await Seller.find({ status: 'pending' }).populate('user', 'name email');
-
-    const pendingProducts = await Product.find({ status: 'pending' }).populate({
-        path: 'seller',
-        select: 'name sellerProfile',
-        populate: {
-            path: 'sellerProfile',
-            select: 'businessName'
+    // Helper function to aggregate data
+    const aggregateData = async (model, fieldName) => {
+        let groupByFormat;
+        if (period === 'week' || period === 'month') {
+             // Group by date (YYYY-MM-DD) for smaller periods
+            groupByFormat = { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } };
+        } else {
+             // Group by month/year (YYYY-MM) for 'all_time'
+            groupByFormat = { $dateToString: { format: "%Y-%m", date: "$createdAt" } };
         }
+
+        const data = await model.aggregate([
+            { $match: matchCriteria },
+            {
+                $group: {
+                    _id: groupByFormat,
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    date: "$_id",
+                    [fieldName]: "$count"
+                }
+            },
+            { $sort: { date: 1 } }
+        ]);
+        return data;
+    };
+
+    const usersData = await aggregateData(User, 'users');
+    const productsData = await aggregateData(Product, 'products');
+
+    // Merge data based on date
+    const chartDataMap = new Map();
+    [...usersData, ...productsData].forEach(item => {
+        const date = item.date;
+        if (!chartDataMap.has(date)) {
+            chartDataMap.set(date, { date, users: 0, products: 0 });
+        }
+        chartDataMap.set(date, { ...chartDataMap.get(date), ...item });
     });
 
-    const productsWithSellerName = pendingProducts.map(p => {
-        const productObj = p.toObject();
-        const businessName = p.seller?.sellerProfile?.businessName || p.seller?.name;
-        return {
-            ...productObj,
-            seller: {
-                _id: productObj.seller._id,
-                businessName: businessName
-            }
-        };
-    });
-
-    res.json({ sellers: pendingSellers, products: productsWithSellerName });
+    const mergedData = Array.from(chartDataMap.values());
+    res.json(mergedData);
 });
 
-// ===================================================================
-// @desc    Get a seller's full details, products, and history for admin review
-// @route   GET /api/admin/sellers/:id
+// @desc    Get all users for management table
+// @route   GET /api/admin/users
 // @access  Private/Admin
-// ===================================================================
-const getSellerDetailsForAdmin = asyncHandler(async (req, res) => {
-    const seller = await Seller.findById(req.params.id).populate('user', 'name email');
-    if (!seller) {
-        res.status(404);
-        throw new Error('Seller not found');
-    }
-
-    const products = await Product.find({ seller: seller.user });
-    const history = await SellerHistory.find({ sellerId: req.params.id }).sort({ createdAt: -1 }).populate('changedBy', 'name role');
-
-    res.json({ seller, products, history });
-});
-
-// ===================================================================
-// @desc    Get a seller's full history
-// @route   GET /api/admin/sellers/:id/history
-// @access  Private/Admin
-// ===================================================================
-const getSellerHistory = asyncHandler(async (req, res) => {
-    const history = await SellerHistory.find({ sellerId: req.params.id }).sort({ createdAt: -1 }).populate('changedBy', 'name role');
-    res.json(history);
-});
-
-// ===================================================================
-// @desc    Get all products for admin view
-// @route   GET /api/admin/products
-// @access  Private/Admin
-// ===================================================================
-const adminGetAllProducts = asyncHandler(async (req, res) => {
-    const products = await Product.find({}).populate({
-        path: 'seller',
-        select: 'name',
-    });
-    res.json(products);
-});
-
-// ===================================================================
-// @desc    Get all sellers for admin
-// @access  Private/Admin
-// ===================================================================
-const adminGetAllSellers = asyncHandler(async (req, res) => {
-    const sellers = await Seller.find({}).populate('user', 'name email');
-    res.json(sellers);
-});
-
-// ===================================================================
-// @desc    Update seller status and log history
-// @access  Private/Admin
-// ===================================================================
-const adminUpdateSellerStatus = asyncHandler(async (req, res) => {
-    const { status } = req.body;
-    const seller = await Seller.findById(req.params.id);
-    if (!seller) {
-        res.status(404);
-        throw new Error('Seller not found');
-    }
-
-    const previousStatus = seller.status;
-    seller.status = status;
-
-    await SellerHistory.create({
-        sellerId: seller._id,
-        changedBy: req.user._id,
-        changes: [{
-            field: 'status',
-            oldValue: previousStatus,
-            newValue: status
-        }],
-        notes: `Seller status changed to ${status} by admin.`
-    });
-
-    await Notification.create({
-        user: seller.user,
-        message: `Your seller profile has been ${status}.`,
-        link: '/seller'
-    });
-
-    await seller.save();
-    res.json(seller);
-});
-
-// ===================================================================
-// @desc    Update product status
-// @access  Private/Admin
-// ===================================================================
-const adminUpdateProductStatus = asyncHandler(async (req, res) => {
-    const { status } = req.body;
-    const product = await Product.findById(req.params.id);
-
-    if (product) {
-        product.status = status;
-
-        await Notification.create({
-            user: product.seller,
-            message: `Your product "${product.name}" has been ${status}.`,
-            link: '/seller'
-        });
-
-        await product.save();
-        res.json(product);
-    } else {
-        res.status(404);
-        throw new Error('Product not found');
-    }
-});
-
-// ===================================================================
-// @desc    Delete a product by admin
-// @access  Private/Admin
-// ===================================================================
-const adminDeleteProduct = asyncHandler(async (req, res) => {
-    const product = await Product.findById(req.params.id);
-    if (product) {
-        await Product.deleteOne({ _id: product._id });
-        res.json({ message: 'Product removed' });
-    } else {
-        res.status(404);
-        throw new Error('Product not found');
-    }
-});
-
-// ===================================================================
-// @desc    Get all users (non-admins)
-// @access  Private/Admin
-// ===================================================================
 const adminGetAllUsers = asyncHandler(async (req, res) => {
-    const users = await User.find({ role: { $ne: 'admin' } });
+    const users = await User.find({ role: { $ne: 'admin' } }).select('-password');
     res.json(users);
 });
 
-// ===================================================================
-// @desc    Update a user's role
+// @desc    Get all sellers for management table
+// @route   GET /api/admin/sellers/all
 // @access  Private/Admin
-// ===================================================================
-const adminUpdateUserRole = asyncHandler(async (req, res) => {
-    const { role } = req.body;
-    const user = await User.findById(req.params.id);
-
-    if (user) {
-        user.role = role;
-        const updatedUser = await user.save();
-        res.json(updatedUser);
-    } else {
-        res.status(404);
-        throw new Error('User not found');
-    }
+const adminGetAllSellers = asyncHandler(async (req, res) => {
+    // Populate the seller's user ID to get owner name/email for the table view
+    const sellers = await Seller.find({})
+        .populate('user', 'name email') // FIX: Ensure user details are populated
+        .sort({ createdAt: -1 });
+    res.json(sellers);
 });
 
-// ===================================================================
-// @desc    Delete a user by admin
+// @desc    Get all products for management table
+// @route   GET /api/admin/products/all
 // @access  Private/Admin
-// ===================================================================
-const adminDeleteUser = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.params.id);
-
-    if (user) {
-        if (user.role === 'admin') {
-            res.status(400);
-            throw new Error('Cannot delete an admin user');
-        }
-        await User.deleteOne({ _id: user._id });
-        res.json({ message: 'User removed' });
-    } else {
-        res.status(404);
-        throw new Error('User not found');
-    }
+const adminGetAllProducts = asyncHandler(async (req, res) => {
+    const products = await Product.find({})
+        .populate({ path: 'seller', select: 'businessName' }) // Optionally populate seller for display
+        .sort({ createdAt: -1 });
+    res.json(products);
 });
 
-// ===================================================================
-// Exports
-// ===================================================================
+// @desc    Get pending seller and product approvals
+// @route   GET /api/admin/approvals
+// @access  Private/Admin
+const getPendingApprovals = asyncHandler(async (req, res) => {
+    // 1. Pending Sellers
+    const pendingSellers = await Seller.find({ status: 'pending' })
+        .select('businessName') // Select only what's needed for the approval table
+        .sort({ createdAt: 1 });
+
+    // 2. Pending Products
+    const pendingProducts = await Product.find({ status: 'pending' })
+        .select('name seller images')
+        .populate('seller', 'businessName') // Populate seller name for the table view
+        .sort({ createdAt: 1 });
+
+    res.json({
+        sellers: pendingSellers,
+        products: pendingProducts,
+    });
+});
+
+// @desc    Update Seller Status (Approve/Reject/Suspend)
+// @route   PUT /api/admin/sellers/:id/status
+// @access  Private/Admin
+const updateSellerStatus = asyncHandler(async (req, res) => {
+    const { status } = req.body; // status: 'approved', 'rejected', 'suspended'
+    const sellerId = req.params.id;
+
+    const seller = await Seller.findById(sellerId);
+    if (!seller) {
+        res.status(404);
+        throw new Error('Seller not found');
+    }
+
+    // Capture old status for history
+    const oldStatus = seller.status;
+
+    // Update status
+    seller.status = status;
+    await seller.save();
+
+    // Log history (optional, but good practice)
+    await SellerHistory.create({
+        seller: seller._id,
+        changedBy: req.user._id, // Assumes user ID is available from auth middleware
+        notes: `Status changed from ${oldStatus} to ${status}.`,
+        changes: [{ field: 'status', oldValue: oldStatus, newValue: status }]
+    });
+
+    // Notify user
+    await Notification.create({
+        recipient: seller.user,
+        message: `Your seller application status has been updated to: ${status}.`,
+        type: 'status',
+    });
+
+    res.json({ message: `Seller ${sellerId} status updated to ${status}` });
+});
+
+// @desc    Update Product Status (Approve/Reject)
+// @route   PUT /api/admin/products/:id/status
+// @access  Private/Admin
+const updateProductStatus = asyncHandler(async (req, res) => {
+    const { status } = req.body; // status: 'approved', 'rejected'
+    const productId = req.params.id;
+
+    const product = await Product.findById(productId).populate('seller');
+    if (!product) {
+        res.status(404);
+        throw new Error('Product not found');
+    }
+
+    product.status = status;
+    await product.save();
+
+    // Notify seller
+    await Notification.create({
+        recipient: product.seller.user, // Assuming product.seller has a user field
+        message: `Your product "${product.name}" status has been updated to: ${status}.`,
+        type: 'product_status',
+    });
+
+    res.json({ message: `Product ${productId} status updated to ${status}` });
+});
+
+
+// Export all controller functions
 module.exports = {
-    getDashboardStats,
-    getChartData,
-    getPendingApprovals,
     getSellerDetailsForAdmin,
-    getSellerHistory,
-    adminGetAllSellers,
-    adminUpdateSellerStatus,
-    adminGetAllProducts,
-    adminUpdateProductStatus,
-    adminDeleteProduct,
+    getAdminDashboardStats,
+    getAdminChartData,
     adminGetAllUsers,
-    adminUpdateUserRole,
-    adminDeleteUser,
+    adminGetAllSellers,
+    adminGetAllProducts,
+    getPendingApprovals,
+    updateSellerStatus,
+    updateProductStatus,
 };
