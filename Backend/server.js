@@ -24,22 +24,17 @@ const app = express();
 
 app.use(cors()); // Enable CORS for all origins
 
-// 1. INCREASE THE HEADER SIZE LIMIT (Fixes HTTP Error 431)
-// We set limits for JSON and URL-encoded bodies, and also for header size.
-// The default header limit is often 8KB, increasing it to 16KB usually fixes this issue.
+// 1. INCREASE THE HEADER/BODY SIZE LIMIT (Helps mitigate HTTP Error 431 related issues)
+// We set limits for JSON and URL-encoded bodies.
+// Note: For header size itself (HTTP 431), you may need configuration outside of Express/Node, 
+// but setting generous body limits is good practice.
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// A dedicated header size limit is handled via raw http config for Node/Express
-// However, since we are setting body limits, we often need to set the header limit 
-// at the node/hosting level (e.g., in a reverse proxy like Nginx), 
-// but setting limits on request bodies helps prevent related issues. 
-// For now, let's ensure body limits are generous if needed.
 
 // Cookie parser middleware
 app.use(cookieParser());
 
-// Statically serve the uploads folder (though uploads now go to Cloudinary, this might be useful if you store other static assets)
+// Statically serve the uploads folder (Critical for displaying documents/images if not using Cloudinary URLs)
 // The built-in __dirname is used here, no need to declare it.
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 

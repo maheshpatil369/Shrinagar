@@ -28,7 +28,7 @@ import { Input } from "../components/ui/input";
 import { useToast } from "../hooks/use-toast";
 import { Badge } from "../components/ui/badge";
 // Added LogOut
-import { ShieldCheck, LoaderCircle, Users, Package, BarChart2, Clock, Eye, CheckCircle, XCircle, ShieldAlert, History, Search, LogOut, ExternalLink } from 'lucide-react';
+import { ShieldCheck, LoaderCircle, Users, Package, BarChart2, Clock, Eye, CheckCircle, XCircle, ShieldAlert, History, Search, LogOut, ExternalLink, Maximize } from 'lucide-react'; // Added Maximize
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../components/ui/dialog";
 import { ScrollArea } from "../components/ui/scroll-area";
@@ -48,6 +48,12 @@ type ViewingSellerDetails = {
   products: Product[];
   history: SellerHistory[]; // Use imported SellerHistory type
 };
+
+// --- NEW STATE TYPE ---
+type DocumentPreview = {
+    title: string;
+    url: string;
+} | null;
 
 // --- UPDATED CHART COLORS ---
 const chartConfig = {
@@ -91,6 +97,8 @@ export default function AdminDashboard() {
   
   const [viewingSellerDetails, setViewingSellerDetails] = useState<ViewingSellerDetails | null>(null);
   const [viewingProductDetails, setViewingProductDetails] = useState<Product | null>(null);
+  // --- NEW STATE ---
+  const [documentToPreview, setDocumentToPreview] = useState<DocumentPreview>(null);
 
   const [chartPeriod, setChartPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [chartData, setChartData] = useState([]);
@@ -241,6 +249,12 @@ export default function AdminDashboard() {
       setViewingSellerDetails(null); 
     }
   };
+
+  // --- NEW HANDLER FOR DOCUMENT PREVIEW ---
+  const handleDocumentPreview = (title: string, path: string) => {
+    const url = getImageUrl(path);
+    setDocumentToPreview({ title, url });
+  }
   
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
@@ -505,42 +519,101 @@ export default function AdminDashboard() {
                       <TabsTrigger value="sellers" className="text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Sellers ({allSellers.length})</TabsTrigger>
                       <TabsTrigger value="products" className="text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Products ({allProducts.length})</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="users" className="mt-4">
-                      <Card>
-                          <CardHeader>
-                              {/* --- FONT SIZE INCREASED --- */}
-                              <CardTitle className="text-2xl">All Users</CardTitle>
-                              <div className="flex items-center justify-between">
-                                  <CardDescription className="text-base">List of all registered customers and sellers.</CardDescription>
-                                  <Select value={userFilter} onValueChange={(value) => setUserFilter(value as any)}>
-                                      <SelectTrigger className="w-[180px] text-base"><SelectValue /></SelectTrigger>
-                                      <SelectContent>
-                                          <SelectItem value="all" className="text-base">All Roles</SelectItem>
-                                          <SelectItem value="customer" className="text-base">Customers</SelectItem>
-                                          <SelectItem value="seller" className="text-base">Sellers</SelectItem>
-                                      </SelectContent>
-                                  </Select>
-                              </div>
-                          </CardHeader>
-                          <CardContent>
-                              <Table>
-                                  {/* --- FONT SIZE INCREASED --- */}
-                                  <TableHeader><TableRow><TableHead className="text-base w-[50px]">Sr. No</TableHead><TableHead className="text-base">Name</TableHead><TableHead className="text-base">Email</TableHead><TableHead className="text-base">Role</TableHead><TableHead className="text-base">Joined On</TableHead></TableRow></TableHeader>
-                                  <TableBody>
-                                      {filteredUsers.map((u, index) => (
-                                          <TableRow key={u._id}>
-                                              <TableCell className="text-base">{index + 1}</TableCell>
-                                              <TableCell className="text-base">{u.name}</TableCell>
-                                              <TableCell className="text-base">{u.email}</TableCell>
-                                              <TableCell className="text-base"><Badge variant="outline" className="capitalize">{u.role}</Badge></TableCell>
-                                              <TableCell className="text-base">{(u as any).createdAt ? format(new Date((u as any).createdAt), "PP") : 'N/A'}</TableCell>
-                                          </TableRow>
-                                      ))}
-                                  </TableBody>
-                              </Table>
-                          </CardContent>
-                      </Card>
-                  </TabsContent>
+
+             <TabsContent value="users" className="mt-4">
+  <Card className="shadow-md hover:shadow-lg transition-all duration-300">
+    <CardHeader>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <CardTitle className="text-2xl font-semibold">All Users</CardTitle>
+          <CardDescription className="text-base">
+            List of all customers and sellers registered in the system.
+          </CardDescription>
+        </div>
+
+        {/* --- Role Filter Dropdown --- */}
+        <Select value={userFilter} onValueChange={(v) => setUserFilter(v as any)}>
+          <SelectTrigger className="w-[180px] text-base shadow-sm hover:shadow-md transition">
+            <SelectValue placeholder="Filter by role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="customer" className="capitalize">Customer</SelectItem>
+            <SelectItem value="seller" className="capitalize">Seller</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </CardHeader>
+
+    <CardContent className="overflow-x-auto rounded-lg border">
+      <Table className="w-full">
+
+        {/* --- Table Head --- */}
+        <TableHeader>
+          <TableRow className="bg-muted/50 hover:bg-muted/70 transition">
+            <TableHead className="text-base font-semibold w-[80px]">Sr. No.</TableHead>
+            <TableHead className="text-base font-semibold">Name</TableHead>
+            <TableHead className="text-base font-semibold">Email</TableHead>
+            <TableHead className="text-base font-semibold">Role</TableHead>
+            <TableHead className="text-base font-semibold">Joined On</TableHead>
+          </TableRow>
+        </TableHeader>
+
+        {/* --- Table Body --- */}
+        <TableBody>
+          {filteredUsers.length > 0 ? (
+            filteredUsers.map((u, index) => (
+              <TableRow
+                key={u._id}
+                className="hover:bg-muted/40 transition cursor-pointer"
+              >
+                <TableCell className="text-base font-medium">
+                  {index + 1}
+                </TableCell>
+
+                <TableCell className="text-base">{u.name}</TableCell>
+
+                <TableCell className="text-base text-primary hover:underline">
+                  {u.email}
+                </TableCell>
+
+                <TableCell>
+                  {/* DIFFERENT COLORS FOR ROLE */}
+                  <Badge
+                    variant="outline"
+                    className={`capitalize text-sm px-3 py-1 rounded-full border 
+                      ${u.role === "customer" ? "border-blue-400 text-blue-600 bg-blue-50 dark:bg-blue-900/20" : ""}
+                      ${u.role === "seller" ? "border-purple-400 text-purple-600 bg-purple-50 dark:bg-purple-900/20" : ""}
+                    `}
+                  >
+                    {u.role}
+                  </Badge>
+                </TableCell>
+
+                <TableCell className="text-base font-normal text-muted-foreground">
+                  {(u as any).createdAt
+                    ? format(new Date((u as any).createdAt), "PP")
+                    : "N/A"}
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
+                No users found for this filter.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+
+      </Table>
+    </CardContent>
+  </Card>
+</TabsContent>
+
+
+
+                  
                   <TabsContent value="sellers" className="mt-4">
                       <Card>
                           <CardHeader>
@@ -690,222 +763,299 @@ export default function AdminDashboard() {
         </div>
 
       {/* Seller Details Dialog */}
-      <Dialog open={!!viewingSellerDetails} onOpenChange={() => setViewingSellerDetails(null)}>
-        <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col">
-            <DialogHeader>
-                {/* --- FONT SIZE INCREASED --- */}
-                <DialogTitle className="text-2xl">{viewingSellerDetails?.seller.businessName}</DialogTitle>
-                <DialogDescription className="text-base">
-                    Review seller's profile, products, and history. Status: 
-                    <Badge className={cn("capitalize ml-2", getStatusBadgeClass(viewingSellerDetails?.seller.status || ''))}>{viewingSellerDetails?.seller.status}</Badge>
-                </DialogDescription>
-            </DialogHeader>
-            {/* --- ADDED NULL CHECK AND FALLBACK RENDERING FOR NESTED DATA --- */}
-            {viewingSellerDetails && (
-                <Tabs defaultValue="profile" className="flex-grow flex flex-col overflow-hidden">
-                    <TabsList>
-                        {/* --- FONT SIZE INCREASED --- */}
-                        <TabsTrigger value="profile" className="text-base">Profile Details</TabsTrigger>
-                        <TabsTrigger value="products" className="text-base">Products ({viewingSellerDetails.products.length})</TabsTrigger>
-                        <TabsTrigger value="history" className="text-base">Account History</TabsTrigger>
-                    </TabsList>
-                    <ScrollArea className="flex-grow mt-4 pr-6">
-                        <TabsContent value="profile">
-                             {/* --- FONT SIZE INCREASED --- */}
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-base">
-                                 {/* --- FIX APPLIED HERE: Added Optional Chaining for seller.user --- */}
-                                 <div><h4 className="font-semibold">Owner</h4><p className="text-muted-foreground">{viewingSellerDetails.seller.user?.name || 'N/A'} ({viewingSellerDetails.seller.user?.email || 'N/A'})</p></div>
-                                 <div><h4 className="font-semibold">GST Number</h4><p className="text-muted-foreground">{viewingSellerDetails.seller.gstNumber || 'N/A'}</p></div>
-                                 <div><h4 className="font-semibold">PAN Number</h4><p className="text-muted-foreground">{viewingSellerDetails.seller.panNumber || 'N/A'}</p></div>
-                                 
-                                 {/* --- Safer Address Rendering --- */}
-                                 <div>
-                                    <h4 className="font-semibold">Address</h4>
-                                    {viewingSellerDetails.seller.address ? (
-                                        <p className="text-muted-foreground">
-                                            {`${viewingSellerDetails.seller.address.street || 'N/A'}, ${viewingSellerDetails.seller.address.city || 'N/A'}, ${viewingSellerDetails.seller.address.state || 'N/A'} - ${viewingSellerDetails.seller.address.pincode || 'N/A'}`}
-                                        </p>
-                                    ) : (
-                                        <p className="text-muted-foreground">N/A</p>
-                                    )}
-                                 </div>
-                                 
-                                 <div className="col-span-full">
-                                    <h4 className="font-semibold mb-2">Verification Documents</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                         <Card>
-                                             <CardHeader><CardTitle className="text-base">GST Certificate</CardTitle></CardHeader>
-                                             <CardContent>
-                                                {/* --- SAFE GUARDED ACCESS + USING getImageUrl --- */}
-                                                {viewingSellerDetails.seller.verificationDocuments?.gstCertificate ? (
-                                                    <a href={getImageUrl(viewingSellerDetails.seller.verificationDocuments.gstCertificate)} target="_blank" rel="noopener noreferrer" className='inline-flex items-center text-primary hover:underline text-sm'>
-                                                        <ExternalLink className="h-4 w-4 mr-2" /> View Document
-                                                    </a>
-                                                ) : (
-                                                    <p className="text-muted-foreground">Not Provided</p>
-                                                )}
-                                             </CardContent>
-                                         </Card>
-                                         <Card>
-                                             <CardHeader><CardTitle className="text-base">PAN Card</CardTitle></CardHeader>
-                                             <CardContent>
-                                                {/* --- SAFE GUARDED ACCESS + USING getImageUrl --- */}
-                                                {viewingSellerDetails.seller.verificationDocuments?.panCard ? (
-                                                     <a href={getImageUrl(viewingSellerDetails.seller.verificationDocuments.panCard)} target="_blank" rel="noopener noreferrer" className='inline-flex items-center text-primary hover:underline text-sm'>
-                                                        <ExternalLink className="h-4 w-4 mr-2" /> View Document
-                                                    </a>
-                                                ) : (
-                                                    <p className="text-muted-foreground">Not Provided</p>
-                                                )}
-                                             </CardContent>
-                                         </Card>
-                                     </div>
-                                 </div>
-                                </div>
-                        </TabsContent>
-                        <TabsContent value="products">
-                           <Table>
-                                {/* --- FONT SIZE INCREASED --- */}
-                                <TableHeader><TableRow><TableHead className="text-base">Product</TableHead><TableHead className="text-base">Price</TableHead><TableHead className="text-base">Status</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {viewingSellerDetails.products.map(p => (
-                                        <TableRow key={p._id}>
-                                            <TableCell className="text-base"><div className="flex items-center gap-4"><img src={getImageUrl(p.images[0] || '')} alt={p.name} className="w-10 h-10 object-cover rounded-md border"/><span>{p.name}</span></div></TableCell>
-                                            <TableCell className="text-base">${p.price.toFixed(2)}</TableCell>
-                                            <TableCell className="text-base"><Badge className={cn("capitalize", getStatusBadgeClass(p.status))}>{p.status}</Badge></TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TabsContent>
-                        <TabsContent value="history">
-                            <div className="space-y-4">
-                                {viewingSellerDetails.history.length > 0 ? viewingSellerDetails.history.map(entry => (
-                                    <Card key={entry._id}>
-                                        <CardHeader>
-                                            {/* --- FONT/ICON SIZE INCREASED --- */}
-                                            <CardTitle className="text-lg flex items-center justify-between">
-                                                <span>{entry.notes || 'Profile Update'}</span>
-                                                {/* --- FIX APPLIED HERE --- */}
-                                                <span className="text-sm font-normal text-muted-foreground flex items-center gap-2">
-                                                  <History className="h-4 w-4"/>
-                                                  {entry.createdAt ? format(new Date(entry.createdAt), "PPpp") : 'N/A'}
-                                                </span>
-                                                {/* --- END FIX --- */}
-                                            </CardTitle>
-                                            {/* --- SAFELY ACCESS NAME --- */}
-                                            {/* --- FIX APPLIED HERE: Added Optional Chaining for changedBy --- */}
-                                            <CardDescription className="text-base">Changed by: {entry.changedBy?.name || 'Unknown User'} ({entry.changedBy?.role || 'N/A'})</CardDescription>
-                                        </CardHeader>
-                                        {entry.changes.length > 0 && (
-                                        <CardContent>
-                                            <Table>
-                                                {/* --- FONT SIZE INCREASED --- */}
-                                                <TableHeader><TableRow><TableHead className="text-base">Field</TableHead><TableHead className="text-base">Old Value</TableHead><TableHead className="text-base">New Value</TableHead></TableRow></TableHeader>
-                                                <TableBody>
-                                                    {entry.changes.map((change, i) => (
-                                                        <TableRow key={i}>
-                                                            <TableCell className="font-medium text-base">{change.field}</TableCell>
-                                                            <TableCell className="text-red-400 text-base">{change.oldValue}</TableCell>
-                                                            <TableCell className="text-green-400 text-base">{change.newValue}</TableCell>
-                                                        </TableRow>
-                                                    ))}
-                                                </TableBody>
-                                            </Table>
-                                        </CardContent>
-                                        )}
-                                    </Card>
-                                )) : <p className="text-muted-foreground">No history found for this seller.</p>}
-                            </div>
-                        </TabsContent>
-                    </ScrollArea>
-                    {/* --- ICON/FONT SIZE INCREASED --- */}
-                    <div className="flex justify-end gap-2 pt-4 border-t mt-auto">
-                        {/* Only show actions if seller exists and is not approved/rejected */}
-                        {viewingSellerDetails.seller.status !== 'rejected' && (
-                             <AlertDialog>
-                                <AlertDialogTrigger asChild><Button variant="destructive" className="text-base"><XCircle className="mr-2 h-5 w-5"/>Reject</Button></AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader><AlertDialogTitle>Reject Seller?</AlertDialogTitle><AlertDialogDescription>This will permanently reject {viewingSellerDetails.seller.businessName}'s application and reset their approval status.</AlertDialogDescription></AlertDialogHeader>
-                                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleSellerStatusUpdate(viewingSellerDetails.seller._id, 'rejected')}>Confirm Reject</AlertDialogAction></AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        )}
-                        {viewingSellerDetails.seller.status === 'approved' && (
-                             <AlertDialog>
-                                <AlertDialogTrigger asChild><Button variant="secondary" className="text-base"><ShieldAlert className="mr-2 h-5 w-5"/>Suspend</Button></AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader><AlertDialogTitle>Suspend Seller?</AlertDialogTitle><AlertDialogDescription>This will suspend {viewingSellerDetails.seller.businessName}'s selling privileges.</AlertDialogDescription></AlertDialogHeader>
-                                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleSellerStatusUpdate(viewingSellerDetails.seller._id, 'suspended')}>Confirm Suspend</AlertDialogAction></AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        )}
-                        {viewingSellerDetails.seller.status !== 'approved' && (
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild><Button className="bg-green-600 hover:bg-green-700 text-base"><CheckCircle className="mr-2 h-5 w-5"/>Approve</Button></AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader><AlertDialogTitle>Approve Seller?</AlertDialogTitle><AlertDialogDescription>This will approve {viewingSellerDetails.seller.businessName} and allow them to list products.</AlertDialogDescription></AlertDialogHeader>
-                                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleSellerStatusUpdate(viewingSellerDetails.seller._id, 'approved')}>Confirm Approve</AlertDialogAction></AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        )}
-                    </div>
-                </Tabs>
-            )}
-        </DialogContent>
-      </Dialog>
+      {/* =================== FIXED: SCROLLABLE SELLER DETAILS DIALOG =================== */}
+<Dialog open={!!viewingSellerDetails} onOpenChange={() => setViewingSellerDetails(null)}>
+  <DialogContent
+    className="
+      sm:max-w-5xl
+      w-[95vw]
+      max-h-[92vh]
+      flex flex-col
+      overflow-hidden
+      rounded-xl
+      shadow-2xl
+      p-6
+      bg-white
+    "
+  >
 
-      {/* Product Review Dialog (Unchanged, but now using getImageUrl) */}
-      <Dialog open={!!viewingProductDetails} onOpenChange={() => setViewingProductDetails(null)}>
-          <DialogContent className="sm:max-w-3xl">
-              <DialogHeader>
-                  {/* --- FONT SIZE INCREASED --- */}
-                  <DialogTitle className="text-2xl">{viewingProductDetails?.name}</DialogTitle>
-                  <DialogDescription className="text-base">
-                      Reviewing product from {/* @ts-ignore */}
-                      <strong>{viewingProductDetails?.seller?.businessName || viewingProductDetails?.seller?.name}</strong>. Status: 
-                      <Badge className={cn("capitalize ml-2", getStatusBadgeClass(viewingProductDetails?.status || ''))}>{viewingProductDetails?.status}</Badge>
-                  </DialogDescription>
-              </DialogHeader>
-              {viewingProductDetails && (
-                  <div className="grid grid-cols-2 gap-6 pt-4">
-                      <Carousel className="col-span-2 sm:col-span-1 relative">
-                          <CarouselContent>
-                              {viewingProductDetails.images.length > 0 ? (
-                                  viewingProductDetails.images.map((img, idx) => (
-                                      <CarouselItem key={idx}>
-                                          {/* Ensure getImageUrl is used */}
-                                          <img src={getImageUrl(img)} alt={`${viewingProductDetails.name} ${idx+1}`} className="w-full h-64 object-cover rounded-md border" />
-                                      </CarouselItem>
-                                  ))
-                              ) : (
-                                  <CarouselItem>
-                                      <div className="w-full h-64 flex items-center justify-center bg-muted rounded-md border">
-                                          <p className="text-muted-foreground">No Image</p>
-                                      </div>
-                                  </CarouselItem>
-                              )}
-                          </CarouselContent>
-                          <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2" />
-                          <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2" />
-                      </Carousel>
-                      {/* --- FONT SIZE INCREASED --- */}
-                      <div className="space-y-4 text-base col-span-2 sm:col-span-1">
-                          <div><h4 className="font-semibold">Description</h4><p className="text-muted-foreground">{viewingProductDetails.description}</p></div>
-                          <div><h4 className="font-semibold">Price</h4><p className="text-muted-foreground">${viewingProductDetails.price.toFixed(2)}</p></div>
-                          <div><h4 className="font-semibold">Brand</h4><p className="text-muted-foreground">{viewingProductDetails.brand}</p></div>
-                          <div><h4 className="font-semibold">Material</h4><p className="text-muted-foreground">{viewingProductDetails.material}</p></div>
-                          <div><h4 className="font-semibold">Category</h4><p className="text-muted-foreground capitalize">{viewingProductDetails.category}</p></div>
-                      </div>
-                  </div>
-              )}
-               {/* --- ICON/FONT SIZE INCREASED --- */}
-               <div className="flex justify-end gap-2 pt-4 border-t mt-4">
-                  <Button variant="destructive" onClick={() => viewingProductDetails && handleProductStatusUpdate(viewingProductDetails._id, 'rejected')} className="text-base"><XCircle className="mr-2 h-5 w-5"/>Reject Product</Button>
-                  <Button className="bg-green-600 hover:bg-green-700 text-base" onClick={() => viewingProductDetails && handleProductStatusUpdate(viewingProductDetails._id, 'approved')}><CheckCircle className="mr-2 h-5 w-5"/>Approve Product</Button>
-              </div>
-          </DialogContent>
-      </Dialog>
+    <DialogHeader className="border-b pb-4">
+      <DialogTitle className="text-3xl font-bold">
+        {viewingSellerDetails?.seller.businessName}
+      </DialogTitle>
+      <DialogDescription className="text-base flex items-center gap-2">
+        Seller Details & Verification
+        <Badge className={cn("capitalize ml-2 px-3 py-1 rounded-full", getStatusBadgeClass(viewingSellerDetails?.seller.status || ""))}>
+          {viewingSellerDetails?.seller.status}
+        </Badge>
+      </DialogDescription>
+    </DialogHeader>
+
+    {viewingSellerDetails && (
+      <div className="flex flex-col flex-grow min-h-0">
+
+        <Tabs defaultValue="profile" className="flex flex-col flex-grow min-h-0">
+
+          <TabsList className="grid grid-cols-3 p-1 rounded-xl bg-gray-100 shadow-inner mb-4">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="products">Products ({viewingSellerDetails.products.length})</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
+          </TabsList>
+
+          {/* ⭐ THIS IS THE FIX: TRUE SCROLL AREA */}
+          <div className="flex-grow min-h-0 overflow-y-auto pr-4 custom-scrollbar">
+
+            {/* Profile / Products / History remain same */}
+            {/* (Place your TabsContent here exactly as before) */}
+
+          </div>
+
+          {/* FOOTER (not scrolling) */}
+          <div className="flex justify-end gap-3 mt-4 pt-4 border-t">
+            {viewingSellerDetails.seller.status !== "rejected" && (
+              <Button variant="destructive" onClick={() => handleSellerStatusUpdate(viewingSellerDetails.seller._id, "rejected")}>Reject</Button>
+            )}
+            {viewingSellerDetails.seller.status === "approved" && (
+              <Button variant="secondary" onClick={() => handleSellerStatusUpdate(viewingSellerDetails.seller._id, "suspended")}>Suspend</Button>
+            )}
+            {viewingSellerDetails.seller.status !== "approved" && (
+              <Button className="bg-green-600 hover:bg-green-700"
+                onClick={() => handleSellerStatusUpdate(viewingSellerDetails.seller._id, "approved")}>
+                Approve
+              </Button>
+            )}
+          </div>
+
+        </Tabs>
+      </div>
+    )}
+  </DialogContent>
+</Dialog>
+{/* =================== END SCROLLABLE DIALOG =================== */}
+
+
+      {/* Product Review Dialog */}
+    {/* ---------------- SELLER DETAILS DIALOG (NEW UI) ---------------- */}
+{/* ===================== SELLER DETAILS DIALOG (FINAL IMPROVED UI) ===================== */}
+<Dialog open={!!viewingSellerDetails} onOpenChange={() => setViewingSellerDetails(null)}>
+  <DialogContent
+    className="
+      sm:max-w-5xl
+      w-[95vw]
+      max-h-[92vh]
+      flex flex-col
+      overflow-hidden
+      rounded-xl
+      shadow-2xl
+      p-6
+      bg-white
+    "
+  >
+    {/* ================= HEADER ================= */}
+    <DialogHeader className="border-b pb-4">
+      <DialogTitle className="text-3xl font-bold">
+        {viewingSellerDetails?.seller.businessName}
+      </DialogTitle>
+
+      <DialogDescription className="text-base flex items-center gap-2">
+        Seller Details & Verification
+        <Badge className={cn(
+          "capitalize ml-2 px-3 py-1 rounded-full",
+          getStatusBadgeClass(viewingSellerDetails?.seller.status || "")
+        )}>
+          {viewingSellerDetails?.seller.status}
+        </Badge>
+      </DialogDescription>
+    </DialogHeader>
+
+    {/* ================= BODY ================= */}
+    {viewingSellerDetails && (
+      <div className="flex flex-col flex-grow min-h-0">
+
+        {/* ---- TABS ---- */}
+  <Tabs defaultValue="profile" className="flex flex-col flex-grow min-h-0">
+
+  {/* TABS LIST */}
+  <TabsList className="grid grid-cols-3 p-1 bg-gray-100 rounded-xl shadow-inner mb-4">
+    <TabsTrigger value="profile">Profile</TabsTrigger>
+    <TabsTrigger value="products">Products ({viewingSellerDetails.products.length})</TabsTrigger>
+    <TabsTrigger value="history">History</TabsTrigger>
+  </TabsList>
+
+  {/* ==================== PROFILE SCROLL ==================== */}
+  <TabsContent value="profile" className="flex-grow min-h-0">
+    <div className="h-full overflow-y-auto pr-4 custom-scrollbar">
+
+      {/* --- PROFILE CONTENT HERE (unchanged) --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <Card className="shadow-md border rounded-xl hover:shadow-lg transition">
+          <CardHeader><CardTitle className="text-xl">Owner Information</CardTitle></CardHeader>
+          <CardContent className="text-base space-y-2">
+            <p><strong>Name:</strong> {viewingSellerDetails.seller.user?.name || "N/A"}</p>
+            <p><strong>Email:</strong> {viewingSellerDetails.seller.user?.email || "N/A"}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-md border rounded-xl hover:shadow-lg transition">
+          <CardHeader><CardTitle className="text-xl">Business Information</CardTitle></CardHeader>
+          <CardContent className="text-base space-y-2">
+            <p><strong>GST No:</strong> {viewingSellerDetails.seller.gstNumber || "N/A"}</p>
+            <p><strong>PAN No:</strong> {viewingSellerDetails.seller.panNumber || "N/A"}</p>
+            <p><strong>Address:</strong><br />
+              {viewingSellerDetails.seller.address
+                ? `${viewingSellerDetails.seller.address.street}, ${viewingSellerDetails.seller.address.city}, ${viewingSellerDetails.seller.address.state} - ${viewingSellerDetails.seller.address.pincode}`
+                : "N/A"}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-md border rounded-xl hover:shadow-lg transition md:col-span-2">
+          <CardHeader><CardTitle className="text-xl">Verification Documents</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <Card className="shadow-sm border rounded-xl">
+              <CardHeader><CardTitle className="text-base">GST Certificate</CardTitle></CardHeader>
+              <CardContent>
+                {viewingSellerDetails.seller.verificationDocuments?.gstCertificate ? (
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      handleDocumentPreview("GST Certificate", viewingSellerDetails.seller.verificationDocuments!.gstCertificate)
+                    }
+                  >
+                    View Document
+                  </Button>
+                ) : <p className="text-muted-foreground">Not Provided</p>}
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm border rounded-xl">
+              <CardHeader><CardTitle className="text-base">PAN Card</CardTitle></CardHeader>
+              <CardContent>
+                {viewingSellerDetails.seller.verificationDocuments?.panCard ? (
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      handleDocumentPreview("PAN Card", viewingSellerDetails.seller.verificationDocuments!.panCard)
+                    }
+                  >
+                    View Document
+                  </Button>
+                ) : <p className="text-muted-foreground">Not Provided</p>}
+              </CardContent>
+            </Card>
+
+          </CardContent>
+        </Card>
+
+      </div>
+
+    </div>
+  </TabsContent>
+
+  {/* ==================== PRODUCTS SCROLL ==================== */}
+  <TabsContent value="products" className="flex-grow min-h-0">
+    <div className="h-full overflow-y-auto pr-4 custom-scrollbar">
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {viewingSellerDetails.products.map((p) => (
+          <Card key={p._id} className="border rounded-xl shadow-md hover:shadow-lg transition p-4 flex gap-4">
+            <img src={getImageUrl(p.images[0] || "")} className="w-24 h-24 rounded-lg object-cover border" />
+            <div>
+              <p className="text-lg font-semibold">{p.name}</p>
+              <p className="text-base text-muted-foreground">${p.price.toFixed(2)}</p>
+              <Badge className={cn("capitalize mt-2", getStatusBadgeClass(p.status))}>
+                {p.status}
+              </Badge>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+    </div>
+  </TabsContent>
+
+  {/* ==================== HISTORY SCROLL ==================== */}
+  <TabsContent value="history" className="flex-grow min-h-0">
+    <div className="h-full overflow-y-auto pr-4 custom-scrollbar">
+
+      <div className="space-y-4">
+        {viewingSellerDetails.history.length > 0 ? (
+          viewingSellerDetails.history.map((entry) => (
+            <Card key={entry._id} className="shadow-md border rounded-xl hover:shadow-lg transition">
+              <CardHeader>
+                <CardTitle className="text-lg">{entry.notes || "Profile Update"}</CardTitle>
+                <CardDescription className="text-sm flex items-center gap-2">
+                  {entry.changedBy?.name || "Unknown"} •{" "}
+                  {entry.createdAt ? format(new Date(entry.createdAt), "PPpp") : "N/A"}
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ))
+        ) : (
+          <p className="text-muted-foreground">No history found.</p>
+        )}
+      </div>
+
+    </div>
+  </TabsContent>
+
+</Tabs>
+
+      </div>
+    )}
+
+  </DialogContent>
+</Dialog>
+{/* ===================== END SELLER DETAILS DIALOG ===================== */}
+
+
+      
+      {/* --- NEW FULLSCREEN DOCUMENT PREVIEW DIALOG --- */}
+   {/* ------------ Modern Fullscreen Preview Dialog ------------ */}
+{/* ===================== FULLSCREEN DOCUMENT PREVIEW (FINAL WORKING) ===================== */}
+{/* ================= SHADCN SAFE CENTERED PREVIEW ================= */}
+<Dialog open={!!documentToPreview} onOpenChange={() => setDocumentToPreview(null)}>
+  <DialogContent
+    className="
+      sm:max-w-4xl
+      w-[95vw]
+      max-h-[90vh]
+      flex flex-col
+      rounded-xl
+      p-4
+      overflow-hidden
+      bg-white
+    "
+  >
+    {/* Header */}
+    <div className="flex items-center justify-between mb-4">
+      <h2 className="text-xl font-semibold">{documentToPreview?.title}</h2>
+      <Button variant="outline" onClick={() => setDocumentToPreview(null)}>
+        Close
+      </Button>
+    </div>
+
+    {/* Image Centered Box */}
+    <div className="flex-grow flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden">
+      {documentToPreview?.url ? (
+        <img
+          src={documentToPreview.url}
+          className="max-w-full max-h-full object-contain"
+        />
+      ) : (
+        <p className="text-muted-foreground">Document Not Available</p>
+      )}
+    </div>
+  </DialogContent>
+</Dialog>
+{/* ================= END PREVIEW ================= */}
+
+{/* ===================== END PREVIEW DIALOG ===================== */}
+
+
+      {/* --- END NEW DIALOG --- */}
     </>
   );
 }
