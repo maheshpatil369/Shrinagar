@@ -610,60 +610,85 @@ function GiftsSection() {
 
 // --- Footer Component (Restored to original dark theme) ---
 function Footer() {
+    const navigate = useNavigate();
+
     return (
-        // Original dark theme classes
         <footer className="bg-black text-white pt-8 pb-4">
             <div className="container mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
+                
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-8">
-                    {/* Brand/Contact Info */}
-                    <div className="lg:col-span-2 space-y-3">
-                         <Link to="/" className="flex items-center gap-2 mb-2">
-                            <Gem className="h-7 w-7 text-[#ffffff]" />
+
+                    {/* Brand / Contact */}
+                    <div className="lg:col-span-2 space-y-3 cursor-pointer"
+                         onClick={() => navigate('/buyer')}>
+                        <div className="flex items-center gap-2 mb-2">
+                            <Gem className="h-7 w-7 text-white" />
                             <span className="font-bold text-2xl tracking-widest">SHRINGAR</span>
-                        </Link>
+                        </div>
                         <p className="text-sm text-white/70">Email: support@shringar.com</p>
                         <p className="text-sm text-white/70">Phone: +91 123 456 7890</p>
                     </div>
 
-                    {/* Links - My Account */}
+                    {/* My Account */}
                     <div>
                         <h4 className="font-semibold mb-3">My Account</h4>
                         <ul className="space-y-2 text-sm text-white/70">
-                            <li><Link to="/profile" className="hover:text-white">My Orders</Link></li>
-                            <li><Link to="/profile" className="hover:text-white">Wishlist</Link></li>
-                            <li><Link to="/profile" className="hover:text-white">My Profile</Link></li>
+                            <li onClick={() => navigate('/buyer')} className="hover:text-white cursor-pointer">My Orders</li>
+                            <li onClick={() => navigate('/buyer')} className="hover:text-white cursor-pointer">Wishlist</li>
+                            <li onClick={() => navigate('/buyer')} className="hover:text-white cursor-pointer">My Profile</li>
                         </ul>
                     </div>
 
-                     {/* Links - Information */}
-                     <div>
+                    {/* Information */}
+                    <div>
                         <h4 className="font-semibold mb-3">Information</h4>
                         <ul className="space-y-2 text-sm text-white/70">
-                            <li><Link to="#" className="hover:text-white">About Us</Link></li>
-                            <li><Link to="#" className="hover:text-white">Contact</Link></li>
-                            <li><Link to="#" className="hover:text-white">FAQ</Link></li>
+                            <li onClick={() => navigate('/buyer')} className="hover:text-white cursor-pointer">About Us</li>
+                            <li onClick={() => navigate('/buyer')} className="hover:text-white cursor-pointer">Contact</li>
+                            <li onClick={() => navigate('/buyer')} className="hover:text-white cursor-pointer">FAQ</li>
                         </ul>
                     </div>
 
-                    {/* Social/Policy */}
-                    <div className="col-span-2 md:col-span-1">
+                    {/* Social & Policies */}
+                    <div>
                         <h4 className="font-semibold mb-3">Connect</h4>
-                         <div className="flex gap-3">
-                            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10"><Facebook className="h-4 w-4"/></Button>
-                            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10"><Twitter className="h-4 w-4"/></Button>
-                            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10"><User className="h-4 w-4"/></Button>
+                        <div className="flex gap-3">
+                            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10"
+                                onClick={() => navigate('/buyer')}>
+                                <Facebook className="h-4 w-4" />
+                            </Button>
+
+                            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10"
+                                onClick={() => navigate('/buyer')}>
+                                <Twitter className="h-4 w-4" />
+                            </Button>
+
+                            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10"
+                                onClick={() => navigate('/buyer')}>
+                                <User className="h-4 w-4" />
+                            </Button>
                         </div>
-                         <p className="text-xs text-white/70 mt-4">Terms & Conditions</p>
-                         <p className="text-xs text-white/70">Privacy Policy</p>
+
+                        <p onClick={() => navigate('/buyer')} className="text-xs text-white/70 mt-4 cursor-pointer hover:text-white">
+                            Terms & Conditions
+                        </p>
+
+                        <p onClick={() => navigate('/buyer')} className="text-xs text-white/70 cursor-pointer hover:text-white">
+                            Privacy Policy
+                        </p>
                     </div>
                 </div>
-                <div className="border-t border-white/10 pt-4 text-center text-sm text-white/70">
+
+                <div className="border-t border-white/10 pt-4 text-center text-sm text-white/70 cursor-pointer"
+                     onClick={() => navigate('/buyer')}>
                     © {new Date().getFullYear()} Shringar. All Rights Reserved.
                 </div>
+
             </div>
         </footer>
     );
 }
+
 
 
 // --- Main Landing Component (Ensuring white background) ---
