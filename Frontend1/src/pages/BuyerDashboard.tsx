@@ -247,32 +247,33 @@ export default function BuyerDashboard() {
   const currentUser = getCurrentUser();
   const { setAuthModalOpen, setPostLoginRedirect } = useAuthModal();
   const [layout, setLayout] = useState<'grid' | 'list'>('grid');
-  
+
   const filters = useMemo((): ProductFilters => ({
-      keyword: searchParams.get('keyword') || undefined,
-      category: searchParams.get('category') || undefined,
-      brand: searchParams.get('brand') || undefined,
-      material: searchParams.get('material') || undefined,
-      minPrice: Number(searchParams.get('minPrice')) || undefined,
-      maxPrice: Number(searchParams.get('maxPrice')) || undefined,
+    keyword: searchParams.get('keyword') || undefined,
+    category: searchParams.get('category') || undefined,
+    brand: searchParams.get('brand') || undefined,
+    material: searchParams.get('material') || undefined,
+    minPrice: Number(searchParams.get('minPrice')) || undefined,
+    maxPrice: Number(searchParams.get('maxPrice')) || undefined,
   }), [searchParams]);
-  
+
   const sortOption = searchParams.get('sort') || 'default';
 
   const debouncedUpdateUrlParams = useCallback(
     debounce((newFilters: ProductFilters) => {
-        const newParams = new URLSearchParams(searchParams);
-        Object.entries(newFilters).forEach(([key, value]) => {
-            if (value !== undefined && value !== '' && value !== 0 && !(key === 'maxPrice' && value === 50000)) {
-                newParams.set(key, String(value));
-            } else {
-                newParams.delete(key);
-            }
-        });
-        setSearchParams(newParams, { replace: true });
+      const newParams = new URLSearchParams(searchParams);
+      Object.entries(newFilters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '' && value !== 0 && !(key === 'maxPrice' && value === 50000)) {
+          newParams.set(key, String(value));
+        } else {
+          newParams.delete(key);
+        }
+      });
+      setSearchParams(newParams, { replace: true });
     }, 500),
-  [setSearchParams, searchParams]);
-  
+    [setSearchParams, searchParams]
+  );
+
   useEffect(() => {
     const loadFilterOptions = async () => {
       try {
@@ -312,154 +313,127 @@ export default function BuyerDashboard() {
   };
 
   const handlePriceChange = (values: number[]) => {
-     const newFilters = { ...filters, minPrice: values[0], maxPrice: values[1] };
-     debouncedUpdateUrlParams(newFilters);
+    const newFilters = { ...filters, minPrice: values[0], maxPrice: values[1] };
+    debouncedUpdateUrlParams(newFilters);
   };
-  
+
   const handleSortChange = (value: string) => {
-      const newParams = new URLSearchParams(searchParams);
-      if (value === 'default') {
-          newParams.delete('sort');
-      } else {
-          newParams.set('sort', value);
-      }
-      setSearchParams(newParams, { replace: true });
+    const newParams = new URLSearchParams(searchParams);
+    if (value === 'default') newParams.delete('sort');
+    else newParams.set('sort', value);
+
+    setSearchParams(newParams, { replace: true });
   };
 
   const sortedProducts = useMemo(() => {
-      let sorted = [...products];
-      switch (sortOption) {
-          case 'price-asc':
-              sorted.sort((a, b) => a.price - b.price);
-              break;
-          case 'price-desc':
-              sorted.sort((a, b) => b.price - a.price);
-              break;
-          case 'name-asc':
-              sorted.sort((a, b) => a.name.localeCompare(b.name));
-              break;
-          case 'name-desc':
-               sorted.sort((a, b) => b.name.localeCompare(a.name));
-               break;
-          default:
-              break;
-      }
-      return sorted;
+    let sorted = [...products];
+    switch (sortOption) {
+      case 'price-asc': sorted.sort((a, b) => a.price - b.price); break;
+      case 'price-desc': sorted.sort((a, b) => b.price - a.price); break;
+      case 'name-asc': sorted.sort((a, b) => a.name.localeCompare(b.name)); break;
+      case 'name-desc': sorted.sort((a, b) => b.name.localeCompare(a.name)); break;
+      default: break;
+    }
+    return sorted;
   }, [products, sortOption]);
 
+  const handleAddToWishlist = async (e: React.MouseEvent, product: Product) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-   const handleAddToWishlist = async (e: React.MouseEvent, product: Product) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!currentUser) {
-            toast({ variant: "destructive", title: "Login Required", description: "Please log in to add items to your wishlist." });
-            setPostLoginRedirect(window.location.pathname);
-            setAuthModalOpen(true);
-            return;
-        }
-        try {
-            await addToWishlist(product._id);
-            toast({ title: "Success", description: `${product.name} added to your wishlist!` });
-        } catch (error) {
-            // FIX: Safely access error message, defaulting to a generic message if not an Axios error
-            const errorMessage = (error as any).response?.data?.message || (error instanceof Error ? error.message : "Could not add to wishlist due to an unexpected error.");
-            toast({ variant: "destructive", title: "Error", description: errorMessage });
-        }
-    };
+    if (!currentUser) {
+      toast({
+        variant: "destructive",
+        title: "Login Required",
+        description: "Please log in to add items to your wishlist."
+      });
+      setPostLoginRedirect(window.location.pathname);
+      setAuthModalOpen(true);
+      return;
+    }
+    try {
+      await addToWishlist(product._id);
+      toast({ title: "Success", description: `${product.name} added to your wishlist!` });
+    } catch (error) {
+      const errorMessage = (error as any).response?.data?.message ||
+        (error instanceof Error ? error.message : "Could not add to wishlist.");
+      toast({ variant: "destructive", title: "Error", description: errorMessage });
+    }
+  };
 
   return (
-    // --- LAYOUT CHANGE: Removed flex-col md:flex-row ---
     <div className="container mx-auto max-w-screen-2xl p-4 md:px-8">
-        
-        {/* --- Main Product Grid --- */}
-        <main className="w-full">
-             {/* --- LAYOUT CHANGE: Added Filter Button here --- */}
-             <div className="flex flex-wrap items-center justify-between mb-6 border-b pb-4 gap-4">
-                 <h1 className="text-2xl font-bold">Shop</h1>
-                 <div className="flex items-center gap-2">
-                     <Select value={sortOption} onValueChange={handleSortChange}>
-                        <SelectTrigger className="w-[160px] text-xs h-9">
-                            <SelectValue placeholder="Default Sorting" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="default">Default Sorting</SelectItem>
-                            <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                            <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                             <SelectItem value="name-asc">Name: A to Z</SelectItem>
-                             <SelectItem value="name-desc">Name: Z to A</SelectItem>
-                        </SelectContent>
-                    </Select>
 
-                     <Button variant={layout === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-9 w-9" onClick={() => setLayout('grid')}>
-                         <LayoutGrid className="h-4 w-4" />
-                         <span className="sr-only">Grid View</span>
-                     </Button>
-                     <Button variant={layout === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-9 w-9" onClick={() => setLayout('list')}>
-                         <List className="h-4 w-4" />
-                         <span className="sr-only">List View</span>
-                     </Button>
+      <main className="w-full">
+        <div className="flex flex-wrap items-center justify-between mb-6 border-b pb-4 gap-4">
+          <h1 className="text-2xl font-bold">Shop</h1>
 
-                    {/* --- LAYOUT CHANGE: Filter button moved here --- */}
-                    <Sheet>
-                      <SheetTrigger asChild>
-                          <Button variant="outline" className="h-9 px-3">
-                              <SlidersHorizontal className="mr-0 sm:mr-2 h-4 w-4" />
-                              <span className="hidden sm:inline">Filters</span>
-                          </Button>
-                      </SheetTrigger> 
-                      <SheetContent side="right" className="w-[300px] sm:w-[400px] overflow-y-auto">
-                           <SheetHeader className="mb-6 border-b pb-4">
-                              <SheetTitle className="text-xl font-semibold">Filters</SheetTitle>
-                           </SheetHeader>
-                           <FilterSidebar 
-                                filters={filters} 
-                                onFilterChange={handleFilterChange} 
-                                onPriceChange={handlePriceChange}
-                                uniqueBrands={allBrands}
-                                uniqueMaterials={allMaterials}
-                            />
-                           <SheetClose asChild className="mt-6 w-full">
-                                <Button>Apply Filters</Button>
-                           </SheetClose>
-                      </SheetContent>
-                  </Sheet>
+          <div className="flex items-center gap-2">
+            <Select value={sortOption} onValueChange={handleSortChange}>
+              <SelectTrigger className="w-[160px] text-xs h-9">
+                <SelectValue placeholder="Default Sorting" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Default Sorting</SelectItem>
+                <SelectItem value="price-asc">Price: Low to High</SelectItem>
+                <SelectItem value="price-desc">Price: High to Low</SelectItem>
+                <SelectItem value="name-asc">Name: A to Z</SelectItem>
+                <SelectItem value="name-desc">Name: Z to A</SelectItem>
+              </SelectContent>
+            </Select>
 
-                 </div>
-             </div>
+            <Button variant={layout === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-9 w-9" onClick={() => setLayout('grid')}>
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button variant={layout === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-9 w-9" onClick={() => setLayout('list')}>
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
 
-            {isLoading ? (
-                 // --- LAYOUT CHANGE: Added xl:grid-cols-5 for full width ---
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                     {[...Array(10)].map((_, i) => <Skeleton key={i} className="h-96 w-full rounded-lg" />)}
-                 </div>
-            ) : error ? (
-                 <div className="text-center py-20 border rounded-lg">
-                    <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold">Error</h2>
-                    <p className="text-muted-foreground mt-2">{error}</p>
-                </div>
-            ) : sortedProducts.length === 0 ? (
-                <div className="text-center py-20 border rounded-lg">
-                    <h2 className="text-xl font-semibold">No Jewelry Found</h2>
-                    <p className="text-muted-foreground mt-2">Try adjusting your filters.</p>
-                </div>
-            ) : layout === 'grid' ? (
-                 // --- LAYOUT CHANGE: Added xl:grid-cols-5 for full width ---
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                    {sortedProducts.map((product) => (
-                       <ProductCard key={product._id} product={product} onAddToWishlist={handleAddToWishlist} currentUser={currentUser} layout="grid" />
-                    ))}
-                </div>
-            ) : ( // List Layout
-                <div className="space-y-4">
-                     {sortedProducts.map((product) => (
-                       <ProductCard key={product._id} product={product} onAddToWishlist={handleAddToWishlist} currentUser={currentUser} layout="list" />
-                    ))}
-                </div>
-            )}
-        </main>
-
-        {/* --- LAYOUT CHANGE: The <aside> element is no longer here --- */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(10)].map((_, i) => (
+              <Skeleton key={i} className="h-96 w-full rounded-lg" />
+            ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-20 border rounded-lg">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h2 className="text-xl font-semibold">Error</h2>
+            <p className="text-muted-foreground mt-2">{error}</p>
+          </div>
+        ) : sortedProducts.length === 0 ? (
+          <div className="text-center py-20 border rounded-lg">
+            <h2 className="text-xl font-semibold">No Jewelry Found</h2>
+            <p className="text-muted-foreground mt-2">Try adjusting your filters.</p>
+          </div>
+        ) : layout === 'grid' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {sortedProducts.map((product) => (
+              <ProductCard
+                key={product._id}
+                product={product}
+                onAddToWishlist={handleAddToWishlist}
+                currentUser={currentUser}
+                layout="grid"
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {sortedProducts.map((product) => (
+              <ProductCard
+                key={product._id}
+                product={product}
+                onAddToWishlist={handleAddToWishlist}
+                currentUser={currentUser}
+                layout="list"
+              />
+            ))}
+          </div>
+        )}
+      </main>
 
     </div>
   );
