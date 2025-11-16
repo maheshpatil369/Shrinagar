@@ -202,10 +202,9 @@ const getMyProducts = asyncHandler(async (req, res) => {
     res.json(products);
 });
 
-// --- NEW: Controller to create a product review ---
 // @desc    Create a new review
 // @route   POST /api/products/:id/reviews
-// @access  Private
+// @access  Private/Customer
 const createProductReview = asyncHandler(async (req, res) => {
   const { rating, comment } = req.body;
   const product = await Product.findById(req.params.id);
@@ -240,6 +239,63 @@ const createProductReview = asyncHandler(async (req, res) => {
     throw new Error('Product not found');
   }
 });
+
+// --- NEW: Controller to delete a product review ---
+// @desc    Delete a product review
+// @route   DELETE /api/products/:productId/reviews/:reviewId
+// @access  Private/Customer(self), Seller(product owner), Admin
+const deleteProductReview = asyncHandler(async (req, res) => {
+  const { productId, reviewId } = req.params;
+  const userId = req.user._id;
+
+  const product = await Product.findById(productId);
+
+  if (!product) {
+    res.status(404);
+    throw new Error('Product not found');
+  }
+
+  // Find the index of the review to be deleted
+  const reviewIndex = product.reviews.findIndex(
+    (r) => r._id.toString() === reviewId.toString()
+  );
+
+  if (reviewIndex === -1) {
+    res.status(404);
+    throw new Error('Review not found');
+  }
+
+  const reviewToDelete = product.reviews[reviewIndex];
+
+  // Authorization Check:
+  // 1. Is the current user the author of the review?
+  const isAuthor = reviewToDelete.user.toString() === userId.toString();
+  // 2. Is the current user the seller of the product? (Only checks if they are the original seller ID)
+  const isSeller = product.seller.toString() === userId.toString();
+  // 3. Is the current user an Admin? (Checked by authMiddleware which sets req.user.role)
+  const isAdmin = req.user.role === 'admin';
+
+  if (!isAuthor && !isSeller && !isAdmin) {
+    res.status(403);
+    throw new Error('Not authorized to delete this review');
+  }
+
+  // Remove the review from the array
+  product.reviews.splice(reviewIndex, 1);
+
+  // Recalculate ratings
+  product.numReviews = product.reviews.length;
+  if (product.numReviews > 0) {
+    product.rating =
+      product.reviews.reduce((acc, item) => item.rating + acc, 0) /
+      product.reviews.length;
+  } else {
+    product.rating = 0;
+  }
+
+  await product.save();
+  res.json({ message: 'Review successfully deleted' });
+});
 // --- End of new controller ---
 
 module.exports = {
@@ -251,5 +307,6 @@ module.exports = {
     updateProduct,
     deleteProduct,
     getMyProducts,
-    createProductReview, // Add new export
+    createProductReview,
+    deleteProductReview, // Export new controller
 };

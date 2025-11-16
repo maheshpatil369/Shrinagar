@@ -2,12 +2,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 // --- All imports are now using alias + file extension ---
-import { getProductById, Product, trackAffiliateClick, PopulatedSeller, createProductReview, Review } from '@/lib/products.ts';
+import { getProductById, Product, trackAffiliateClick, PopulatedSeller, createProductReview, Review, deleteProductReview } from '@/lib/products.ts';
 import { useToast } from '@/hooks/use-toast.ts';
 import { Button } from '@/components/ui/button.tsx';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
-import { ExternalLink, LoaderCircle, ArrowLeft, Heart, View, Maximize, Share2, Star } from 'lucide-react';
+import { ExternalLink, LoaderCircle, ArrowLeft, Heart, View, Maximize, Share2, Star, Trash2 } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel.tsx";
 import { addToWishlist, getWishlist, isProductInWishlist, removeFromWishlist } from '@/lib/user.ts';
 import { Dialog, DialogContent } from '@/components/ui/dialog.tsx';
@@ -18,6 +18,18 @@ import { Textarea } from '@/components/ui/textarea.tsx';
 import { Label } from '@/components/ui/label.tsx';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils.ts'; // Import cn utility
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog.tsx";
+
 
 function addRecentlyViewed(productId: string) {
     let viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
@@ -72,6 +84,7 @@ export default function ProductDetailPage() {
     const fetchProduct = useCallback(async (productId: string) => {
         setIsLoading(true);
         try {
+            // Note: Product details now contain full review list
             const { product: data, recommendations: recs } = await getProductById(productId);
             setProduct(data);
             setRecommendations(recs);
@@ -229,6 +242,20 @@ export default function ProductDetailPage() {
         }
     };
 
+    // --- NEW: Review delete handler ---
+    const handleDeleteReview = async (reviewId: string) => {
+        if (!product || !user || !id) return;
+
+        try {
+            await deleteProductReview(id, reviewId);
+            toast({ title: "Review Deleted", description: "The review was successfully removed." });
+            fetchProduct(id); // Refetch product to update the list and recalculate rating
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Deletion Failed", description: error.response?.data?.message || "Could not delete review." });
+        }
+    };
+    // --- End new handler ---
+
     const handleArVrClick = () => {
         toast({
             title: "Coming Soon!",
@@ -241,6 +268,8 @@ export default function ProductDetailPage() {
 
     const sellerDetails = typeof product.seller === 'object' ? product.seller as PopulatedSeller : null;
     const userHasReviewed = product.reviews.find(r => r.user === user?._id);
+    const isProductSeller = product.seller.toString() === user?._id;
+    const isAdmin = user?.role === 'admin';
 
     return (
         <>
@@ -345,7 +374,7 @@ export default function ProductDetailPage() {
                             </div>
                         </div>
 
-                        {/* --- Reviews Section (Unchanged) --- */}
+                        {/* --- Reviews Section (Updated to include Delete option) --- */}
                         <div className="mt-12 lg:mt-16">
                             <h2 className="text-3xl font-bold mb-6">Reviews</h2>
                             <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
@@ -358,7 +387,7 @@ export default function ProductDetailPage() {
                                         <CardContent>
                                             {user ? (
                                                 userHasReviewed ? (
-                                                    <p className="text-muted-foreground">You have already reviewed this product.</p>
+                                                    <p className="text-muted-foreground">You have already reviewed this product. You can delete your existing review below.</p>
                                                 ) : (
                                                     <form onSubmit={handleReviewSubmit} className="space-y-4">
                                                         <div>
@@ -411,18 +440,52 @@ export default function ProductDetailPage() {
                                     {product.reviews.length === 0 ? (
                                         <p className="text-muted-foreground">No reviews yet.</p>
                                     ) : (
-                                        product.reviews.map((review) => (
-                                            <div key={review._id} className="pb-4 border-b last:border-b-0">
-                                                <div className="flex justify-between items-center mb-1">
-                                                    <h4 className="font-semibold">{review.name}</h4>
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {format(new Date(review.createdAt), 'dd MMM yyyy')}
-                                                    </span>
+                                        product.reviews.map((review) => {
+                                            const isCurrentUsersReview = review.user === user?._id;
+                                            const canDelete = isCurrentUsersReview || isProductSeller || isAdmin;
+                                            
+                                            return (
+                                                <div key={review._id} className="pb-4 border-b last:border-b-0">
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <div>
+                                                            <h4 className="font-semibold">{review.name}</h4>
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {format(new Date(review.createdAt), 'dd MMM yyyy')}
+                                                            </span>
+                                                        </div>
+                                                        
+                                                        {canDelete && (
+                                                            <AlertDialog>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 hover:bg-red-50 hover:text-red-700">
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle>Delete Review?</AlertDialogTitle>
+                                                                        <AlertDialogDescription>
+                                                                            This will permanently delete this review. This action cannot be undone.
+                                                                        </AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                        <AlertDialogAction 
+                                                                            onClick={() => handleDeleteReview(review._id)}
+                                                                            className="bg-destructive hover:bg-destructive/90"
+                                                                        >
+                                                                            Confirm Delete
+                                                                        </AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        )}
+                                                    </div>
+                                                    <Rating value={review.rating} />
+                                                    <p className="text-sm text-muted-foreground mt-2">{review.comment}</p>
                                                 </div>
-                                                <Rating value={review.rating} />
-                                                <p className="text-sm text-muted-foreground mt-2">{review.comment}</p>
-                                            </div>
-                                        ))
+                                            );
+                                        })
                                     )}
                                 </div>
                             </div>
@@ -448,6 +511,7 @@ export default function ProductDetailPage() {
 
 
 function RecommendationCard({ product }: { product: Product }) {
+    // ... existing code ...
     return (
         <Link to={`/product/${product._id}`} className="flex items-center gap-4 group p-2 rounded-lg hover:bg-muted/50 transition-colors">
             <div className="w-20 h-20 shrink-0">

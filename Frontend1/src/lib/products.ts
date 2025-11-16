@@ -148,3 +148,16 @@ export const createProductReview = async (
   const { data } = await api.post(`/products/${productId}/reviews`, review, getAuthHeaders());
   return data;
 };
+
+// --- NEW: API call to delete a review ---
+export const deleteProductReview = async (
+  productId: string,
+  reviewId: string
+): Promise<{ message: string }> => {
+  const { data } = await api.delete(
+    `/products/${productId}/reviews/${reviewId}`,
+    getAuthHeaders()
+  );
+  return data;
+};
+// --- End of new API call ---
