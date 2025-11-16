@@ -4,7 +4,8 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Product, getApprovedProducts, ProductFilters } from "../lib/products";
-import { ExternalLink, LoaderCircle, Search, SlidersHorizontal, Heart, X, LayoutGrid, List, ShoppingCart, AlertCircle, Menu } from 'lucide-react';
+// Using Gem icon, but styling it neutrally to look like the default diamond icon
+import { ExternalLink, LoaderCircle, Search, SlidersHorizontal, Heart, X, LayoutGrid, List, ShoppingCart, AlertCircle, Menu, Gem } from 'lucide-react';
 import { useToast } from "../hooks/use-toast";
 import { Input } from "../components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
@@ -447,11 +448,16 @@ export default function BuyerDashboard() {
 
       <main className="w-full">
         <div className="flex flex-wrap items-center justify-between mb-6 border-b pb-4 gap-4">
-          <h1 className="text-2xl font-bold">Shop</h1>
+          
+          {/* UPDATED: Changed name to "Jwelart Shop" and removed red styling */}
+          <h1 className="text-2xl font-bold flex items-center gap-3 text-gray-800">
+              {/* <Gem className="h-6 w-6 text-current" /> */}
+              Jwelary Shop
+          </h1>
 
           <div className="flex items-center gap-2">
             
-            {/* UPDATED: Filter Button now uses white outline variant */}
+            {/* Filter Button */}
             <Sheet open={isMobileFilterOpen} onOpenChange={setIsMobileFilterOpen}>
                 <SheetTrigger asChild>
                     <Button variant="outline" size="sm" className="h-9 font-semibold">
@@ -495,12 +501,12 @@ export default function BuyerDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* FIX: Permanent Sidebar is now hidden on ALL screens */}
+            {/* Permanent Sidebar is now hidden on ALL screens */}
             <aside className="hidden min-w-[250px]"> 
                 <FilterSidebar {...filterProps} />
             </aside>
 
-            {/* FIX: Main Product Area now takes full width on large screens */}
+            {/* Main Product Area now takes full width on large screens */}
             <div className="lg:col-span-12">
                 {isLoading ? (
                   <div className={`grid gap-6 ${layout === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'space-y-4'}`}>
