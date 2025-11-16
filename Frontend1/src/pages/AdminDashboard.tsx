@@ -47,7 +47,7 @@ import {
   Search,
   LogOut,
   Maximize,
-  Trash2, 
+  Trash2,
   MessageSquare, // Added MessageSquare icon for Reviews
   Copy, // Added Copy icon
 } from 'lucide-react';
@@ -247,11 +247,11 @@ export default function AdminDashboard() {
       return matchesSearch && matchesCategory && matchesStatus;
     });
   }, [allProducts, productSearch, productCategoryFilter, productStatusFilter]);
-  
+
   // --- NEW FILTERED REVIEWS ---
   const filteredReviews = useMemo(() => {
       const searchLower = reviewSearch.toLowerCase();
-      return allReviews.filter(r => 
+      return allReviews.filter(r =>
           r.productName?.toLowerCase().includes(searchLower) ||
           r.userName?.toLowerCase().includes(searchLower) ||
           r.comment?.toLowerCase().includes(searchLower) ||
@@ -334,9 +334,10 @@ export default function AdminDashboard() {
   return (
     <>
       <div className="container mx-auto p-4 md:p-8">
-        <header className="flex items-center justify-between mb-8">
+        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4 sm:gap-0">
           <div>
-            <h1 className="text-4xl font-bold">Admin Dashboard</h1>
+            {/* Added breakpoint font size for better mobile scaling */}
+            <h1 className="text-3xl sm:text-4xl font-bold">Admin Dashboard</h1>
             <p className="text-muted-foreground text-base">Welcome, {user.name}!</p>
           </div>
           <div className="flex items-center gap-4">
@@ -364,14 +365,15 @@ export default function AdminDashboard() {
         </header>
 
         <Tabs value={mainTab} onValueChange={setMainTab}>
+          {/* Tabs List now has smaller text on small screens */}
           <TabsList className="grid w-full grid-cols-3 bg-indigo-100 dark:bg-indigo-900/50 p-1 rounded-lg">
-            <TabsTrigger value="dashboard" className="text-base data-[state=active]:bg-indigo-600 data-[state=active]:text-white rounded-md">Dashboard Stats</TabsTrigger>
-            <TabsTrigger value="approvals" className="text-base data-[state=active]:bg-indigo-600 data-[state=active]:text-white rounded-md">Approvals ({pendingApprovalsCount})</TabsTrigger>
-            <TabsTrigger value="management" className="text-base data-[state=active]:bg-indigo-600 data-[state=active]:text-white rounded-md">Management</TabsTrigger>
+            <TabsTrigger value="dashboard" className="text-sm sm:text-base data-[state=active]:bg-indigo-600 data-[state=active]:text-white rounded-md">Dashboard Stats</TabsTrigger>
+            <TabsTrigger value="approvals" className="text-sm sm:text-base data-[state=active]:bg-indigo-600 data-[state=active]:text-white rounded-md">Approvals ({pendingApprovalsCount})</TabsTrigger>
+            <TabsTrigger value="management" className="text-sm sm:text-base data-[state=active]:bg-indigo-600 data-[state=active]:text-white rounded-md">Management</TabsTrigger>
           </TabsList>
 
           {/* ----------------- DASHBOARD ----------------- */}
-       <TabsContent value="dashboard" className="mt-6">
+        <TabsContent value="dashboard" className="mt-6">
 
   {/* ====== TOP CARDS (Users / Sellers / Products / Approvals) ====== */}
   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -383,13 +385,13 @@ export default function AdminDashboard() {
     >
       <CardHeader className="pb-2">
         <div className="flex items-center gap-3">
-          <Users className="h-8 w-8 text-blue-500" />
-          <CardTitle className="text-2xl font-semibold">Total Users</CardTitle>
+          <Users className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />
+          <CardTitle className="text-xl sm:text-2xl font-semibold">Total Users</CardTitle>
         </div>
       </CardHeader>
 
       <CardContent>
-        <div className="text-4xl font-bold">{stats?.totalUsers}</div>
+        <div className="text-3xl sm:text-4xl font-bold">{stats?.totalUsers}</div>
       </CardContent>
     </Card>
 
@@ -400,13 +402,13 @@ export default function AdminDashboard() {
     >
       <CardHeader className="pb-2">
         <div className="flex items-center gap-3">
-          <Package className="h-8 w-8 text-purple-500" />
-          <CardTitle className="text-2xl font-semibold">Total Sellers</CardTitle>
+          <Package className="h-7 w-7 sm:h-8 sm:w-8 text-purple-500" />
+          <CardTitle className="text-xl sm:text-2xl font-semibold">Total Sellers</CardTitle>
         </div>
       </CardHeader>
 
       <CardContent>
-        <div className="text-4xl font-bold">{stats?.totalSellers}</div>
+        <div className="text-3xl sm:text-4xl font-bold">{stats?.totalSellers}</div>
       </CardContent>
     </Card>
 
@@ -417,13 +419,13 @@ export default function AdminDashboard() {
     >
       <CardHeader className="pb-2">
         <div className="flex items-center gap-3">
-          <BarChart2 className="h-8 w-8 text-green-500" />
-          <CardTitle className="text-2xl font-semibold">Total Products</CardTitle>
+          <BarChart2 className="h-7 w-7 sm:h-8 sm:w-8 text-green-500" />
+          <CardTitle className="text-xl sm:text-2xl font-semibold">Total Products</CardTitle>
         </div>
       </CardHeader>
 
       <CardContent>
-        <div className="text-4xl font-bold">{stats?.totalProducts}</div>
+        <div className="text-3xl sm:text-4xl font-bold">{stats?.totalProducts}</div>
       </CardContent>
     </Card>
 
@@ -434,15 +436,15 @@ export default function AdminDashboard() {
     >
       <CardHeader className="pb-2">
         <div className="flex items-center gap-3">
-          <Clock className="h-8 w-8 text-red-500" />
-          <CardTitle className="text-2xl font-semibold">Pending Approvals</CardTitle>
+          <Clock className="h-7 w-7 sm:h-8 sm:w-8 text-red-500" />
+          <CardTitle className="text-xl sm:text-2xl font-semibold">Pending Approvals</CardTitle>
         </div>
       </CardHeader>
 
       <CardContent>
         <div
           className={cn(
-            "text-4xl font-bold",
+            "text-3xl sm:text-4xl font-bold",
             pendingApprovalsCount > 0 ? "text-red-500" : ""
           )}
         >
@@ -459,7 +461,7 @@ export default function AdminDashboard() {
     {/* Growth Overview Chart */}
     <Card className="lg:col-span-2">
       <CardHeader>
-        <div className="w-full flex items-center justify-between">
+        <div className="w-full flex items-center justify-between flex-col sm:flex-row gap-4 sm:gap-0">
 
           <div className="flex flex-col">
             <CardTitle className="text-2xl">Growth Overview</CardTitle>
@@ -472,7 +474,7 @@ export default function AdminDashboard() {
             value={chartPeriod}
             onValueChange={(value) => setChartPeriod(value as any)}
           >
-            <SelectTrigger className="w-[150px] text-base">
+            <SelectTrigger className="w-full sm:w-[150px] text-base">
               <SelectValue />
             </SelectTrigger>
 
@@ -559,8 +561,9 @@ export default function AdminDashboard() {
           <TabsContent value="approvals" className="mt-6">
             <div className="grid lg:grid-cols-2 gap-8">
               <Card>
-                <CardHeader><CardTitle className="text-2xl">Pending Seller Applications ({pending.sellers.length})</CardTitle></CardHeader>
-                <CardContent>
+                <CardHeader><CardTitle className="text-xl sm:text-2xl">Pending Seller Applications ({pending.sellers.length})</CardTitle></CardHeader>
+                {/* Ensure table scrolls horizontally */}
+                <CardContent className="overflow-x-auto">
                   {pending.sellers.length > 0 ? (
                     <Table>
                       <TableHeader>
@@ -573,13 +576,13 @@ export default function AdminDashboard() {
                       <TableBody>
                         {pending.sellers.map((seller, index) => (
                           <TableRow key={seller._id}>
-                            <TableCell className="text-base">{index + 1}</TableCell>
-                            <TableCell className="font-medium text-base">{seller.businessName}</TableCell>
-                            <TableCell className="text-right space-x-2">
-                              <Button variant="outline" size="sm" onClick={() => handleViewSeller(seller._id)} className="text-base"><Eye className="mr-2 h-5 w-5" />Review</Button>
+                            <TableCell className="text-sm">{index + 1}</TableCell>
+                            <TableCell className="font-medium text-sm">{seller.businessName}</TableCell>
+                            <TableCell className="text-right space-x-2 whitespace-nowrap">
+                              <Button variant="outline" size="sm" onClick={() => handleViewSeller(seller._id)} className="text-xs sm:text-base"><Eye className="mr-2 h-4 w-4" />Review</Button>
 
                               <AlertDialog>
-                                <AlertDialogTrigger asChild><Button size="sm" variant="destructive" className="text-base"><XCircle className="mr-2 h-5 w-5" />Reject</Button></AlertDialogTrigger>
+                                <AlertDialogTrigger asChild><Button size="sm" variant="destructive" className="text-xs sm:text-base"><XCircle className="mr-2 h-4 w-4" />Reject</Button></AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Reject Seller?</AlertDialogTitle>
@@ -593,7 +596,7 @@ export default function AdminDashboard() {
                               </AlertDialog>
 
                               <AlertDialog>
-                                <AlertDialogTrigger asChild><Button size="sm" className="bg-green-600 hover:bg-green-700 text-base"><CheckCircle className="mr-2 h-5 w-5" />Approve</Button></AlertDialogTrigger>
+                                <AlertDialogTrigger asChild><Button size="sm" className="bg-green-600 hover:bg-green-700 text-xs sm:text-base"><CheckCircle className="mr-2 h-4 w-4" />Approve</Button></AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Approve Seller?</AlertDialogTitle>
@@ -615,8 +618,9 @@ export default function AdminDashboard() {
               </Card>
 
               <Card>
-                <CardHeader><CardTitle className="text-2xl">Pending Product Listings ({pending.products.length})</CardTitle></CardHeader>
-                <CardContent>
+                <CardHeader><CardTitle className="text-xl sm:text-2xl">Pending Product Listings ({pending.products.length})</CardTitle></CardHeader>
+                {/* Ensure table scrolls horizontally */}
+                <CardContent className="overflow-x-auto">
                   {pending.products.length > 0 ? (
                     <Table>
                       <TableHeader>
@@ -630,14 +634,14 @@ export default function AdminDashboard() {
                       <TableBody>
                         {pending.products.map((product, index) => (
                           <TableRow key={product._id}>
-                            <TableCell className="text-base">{index + 1}</TableCell>
-                            <TableCell className="font-medium text-base">{product.name}</TableCell>
-                            <TableCell className="text-base">{(product as any).seller?.businessName || 'N/A'}</TableCell>
-                            <TableCell className="text-right space-x-2">
-                              <Button variant="outline" size="sm" onClick={() => setViewingProductDetails(product)} className="text-base"><Eye className="mr-2 h-5 w-5" />Review</Button>
+                            <TableCell className="text-sm">{index + 1}</TableCell>
+                            <TableCell className="font-medium text-sm">{product.name}</TableCell>
+                            <TableCell className="text-sm">{(product as any).seller?.businessName || 'N/A'}</TableCell>
+                            <TableCell className="text-right space-x-2 whitespace-nowrap">
+                              <Button variant="outline" size="sm" onClick={() => setViewingProductDetails(product)} className="text-xs sm:text-base"><Eye className="mr-2 h-4 w-4" />Review</Button>
 
                               <AlertDialog>
-                                <AlertDialogTrigger asChild><Button size="sm" variant="destructive" className="text-base"><XCircle className="mr-2 h-5 w-5" />Reject</Button></AlertDialogTrigger>
+                                <AlertDialogTrigger asChild><Button size="sm" variant="destructive" className="text-xs sm:text-base"><XCircle className="mr-2 h-4 w-4" />Reject</Button></AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Reject Product?</AlertDialogTitle>
@@ -651,7 +655,7 @@ export default function AdminDashboard() {
                               </AlertDialog>
 
                               <AlertDialog>
-                                <AlertDialogTrigger asChild><Button size="sm" className="bg-green-600 hover:bg-green-700 text-base"><CheckCircle className="mr-2 h-5 w-5" />Approve</Button></AlertDialogTrigger>
+                                <AlertDialogTrigger asChild><Button size="sm" className="bg-green-600 hover:bg-green-700 text-xs sm:text-base"><CheckCircle className="mr-2 h-4 w-4" />Approve</Button></AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Approve Product?</AlertDialogTitle>
@@ -678,11 +682,11 @@ export default function AdminDashboard() {
           <TabsContent value="management" className="mt-6">
             <Tabs defaultValue={managementTab} onValueChange={setManagementTab}>
               <TabsList className="grid w-full grid-cols-4 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
-                <TabsTrigger value="users" className="text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Users ({allUsers.length})</TabsTrigger>
-                <TabsTrigger value="sellers" className="text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Sellers ({allSellers.length})</TabsTrigger>
-                <TabsTrigger value="products" className="text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Products ({allProducts.length})</TabsTrigger>
-                 {/* --- NEW TAB --- */}
-                <TabsTrigger value="reviews" className="text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Reviews ({allReviews.length})</TabsTrigger>
+                <TabsTrigger value="users" className="text-xs sm:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Users ({allUsers.length})</TabsTrigger>
+                <TabsTrigger value="sellers" className="text-xs sm:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Sellers ({allSellers.length})</TabsTrigger>
+                <TabsTrigger value="products" className="text-xs sm:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Products ({allProducts.length})</TabsTrigger>
+                   {/* --- NEW TAB --- */}
+                <TabsTrigger value="reviews" className="text-xs sm:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Reviews ({allReviews.length})</TabsTrigger>
               </TabsList>
 
               {/* USERS */}
@@ -696,7 +700,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <Select value={userFilter} onValueChange={(v) => setUserFilter(v as any)}>
-                        <SelectTrigger className="w-[180px] text-base shadow-sm hover:shadow-md transition">
+                        <SelectTrigger className="w-full sm:w-[180px] text-base shadow-sm hover:shadow-md transition">
                           <SelectValue placeholder="Filter by role" />
                         </SelectTrigger>
                         <SelectContent>
@@ -708,32 +712,33 @@ export default function AdminDashboard() {
                     </div>
                   </CardHeader>
 
+                  {/* Ensure table scrolls horizontally */}
                   <CardContent className="overflow-x-auto rounded-lg border">
                     <Table className="w-full">
                       <TableHeader>
                         <TableRow className="bg-muted/50 hover:bg-muted/70 transition">
-                          <TableHead className="text-base font-semibold w-[80px]">Sr. No.</TableHead>
-                          <TableHead className="text-base font-semibold">Name</TableHead>
-                          <TableHead className="text-base font-semibold">Email</TableHead>
-                          <TableHead className="text-base font-semibold">Role</TableHead>
-                          <TableHead className="text-base font-semibold">Joined On</TableHead>
+                          <TableHead className="text-base w-[80px]">Sr. No.</TableHead>
+                          <TableHead className="text-base">Name</TableHead>
+                          <TableHead className="text-base">Email</TableHead>
+                          <TableHead className="text-base">Role</TableHead>
+                          <TableHead className="text-base">Joined On</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredUsers.length > 0 ? (
                           filteredUsers.map((u, index) => (
                             <TableRow key={u._id} className="hover:bg-muted/40 transition cursor-pointer">
-                              <TableCell className="text-base font-medium">{index + 1}</TableCell>
-                              <TableCell className="text-base">{u.name}</TableCell>
-                              <TableCell className="text-base text-primary hover:underline">{u.email}</TableCell>
+                              <TableCell className="text-sm font-medium">{index + 1}</TableCell>
+                              <TableCell className="text-sm">{u.name}</TableCell>
+                              <TableCell className="text-sm text-primary hover:underline">{u.email}</TableCell>
                               <TableCell>
-                                <Badge variant="outline" className={`capitalize text-sm px-3 py-1 rounded-full border
+                                <Badge variant="outline" className={`capitalize text-xs px-2 py-1 rounded-full border
                                   ${u.role === "customer" ? "border-blue-400 text-blue-600 bg-blue-50 dark:bg-blue-900/20" : ""}
                                   ${u.role === "seller" ? "border-purple-400 text-purple-600 bg-purple-50 dark:bg-purple-900/20" : ""}`}>
                                   {u.role}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="text-base font-normal text-muted-foreground">
+                              <TableCell className="text-sm font-normal text-muted-foreground whitespace-nowrap">
                                 {(u as any).createdAt ? format(new Date((u as any).createdAt), "PP") : "N/A"}
                               </TableCell>
                             </TableRow>
@@ -755,13 +760,14 @@ export default function AdminDashboard() {
                   <CardHeader>
                     <CardTitle className="text-2xl">All Sellers</CardTitle>
                     <CardDescription className="text-base">Search and manage all sellers in the system.</CardDescription>
-                    <div className="mt-4 flex items-center gap-4">
+                    {/* Filter bar stacks correctly on small screens */}
+                    <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                       <div className="relative flex-grow">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input placeholder="Search by business name..." className="pl-10 text-base" value={sellerSearch} onChange={e => setSellerSearch(e.target.value)} />
                       </div>
                       <Select value={sellerStatusFilter} onValueChange={setSellerStatusFilter}>
-                        <SelectTrigger className="w-[180px] text-base"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                        <SelectTrigger className="w-full sm:w-[180px] text-base"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all" className="text-base">All Statuses</SelectItem>
                           {['pending', 'approved', 'rejected', 'suspended'].map(status => (<SelectItem key={status} value={status} className="capitalize text-base">{status}</SelectItem>))}
@@ -769,7 +775,8 @@ export default function AdminDashboard() {
                       </Select>
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  {/* Ensure table scrolls horizontally */}
+                  <CardContent className="overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -783,16 +790,16 @@ export default function AdminDashboard() {
                       <TableBody>
                         {filteredSellers.map((s, index) => (
                           <TableRow key={s._id}>
-                            <TableCell className="text-base">{index + 1}</TableCell>
-                            <TableCell className="text-base">{s.businessName}</TableCell>
-                            <TableCell className="text-base">{s.user?.name || 'N/A'}</TableCell>
-                            <TableCell className="text-base"><Badge className={cn("capitalize", getStatusBadgeClass(s.status))}>{s.status}</Badge></TableCell>
-                            <TableCell className="text-right space-x-2">
-                              <Button variant="outline" size="sm" onClick={() => handleViewSeller(s._id)} className="text-base"><Eye className="h-5 w-5 mr-1" />Details</Button>
+                            <TableCell className="text-sm">{index + 1}</TableCell>
+                            <TableCell className="text-sm">{s.businessName}</TableCell>
+                            <TableCell className="text-sm">{s.user?.name || 'N/A'}</TableCell>
+                            <TableCell className="text-sm"><Badge className={cn("capitalize text-xs px-2 py-1", getStatusBadgeClass(s.status))}>{s.status}</Badge></TableCell>
+                            <TableCell className="text-right space-x-2 whitespace-nowrap">
+                              <Button variant="outline" size="sm" onClick={() => handleViewSeller(s._id)} className="text-xs"><Eye className="h-4 w-4 mr-1" />Details</Button>
 
                               {s.status !== 'approved' && (
                                 <AlertDialog>
-                                  <AlertDialogTrigger asChild><Button size="sm" className="bg-green-600 hover:bg-green-700" disabled={s.status === 'approved'}><CheckCircle className="h-5 w-5"/></Button></AlertDialogTrigger>
+                                  <AlertDialogTrigger asChild><Button size="sm" className="bg-green-600 hover:bg-green-700" disabled={s.status === 'approved'}><CheckCircle className="h-4 w-4"/></Button></AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader><AlertDialogTitle>Approve Seller?</AlertDialogTitle><AlertDialogDescription>This will approve {s.businessName}.</AlertDialogDescription></AlertDialogHeader>
                                     <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleSellerStatusUpdate(s._id, 'approved')}>Confirm Approve</AlertDialogAction></AlertDialogFooter>
@@ -802,7 +809,7 @@ export default function AdminDashboard() {
 
                               {s.status !== 'rejected' && (
                                 <AlertDialog>
-                                  <AlertDialogTrigger asChild><Button size="sm" variant="destructive" disabled={s.status === 'rejected'}><XCircle className="h-5 w-5"/></Button></AlertDialogTrigger>
+                                  <AlertDialogTrigger asChild><Button size="sm" variant="destructive" disabled={s.status === 'rejected'}><XCircle className="h-4 w-4"/></Button></AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader><AlertDialogTitle>Reject Seller?</AlertDialogTitle><AlertDialogDescription>This will reject {s.businessName}'s application.</AlertDialogDescription></AlertDialogHeader>
                                     <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleSellerStatusUpdate(s._id, 'rejected')}>Confirm Reject</AlertDialogAction></AlertDialogFooter>
@@ -812,7 +819,7 @@ export default function AdminDashboard() {
 
                               {s.status === 'approved' && (
                                 <AlertDialog>
-                                  <AlertDialogTrigger asChild><Button size="sm" variant="secondary"><ShieldAlert className="h-5 w-5" /></Button></AlertDialogTrigger>
+                                  <AlertDialogTrigger asChild><Button size="sm" variant="secondary"><ShieldAlert className="h-4 w-4" /></Button></AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader><AlertDialogTitle>Suspend Seller?</AlertDialogTitle><AlertDialogDescription>This will suspend {s.businessName}'s account.</AlertDialogDescription></AlertDialogHeader>
                                     <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleSellerStatusUpdate(s._id, 'suspended')}>Confirm Suspend</AlertDialogAction></AlertDialogFooter>
@@ -834,21 +841,22 @@ export default function AdminDashboard() {
                   <CardHeader>
                     <CardTitle className="text-2xl">All Products</CardTitle>
                     <CardDescription className="text-base">Search and manage all products in the system.</CardDescription>
-                    <div className="mt-4 flex items-center gap-4">
+                    {/* Filter bar stacks correctly on small screens */}
+                    <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                       <div className="relative flex-grow">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         {/* Updated placeholder to include ID search */}
                         <Input placeholder="Search by product name or ID..." className="pl-10 text-base" value={productSearch} onChange={e => setProductSearch(e.target.value)} />
                       </div>
                       <Select value={productCategoryFilter} onValueChange={setProductCategoryFilter}>
-                        <SelectTrigger className="w-[180px] text-base"><SelectValue placeholder="All Categories" /></SelectTrigger>
+                        <SelectTrigger className="w-full sm:w-[180px] text-base"><SelectValue placeholder="All Categories" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all" className="text-base">All Categories</SelectItem>
                           {['ring', 'necklace', 'bracelet', 'earrings', 'watch', 'other'].map(cat => (<SelectItem key={cat} value={cat} className="capitalize text-base">{cat}</SelectItem>))}
                         </SelectContent>
                       </Select>
                       <Select value={productStatusFilter} onValueChange={setProductStatusFilter}>
-                        <SelectTrigger className="w-[180px] text-base"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                        <SelectTrigger className="w-full sm:w-[180px] text-base"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all" className="text-base">All Statuses</SelectItem>
                           {['pending', 'approved', 'rejected', 'suspended'].map(status => (<SelectItem key={status} value={status} className="capitalize text-base">{status}</SelectItem>))}
@@ -856,7 +864,8 @@ export default function AdminDashboard() {
                       </Select>
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  {/* Ensure table scrolls horizontally */}
+                  <CardContent className="overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -872,18 +881,18 @@ export default function AdminDashboard() {
                       <TableBody>
                         {filteredProducts.map((p, index) => (
                           <TableRow key={p._id}>
-                            <TableCell className="text-base">{index + 1}</TableCell>
-                            <TableCell className="text-base">{p.name}</TableCell>
+                            <TableCell className="text-sm">{index + 1}</TableCell>
+                            <TableCell className="text-sm">{p.name}</TableCell>
                             {/* Display Seller Name (using populated value from backend) */}
-                            <TableCell className="text-sm">{(p as any).seller?.name || 'N/A'}</TableCell>
-                            <TableCell className="text-base">${p.price.toFixed(2)}</TableCell>
-                            <TableCell className="text-base"><Badge className={cn("capitalize", getStatusBadgeClass(p.status))}>{p.status}</Badge></TableCell>
-                            <TableCell className="text-right space-x-2">
-                              <Button variant="ghost" size="sm" onClick={() => setViewingProductDetails(p)} className="text-base"><Eye className="h-5 w-5 mr-1" />Review</Button>
+                            <TableCell className="text-xs sm:text-sm">{(p as any).seller?.name || 'N/A'}</TableCell>
+                            <TableCell className="text-sm">${p.price.toFixed(2)}</TableCell>
+                            <TableCell className="text-sm"><Badge className={cn("capitalize text-xs px-2 py-1", getStatusBadgeClass(p.status))}>{p.status}</Badge></TableCell>
+                            <TableCell className="text-right space-x-2 whitespace-nowrap">
+                              <Button variant="ghost" size="sm" onClick={() => setViewingProductDetails(p)} className="text-xs"><Eye className="h-4 w-4 mr-1" />Review</Button>
 
                               {p.status !== 'rejected' && (
                                 <AlertDialog>
-                                  <AlertDialogTrigger asChild><Button size="sm" variant="destructive" disabled={p.status === 'rejected'}><XCircle className="h-5 w-5" /></Button></AlertDialogTrigger>
+                                  <AlertDialogTrigger asChild><Button size="sm" variant="destructive" disabled={p.status === 'rejected'}><XCircle className="h-4 w-4" /></Button></AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader><AlertDialogTitle>Reject Product?</AlertDialogTitle><AlertDialogDescription>This will reject the product "{p.name}".</AlertDialogDescription></AlertDialogHeader>
                                     <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleProductStatusUpdate(p._id, 'rejected')}>Confirm Reject</AlertDialogAction></AlertDialogFooter>
@@ -893,7 +902,7 @@ export default function AdminDashboard() {
 
                               {p.status !== 'approved' && (
                                 <AlertDialog>
-                                  <AlertDialogTrigger asChild><Button size="sm" className="bg-green-600 hover:bg-green-700" disabled={p.status === 'approved'}><CheckCircle className="h-5 w-5" /></Button></AlertDialogTrigger>
+                                  <AlertDialogTrigger asChild><Button size="sm" className="bg-green-600 hover:bg-green-700" disabled={p.status === 'approved'}><CheckCircle className="h-4 w-4" /></Button></AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader><AlertDialogTitle>Approve Product?</AlertDialogTitle><AlertDialogDescription>This will make "{p.name}" visible to all buyers.</AlertDialogDescription></AlertDialogHeader>
                                     <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleProductStatusUpdate(p._id, 'approved')}>Confirm Approve</AlertDialogAction></AlertDialogFooter>
@@ -912,43 +921,44 @@ export default function AdminDashboard() {
                <TabsContent value="reviews" className="mt-4">
                   <Card>
                       <CardHeader>
-                          <CardTitle className="text-2xl flex items-center gap-2">
+                          <CardTitle className="text-xl sm:text-2xl flex items-center gap-2">
                             <MessageSquare className="h-6 w-6" /> All Customer Reviews
                           </CardTitle>
-                          <CardDescription className="text-base">Manage and moderate all product reviews across the marketplace.</CardDescription>
+                          <CardDescription className="text-sm sm:text-base">Manage and moderate all product reviews across the marketplace.</CardDescription>
                           <div className="mt-4 relative">
                               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                               {/* Updated placeholder to include ID search */}
-                              <Input 
-                                  placeholder="Search by product name, user, comment, or product ID..." 
-                                  className="pl-10 text-base" 
-                                  value={reviewSearch} 
-                                  onChange={e => setReviewSearch(e.target.value)} 
+                              <Input
+                                  placeholder="Search by product name, user, comment, or product ID..."
+                                  className="pl-10 text-base"
+                                  value={reviewSearch}
+                                  onChange={e => setReviewSearch(e.target.value)}
                               />
                           </div>
                       </CardHeader>
                       <CardContent>
+                          {/* Ensure table scrolls horizontally */}
                           <div className="overflow-x-auto">
                               <Table>
                                   <TableHeader>
                                       <TableRow>
-                                          <TableHead className="text-base w-[50px]">Sr. No</TableHead>
+                                          <TableHead className="text-sm w-[50px]">Sr. No</TableHead>
                                           {/* Added Product ID column */}
-                                          <TableHead className="text-base w-[180px]">Product ID</TableHead>
-                                          <TableHead className="text-base w-[250px]">Product Name</TableHead>
-                                          <TableHead className="text-base w-[120px]">Rating</TableHead>
-                                          <TableHead className="text-base">Comment</TableHead>
-                                          <TableHead className="text-base w-[150px]">User</TableHead>
-                                          <TableHead className="text-right text-base w-[80px]">Delete</TableHead>
+                                          <TableHead className="text-sm w-[150px]">Product ID</TableHead>
+                                          <TableHead className="text-sm w-[200px]">Product Name</TableHead>
+                                          <TableHead className="text-sm w-[100px]">Rating</TableHead>
+                                          <TableHead className="text-sm">Comment</TableHead>
+                                          <TableHead className="text-sm w-[120px]">User</TableHead>
+                                          <TableHead className="text-right text-sm w-[80px]">Delete</TableHead>
                                       </TableRow>
                                   </TableHeader>
                                   <TableBody>
                                       {filteredReviews.length > 0 ? (
                                           filteredReviews.map((review, index) => (
                                               <TableRow key={review._id}>
-                                                  <TableCell className="text-base">{index + 1}</TableCell>
+                                                  <TableCell className="text-xs sm:text-sm">{index + 1}</TableCell>
                                                   {/* Display Product ID with Copy Button */}
-                                                  <TableCell className="text-xs font-mono flex items-center space-x-1">
+                                                  <TableCell className="text-xs font-mono flex items-center space-x-1 whitespace-nowrap">
                                                       <span className="truncate max-w-[120px]">{review.productId}</span>
                                                       <Button
                                                           variant="ghost"
@@ -959,16 +969,16 @@ export default function AdminDashboard() {
                                                           <Copy className="h-3.5 w-3.5" />
                                                       </Button>
                                                   </TableCell>
-                                                  <TableCell className="font-medium text-sm">{review.productName}</TableCell>
-                                                  <TableCell>
+                                                  <TableCell className="font-medium text-xs sm:text-sm">{review.productName}</TableCell>
+                                                  <TableCell className="whitespace-nowrap">
                                                       <Rating value={review.rating} />
                                                   </TableCell>
-                                                  <TableCell className="text-sm max-w-xs truncate">{review.comment}</TableCell>
-                                                  <TableCell className="text-sm text-muted-foreground">{review.userName}</TableCell>
+                                                  <TableCell className="text-xs sm:text-sm max-w-[150px] truncate">{review.comment}</TableCell>
+                                                  <TableCell className="text-xs sm:text-sm text-muted-foreground">{review.userName}</TableCell>
                                                   <TableCell className="text-right">
                                                       <AlertDialog>
                                                           <AlertDialogTrigger asChild>
-                                                              <Button variant="ghost" size="icon" className="text-red-500 hover:bg-red-50 hover:text-red-700">
+                                                              <Button variant="ghost" size="icon" className="text-red-500 hover:bg-red-50 hover:text-red-700 h-8 w-8">
                                                                   <Trash2 className="h-4 w-4" />
                                                               </Button>
                                                           </AlertDialogTrigger>
@@ -981,7 +991,7 @@ export default function AdminDashboard() {
                                                               </AlertDialogHeader>
                                                               <AlertDialogFooter>
                                                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                  <AlertDialogAction 
+                                                                  <AlertDialogAction
                                                                       onClick={() => handleDeleteReview(review.productId, review._id)}
                                                                       className="bg-destructive hover:bg-destructive/90"
                                                                   >
@@ -1003,14 +1013,14 @@ export default function AdminDashboard() {
                           </div>
                       </CardContent>
                   </Card>
-              </TabsContent>
-              {/* --- END NEW REVIEWS TAB --- */}
+               </TabsContent>
+               {/* --- END NEW REVIEWS TAB --- */}
             </Tabs>
           </TabsContent>
         </Tabs>
       </div>
 
-   {/* ===================== SELLER DETAILS DIALOG (UPDATED CLEAN VERSION) ===================== */}
+    {/* ===================== SELLER DETAILS DIALOG (UPDATED CLEAN VERSION) ===================== */}
 <Dialog open={!!viewingSellerDetails} onOpenChange={() => setViewingSellerDetails(null)}>
   <DialogContent
     className="
@@ -1021,22 +1031,22 @@ export default function AdminDashboard() {
       overflow-y-auto
       rounded-xl
       shadow-2xl
-      p-6
+      p-4 sm:p-6 /* Reduced padding on small screens */
       bg-white
     "
   >
 
     {/* ================= HEADER ================= */}
     <DialogHeader className="border-b pb-4">
-      <DialogTitle className="text-3xl font-bold">
+      <DialogTitle className="text-2xl sm:text-3xl font-bold">
         {viewingSellerDetails?.seller.businessName}
       </DialogTitle>
 
-      <DialogDescription className="text-base flex items-center gap-2">
+      <DialogDescription className="text-sm sm:text-base flex items-center gap-2">
         Seller Details & Verification
         <Badge
           className={cn(
-            "capitalize ml-2 px-3 py-1 rounded-full",
+            "capitalize ml-2 px-2 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-sm rounded-full",
             getStatusBadgeClass(viewingSellerDetails?.seller.status || "")
           )}
         >
@@ -1052,7 +1062,7 @@ export default function AdminDashboard() {
         <Tabs defaultValue="profile" className="flex flex-col flex-grow min-h-0">
 
           {/* ---- TABS ---- */}
-          <TabsList className="grid grid-cols-3 p-1 mb-4 bg-gray-100 rounded-xl shadow-inner">
+          <TabsList className="grid grid-cols-3 p-1 mb-4 bg-gray-100 rounded-xl shadow-inner text-sm">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="products">Products ({viewingSellerDetails.products.length})</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
@@ -1065,12 +1075,13 @@ export default function AdminDashboard() {
           <TabsContent value="profile" className="flex-grow min-h-0">
             <div className="h-full overflow-y-auto pr-3 pb-6 custom-scrollbar">
 
+              {/* RENDER GRID RESPONSIVELY */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {/* OWNER INFORMATION */}
                 <Card className="shadow-md border rounded-xl">
-                  <CardHeader><CardTitle className="text-xl">Owner Information</CardTitle></CardHeader>
-                  <CardContent className="text-base space-y-2">
+                  <CardHeader><CardTitle className="text-lg sm:text-xl">Owner Information</CardTitle></CardHeader>
+                  <CardContent className="text-sm sm:text-base space-y-2">
                     <p><strong>Name:</strong> {viewingSellerDetails.seller.user?.name || "N/A"}</p>
                     <p><strong>Email:</strong> {viewingSellerDetails.seller.user?.email || "N/A"}</p>
                   </CardContent>
@@ -1078,16 +1089,16 @@ export default function AdminDashboard() {
 
                 {/* BUSINESS INFORMATION */}
                 <Card className="shadow-md border rounded-xl">
-                  <CardHeader><CardTitle className="text-xl">Business Information</CardTitle></CardHeader>
-                  <CardContent className="text-base space-y-2">
+                  <CardHeader><CardTitle className="text-lg sm:text-xl">Business Information</CardTitle></CardHeader>
+                  <CardContent className="text-sm sm:text-base space-y-2">
                     <p><strong>GST No:</strong> {viewingSellerDetails.seller.gstNumber || "N/A"}</p>
                     <p><strong>PAN No:</strong> {viewingSellerDetails.seller.panNumber || "N/A"}</p>
                     <p><strong>Address:</strong><br />
                       {viewingSellerDetails.seller.address
-                        ? `${viewingSellerDetails.seller.address.street}, 
-                           ${viewingSellerDetails.seller.address.city}, 
-                           ${viewingSellerDetails.seller.address.state} - 
-                           ${viewingSellerDetails.seller.address.pincode}`
+                        ? `${viewingSellerDetails.seller.address.street},
+                            ${viewingSellerDetails.seller.address.city},
+                            ${viewingSellerDetails.seller.address.state} -
+                            ${viewingSellerDetails.seller.address.pincode}`
                         : "N/A"}
                     </p>
                   </CardContent>
@@ -1096,14 +1107,14 @@ export default function AdminDashboard() {
                 {/* VERIFICATION DOCUMENTS */}
                 <Card className="shadow-md border rounded-xl md:col-span-2">
                   <CardHeader className="sticky top-0 bg-white z-10 border-b">
-                    <CardTitle className="text-xl">Verification Documents</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl">Verification Documents</CardTitle>
                   </CardHeader>
 
                   <CardContent className="space-y-3">
 
                     {/* GST CERTIFICATE */}
                     <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <span className="font-medium">GST Certificate</span>
+                      <span className="font-medium text-sm">GST Certificate</span>
                       {viewingSellerDetails.seller.verificationDocuments?.gstCertificate ? (
                         <Button
                           size="sm"
@@ -1124,7 +1135,7 @@ export default function AdminDashboard() {
 
                     {/* PAN CARD */}
                     <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <span className="font-medium">PAN Card</span>
+                      <span className="font-medium text-sm">PAN Card</span>
                       {viewingSellerDetails.seller.verificationDocuments?.panCard ? (
                         <Button
                           size="sm"
@@ -1164,13 +1175,13 @@ export default function AdminDashboard() {
                     <img
                       src={getImageUrl(p.images[0] || "")}
                       alt={p.name}
-                      className="w-24 h-24 rounded-lg object-cover border"
+                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-cover border"
                     />
 
                     <div>
-                      <p className="text-lg font-semibold">{p.name}</p>
-                      <p className="text-base text-muted-foreground">${p.price.toFixed(2)}</p>
-                      <Badge className={cn("capitalize mt-2", getStatusBadgeClass(p.status))}>
+                      <p className="text-base sm:text-lg font-semibold">{p.name}</p>
+                      <p className="text-sm text-muted-foreground">${p.price.toFixed(2)}</p>
+                      <Badge className={cn("capitalize mt-1 text-xs px-2 py-0.5", getStatusBadgeClass(p.status))}>
                         {p.status}
                       </Badge>
                     </div>
@@ -1193,8 +1204,8 @@ export default function AdminDashboard() {
                   viewingSellerDetails.history.map((entry) => (
                     <Card key={entry._id} className="shadow-md border rounded-xl">
                       <CardHeader>
-                        <CardTitle className="text-lg">{entry.notes || "Profile Update"}</CardTitle>
-                        <CardDescription className="text-sm flex items-center gap-2">
+                        <CardTitle className="text-base sm:text-lg">{entry.notes || "Profile Update"}</CardTitle>
+                        <CardDescription className="text-xs sm:text-sm flex items-center gap-2">
                           {entry.changedBy?.name || "Unknown"} •{" "}
                           {entry.createdAt ? format(new Date(entry.createdAt), "PPpp") : "N/A"}
                         </CardDescription>
@@ -1222,26 +1233,26 @@ export default function AdminDashboard() {
       {/* ---------------- PRODUCT REVIEW DIALOG ---------------- */}
     {/* ---------------- PRODUCT REVIEW DIALOG (2-SIDED LAYOUT) ---------------- */}
 <Dialog open={!!viewingProductDetails} onOpenChange={() => setViewingProductDetails(null)}>
-  <DialogContent className="sm:max-w-5xl w-[95vw] max-h-[92vh] overflow-hidden p-6 bg-white rounded-xl shadow-xl">
+  <DialogContent className="sm:max-w-5xl w-[95vw] max-h-[92vh] overflow-hidden p-4 sm:p-6 bg-white rounded-xl shadow-xl">
 
     {/* HEADER */}
     <DialogHeader className="border-b pb-3">
-      <DialogTitle className="text-2xl font-semibold">
+      <DialogTitle className="text-xl sm:text-2xl font-semibold">
         {viewingProductDetails?.name}
       </DialogTitle>
-      <DialogDescription>
+      <DialogDescription className="text-sm sm:text-base">
         Product Review & Approval
       </DialogDescription>
     </DialogHeader>
 
-    {/* BODY (TWO SIDE LAYOUT) */}
-    <div className="flex flex-col lg:flex-row gap-6 mt-4 h-full overflow-hidden">
+    {/* BODY (TWO SIDE LAYOUT) - Stacks on mobile */}
+    <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 mt-4 h-full overflow-hidden">
 
       {/* ========== LEFT SIDE: IMAGE / CAROUSEL ========== */}
       <div className="w-full lg:w-1/2 h-full flex items-center justify-center overflow-hidden">
 
         {viewingProductDetails?.images?.length ? (
-          <Carousel className="w-full h-full max-h-[400px] flex items-center justify-center">
+          <Carousel className="w-full h-full max-h-[300px] sm:max-h-[400px] flex items-center justify-center">
             <CarouselContent>
               {viewingProductDetails.images.map((img, idx) => (
                 <CarouselItem
@@ -1251,7 +1262,7 @@ export default function AdminDashboard() {
                   <img
                     src={getImageUrl(img)}
                     alt={`${viewingProductDetails.name} ${idx + 1}`}
-                    className="max-h-[380px] w-auto object-contain rounded-lg border"
+                    className="max-h-[280px] sm:max-h-[380px] w-auto object-contain rounded-lg border"
                   />
                 </CarouselItem>
               ))}
@@ -1261,7 +1272,7 @@ export default function AdminDashboard() {
             <CarouselNext />
           </Carousel>
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-muted rounded-lg border">
+          <div className="w-full h-48 sm:h-full flex items-center justify-center bg-muted rounded-lg border">
             <p className="text-muted-foreground">No Image</p>
           </div>
         )}
@@ -1272,14 +1283,14 @@ export default function AdminDashboard() {
       <div className="w-full lg:w-1/2 h-full overflow-y-auto custom-scrollbar pr-3">
 
         <Card className="p-4 border rounded-xl shadow-sm space-y-3">
-          <p><strong>Name:</strong> {viewingProductDetails?.name}</p>
-          <p><strong>Price:</strong> ${viewingProductDetails?.price?.toFixed(2)}</p>
-          <p><strong>Category:</strong> {viewingProductDetails?.category}</p>
+          <p className="text-sm sm:text-base"><strong>Name:</strong> {viewingProductDetails?.name}</p>
+          <p className="text-sm sm:text-base"><strong>Price:</strong> ${viewingProductDetails?.price?.toFixed(2)}</p>
+          <p className="text-sm sm:text-base"><strong>Category:</strong> {viewingProductDetails?.category}</p>
 
           <p>
-            <strong>Status:</strong>{' '}
+            <strong className="text-sm sm:text-base">Status:</strong>{' '}
             <Badge className={cn(
-              "capitalize",
+              "capitalize text-xs px-2 py-0.5",
               getStatusBadgeClass(viewingProductDetails?.status || '')
             )}>
               {viewingProductDetails?.status}
@@ -1287,8 +1298,8 @@ export default function AdminDashboard() {
           </p>
 
           <div>
-            <strong>Description:</strong>
-            <p className="text-muted-foreground mt-1">
+            <strong className="text-sm sm:text-base">Description:</strong>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               {viewingProductDetails?.description}
             </p>
           </div>
@@ -1303,6 +1314,7 @@ export default function AdminDashboard() {
     <div className="flex justify-end gap-3 mt-4 pt-4 border-t">
       <Button
         variant="destructive"
+        size="sm"
         onClick={() =>
           viewingProductDetails &&
           handleProductStatusUpdate(viewingProductDetails._id, "rejected")
@@ -1313,6 +1325,7 @@ export default function AdminDashboard() {
 
       <Button
         className="bg-green-600 hover:bg-green-700 text-white"
+        size="sm"
         onClick={() =>
           viewingProductDetails &&
           handleProductStatusUpdate(viewingProductDetails._id, "approved")
@@ -1330,8 +1343,8 @@ export default function AdminDashboard() {
       <Dialog open={!!documentToPreview} onOpenChange={() => setDocumentToPreview(null)}>
         <DialogContent className="sm:max-w-4xl w-[95vw] max-h-[90vh] flex flex-col rounded-xl p-4 overflow-hidden bg-white">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">{documentToPreview?.title}</h2>
-            <Button variant="outline" onClick={() => setDocumentToPreview(null)}>Close</Button>
+            <h2 className="text-lg sm:text-xl font-semibold">{documentToPreview?.title}</h2>
+            <Button variant="outline" size="sm" onClick={() => setDocumentToPreview(null)}>Close</Button>
           </div>
 
           <div className="flex-grow flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden">
