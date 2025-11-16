@@ -1363,109 +1363,189 @@ export default function AdminDashboard() {
           </TabsList>
 
           {/* ----------------- DASHBOARD ----------------- */}
-          <TabsContent value="dashboard" className="mt-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-              <Card className="cursor-pointer hover:bg-muted/50 border-l-4 border-blue-500" onClick={() => { setMainTab("management"); setManagementTab("users"); }}>
-                <CardHeader className="flex items-center justify-between pb-2">
-            <CardTitle className="text-xl font-semibold">Total Users</CardTitle>
-                  <Users className="h-6 w-6 text-blue-500" />
-                </CardHeader>
-                <CardContent><div className="text-3xl font-bold">{stats?.totalUsers}</div></CardContent>
-              </Card>
+       <TabsContent value="dashboard" className="mt-6">
 
-              <Card className="cursor-pointer hover:bg-muted/50 border-l-4 border-purple-500" onClick={() => { setMainTab("management"); setManagementTab("sellers"); }}>
-                <CardHeader className="flex items-center justify-between pb-2">
-                  <CardTitle className="text-xl font-semibold">Total Sellers</CardTitle>
-                  <Package className="h-6 w-6 text-purple-500" />
-                </CardHeader>
-                <CardContent><div className="text-3xl font-bold">{stats?.totalSellers}</div></CardContent>
-              </Card>
+  {/* ====== TOP CARDS (Users / Sellers / Products / Approvals) ====== */}
+  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
 
-              <Card className="cursor-pointer hover:bg-muted/50 border-l-4 border-green-500" onClick={() => { setMainTab("management"); setManagementTab("products"); }}>
-                <CardHeader className="flex items-center justify-between pb-2">
-                  <CardTitle className="text-xl font-semibold">Total Products</CardTitle>
-                  <BarChart2 className="h-6 w-6 text-green-500" />
-                </CardHeader>
-                <CardContent><div className="text-3xl font-bold">{stats?.totalProducts}</div></CardContent>
-              </Card>
+    {/* Total Users */}
+    <Card
+      className="cursor-pointer hover:bg-muted/50 border-l-4 border-blue-500"
+      onClick={() => { setMainTab("management"); setManagementTab("users"); }}
+    >
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-3">
+          <Users className="h-8 w-8 text-blue-500" />
+          <CardTitle className="text-2xl font-semibold">Total Users</CardTitle>
+        </div>
+      </CardHeader>
 
-              <Card className="cursor-pointer hover:bg-muted/50 border-l-4 border-red-500" onClick={() => setMainTab("approvals")}>
-                <CardHeader className="flex items-center justify-between pb-2">
-                  <CardTitle className="text-xl font-semibold">Pending Approvals</CardTitle>
-                  <Clock className="h-6 w-6 text-red-500" />
-                </CardHeader>
-                <CardContent><div className={cn("text-3xl font-bold", pendingApprovalsCount > 0 ? "text-red-500" : "")}>{pendingApprovalsCount}</div></CardContent>
-              </Card>
-            </div>
+      <CardContent>
+        <div className="text-4xl font-bold">{stats?.totalUsers}</div>
+      </CardContent>
+    </Card>
 
-            {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-2">
-              <CardHeader>
-  <div className="w-full flex items-center justify-between">
+    {/* Total Sellers */}
+    <Card
+      className="cursor-pointer hover:bg-muted/50 border-l-4 border-purple-500"
+      onClick={() => { setMainTab("management"); setManagementTab("sellers"); }}
+    >
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-3">
+          <Package className="h-8 w-8 text-purple-500" />
+          <CardTitle className="text-2xl font-semibold">Total Sellers</CardTitle>
+        </div>
+      </CardHeader>
 
-    {/* Left side: Title + Description */}
-    <div className="flex flex-col">
-      <CardTitle className="text-2xl">Growth Overview</CardTitle>
-      <CardDescription className="text-base">
-        New users and products over time.
-      </CardDescription>
-    </div>
+      <CardContent>
+        <div className="text-4xl font-bold">{stats?.totalSellers}</div>
+      </CardContent>
+    </Card>
 
-    {/* Right side: Filter */}
-    <Select value={chartPeriod} onValueChange={(value) => setChartPeriod(value as any)}>
-      <SelectTrigger className="w-[150px] text-base">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="week">Last 7 Days</SelectItem>
-        <SelectItem value="month">Last 30 Days</SelectItem>
-        {/* <SelectItem value="year">Last Year</SelectItem> */}
-      </SelectContent>
-    </Select>
+    {/* Total Products */}
+    <Card
+      className="cursor-pointer hover:bg-muted/50 border-l-4 border-green-500"
+      onClick={() => { setMainTab("management"); setManagementTab("products"); }}
+    >
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-3">
+          <BarChart2 className="h-8 w-8 text-green-500" />
+          <CardTitle className="text-2xl font-semibold">Total Products</CardTitle>
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        <div className="text-4xl font-bold">{stats?.totalProducts}</div>
+      </CardContent>
+    </Card>
+
+    {/* Pending Approvals */}
+    <Card
+      className="cursor-pointer hover:bg-muted/50 border-l-4 border-red-500"
+      onClick={() => setMainTab("approvals")}
+    >
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-3">
+          <Clock className="h-8 w-8 text-red-500" />
+          <CardTitle className="text-2xl font-semibold">Pending Approvals</CardTitle>
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        <div
+          className={cn(
+            "text-4xl font-bold",
+            pendingApprovalsCount > 0 ? "text-red-500" : ""
+          )}
+        >
+          {pendingApprovalsCount}
+        </div>
+      </CardContent>
+    </Card>
   </div>
-</CardHeader>
 
-                <CardContent>
-                  <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData}>
-                        <CartesianGrid vertical={false} />
-                        <XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => chartPeriod === 'year' ? format(new Date(`${value}-02`), 'MMM') : format(new Date(value), 'd MMM')} />
-                        <YAxis tickLine={false} axisLine={false} />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <ChartLegend content={<ChartLegendContent />} />
-                        <Bar dataKey="users" fill="var(--color-users)" radius={4} />
-                        <Bar dataKey="products" fill="var(--color-products)" radius={4} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-2xl">User Roles</CardTitle>
-                  <CardDescription className="text-base">Customer vs. Seller breakdown.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex items-center justify-center">
-                  <ChartContainer config={pieChartConfig} className="h-[250px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Tooltip content={<ChartTooltipContent hideLabel />} />
-                        <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
-                          {pieData.map((_entry, index) => (
-                            <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <ChartLegend content={<ChartLegendContent />} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+  {/* ====== CHARTS SECTION ====== */}
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    {/* Growth Overview Chart */}
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <div className="w-full flex items-center justify-between">
+
+          <div className="flex flex-col">
+            <CardTitle className="text-2xl">Growth Overview</CardTitle>
+            <CardDescription className="text-base">
+              New users and products over time.
+            </CardDescription>
+          </div>
+
+          <Select
+            value={chartPeriod}
+            onValueChange={(value) => setChartPeriod(value as any)}
+          >
+            <SelectTrigger className="w-[150px] text-base">
+              <SelectValue />
+            </SelectTrigger>
+
+            <SelectContent>
+              <SelectItem value="week">Last 7 Days</SelectItem>
+              <SelectItem value="month">Last 30 Days</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        <ChartContainer config={chartConfig} className="h-[250px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="date"
+                tickLine={false}
+                tickMargin={10}
+                axisLine={false}
+                tickFormatter={(value) =>
+                  chartPeriod === "year"
+                    ? format(new Date(`${value}-02`), "MMM")
+                    : format(new Date(value), "d MMM")
+                }
+              />
+              <YAxis tickLine={false} axisLine={false} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartLegend content={<ChartLegendContent />} />
+
+              <Bar dataKey="users" fill="var(--color-users)" radius={4} />
+              <Bar dataKey="products" fill="var(--color-products)" radius={4} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+
+    {/* Pie Chart */}
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-2xl">User Roles</CardTitle>
+        <CardDescription className="text-base">
+          Customer vs. Seller breakdown.
+        </CardDescription>
+      </CardHeader>
+
+      <CardContent className="flex items-center justify-center">
+        <ChartContainer config={pieChartConfig} className="h-[250px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Tooltip content={<ChartTooltipContent hideLabel />} />
+              <Pie
+                data={pieData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={100}
+                label={({ name, percent }) =>
+                  `${name} (${(percent * 100).toFixed(0)}%)`
+                }
+              >
+                {pieData.map((_entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={PIE_COLORS[index % PIE_COLORS.length]}
+                  />
+                ))}
+              </Pie>
+              <ChartLegend content={<ChartLegendContent />} />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  </div>
+
+</TabsContent>
+
 
           {/* ----------------- APPROVALS ----------------- */}
           <TabsContent value="approvals" className="mt-6">
