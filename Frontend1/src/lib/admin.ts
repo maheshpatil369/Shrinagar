@@ -1,4 +1,4 @@
-// maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Frontend1/src/lib/admin.ts
+// maheshpatil369/shrinagar/Shrinagar-b9ec823c114ce2847f5e61759f8372f4bfe46c3b/Frontend1/src/lib/admin.ts
 import { api } from './api';
 import { Product } from './products';
 import { User } from './auth';
@@ -15,6 +15,20 @@ export interface SellerHistory {
         newValue: string;
     }[];
     notes: string;
+    createdAt: string;
+}
+
+// Define structure for the Review used in Admin Management (NEW)
+// This is the flattened structure returned by the MongoDB aggregate in the controller
+export interface AdminReview {
+    _id: string; // Review ID
+    productId: string;
+    productName: string;
+    productSeller: string; // Seller ID
+    rating: number;
+    comment: string;
+    userName: string;
+    userId: string;
     createdAt: string;
 }
 
@@ -78,3 +92,14 @@ export const adminGetAllProducts = async (): Promise<Product[]> => {
     return data;
 };
 
+// --- NEW ADMIN REVIEW MANAGEMENT FUNCTIONS ---
+
+export const adminGetAllReviews = async (): Promise<AdminReview[]> => {
+    const { data } = await api.get('/admin/reviews', getAuthHeaders());
+    return data;
+};
+
+export const adminDeleteReview = async (productId: string, reviewId: string): Promise<{ message: string }> => {
+    const { data } = await api.delete(`/admin/reviews/${productId}/${reviewId}`, getAuthHeaders());
+    return data;
+};

@@ -1,4 +1,4 @@
-// maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Backend/controllers/adminController.js
+// maheshpatil369/shrinagar/Shrinagar-b9ec823c114ce2847f5e61759f8372f4bfe46c3b/Backend/controllers/adminController.js
 
 const asyncHandler = require('../middleware/asyncHandler.js');
 const User = require('../models/userModel.js');
@@ -239,6 +239,7 @@ const adminDeleteProduct = asyncHandler(async (req, res) => {
 
 // ===================================================================
 // @desc    Get all users (non-admins)
+// @route   GET /api/admin/users
 // @access  Private/Admin
 // ===================================================================
 const adminGetAllUsers = asyncHandler(async (req, res) => {
@@ -285,6 +286,91 @@ const adminDeleteUser = asyncHandler(async (req, res) => {
 });
 
 // ===================================================================
+// @desc    Get all product reviews for Admin Management (NEW)
+// @route   GET /api/admin/reviews
+// @access  Private/Admin
+// ===================================================================
+const adminGetAllReviews = asyncHandler(async (req, res) => {
+    // Aggregate to extract all reviews from all products
+    const reviews = await Product.aggregate([
+        // Match only products that have at least one review
+        { $match: { 'reviews.0': { $exists: true } } },
+        // Unwind the reviews array to get one document per review
+        { $unwind: '$reviews' },
+        // Project the desired fields
+        {
+            $project: {
+                _id: '$reviews._id', // The review ID
+                productId: '$_id', // The product ID
+                productName: '$name',
+                productSeller: '$seller',
+                rating: '$reviews.rating',
+                comment: '$reviews.comment',
+                userName: '$reviews.name', // User name saved in the review schema
+                userId: '$reviews.user', // User ID who wrote the review
+                createdAt: '$reviews.createdAt',
+            },
+        },
+        // Optionally, sort by creation date descending
+        { $sort: { createdAt: -1 } } 
+    ]);
+
+    // Populate seller information manually if needed, or rely on the frontend
+    // to match productSeller ID with the seller list. For simplicity and 
+    // performance, we return the raw aggregation result.
+    
+    // However, we should populate the seller's business name for display if possible.
+    // For large data sets, this lookup might be slow. Since the frontend only 
+    // needs the review data and product ID, we will leave it as is and the 
+    // frontend can handle linking if it has the full seller list.
+    
+    res.json(reviews);
+});
+
+
+// ===================================================================
+// @desc    Delete a specific review by Admin (NEW)
+// @route   DELETE /api/admin/reviews/:productId/:reviewId
+// @access  Private/Admin
+// ===================================================================
+const adminDeleteReview = asyncHandler(async (req, res) => {
+    const { productId, reviewId } = req.params;
+
+    const product = await Product.findById(productId);
+
+    if (!product) {
+        res.status(404);
+        throw new Error('Product not found');
+    }
+
+    const reviewIndex = product.reviews.findIndex(
+        (r) => r._id.toString() === reviewId.toString()
+    );
+
+    if (reviewIndex === -1) {
+        res.status(404);
+        throw new Error('Review not found');
+    }
+
+    // Remove the review from the array
+    product.reviews.splice(reviewIndex, 1);
+
+    // Recalculate ratings
+    product.numReviews = product.reviews.length;
+    if (product.numReviews > 0) {
+        product.rating =
+            product.reviews.reduce((acc, item) => item.rating + acc, 0) /
+            product.reviews.length;
+    } else {
+        product.rating = 0;
+    }
+
+    await product.save();
+    res.json({ message: 'Review successfully deleted by Admin.' });
+});
+
+
+// ===================================================================
 // Exports
 // ===================================================================
 module.exports = {
@@ -301,4 +387,7 @@ module.exports = {
     adminGetAllUsers,
     adminUpdateUserRole,
     adminDeleteUser,
+    // --- NEW EXPORTS ---
+    adminGetAllReviews,
+    adminDeleteReview,
 };

@@ -1,4 +1,4 @@
-// maheshpatil369/shrinagar/Shrinagar-c908f2c7ebd73d867e2e79166bd07d6874cca960/Backend/routes/adminRoutes.js
+// maheshpatil369/shrinagar/Shrinagar-b9ec823c114ce2847f5e61759f8372f4bfe46c3b/Backend/routes/adminRoutes.js
 
 const express = require('express');
 const router = express.Router();
@@ -16,6 +16,9 @@ const {
     adminGetAllUsers,
     adminUpdateUserRole,
     adminDeleteUser,
+    // --- NEW IMPORTS ---
+    adminGetAllReviews,
+    adminDeleteReview,
 } = require('../controllers/adminController.js');
 const { protect, admin } = require('../middleware/authMiddleware.js');
 
@@ -40,5 +43,10 @@ router.route('/products/:id').delete(protect, admin, adminDeleteProduct);
 router.route('/users').get(protect, admin, adminGetAllUsers);
 router.route('/users/:id').delete(protect, admin, adminDeleteUser);
 router.route('/users/:id/role').put(protect, admin, adminUpdateUserRole);
+
+// ====================== Review Management (NEW) ======================
+router.route('/reviews').get(protect, admin, adminGetAllReviews);
+router.route('/reviews/:productId/:reviewId').delete(protect, admin, adminDeleteReview);
+
 
 module.exports = router;
