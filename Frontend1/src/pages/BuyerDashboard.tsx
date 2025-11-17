@@ -4,7 +4,6 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Product, getApprovedProducts, ProductFilters } from "../lib/products";
-// Using Gem icon, but styling it neutrally to look like the default diamond icon
 import { ExternalLink, LoaderCircle, Search, SlidersHorizontal, Heart, X, LayoutGrid, List, ShoppingCart, AlertCircle, Menu, Gem } from 'lucide-react';
 import { useToast } from "../hooks/use-toast";
 import { Input } from "../components/ui/input";
@@ -13,17 +12,15 @@ import { Slider } from "../components/ui/slider";
 import { addToWishlist } from "../lib/user";
 import { getCurrentUser } from "../lib/auth";
 import { Skeleton } from "../components/ui/skeleton";
-import { LoadingSpinner } from "../components/ui/LoadingSpinner";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "../components/ui/sheet";
 import Rating from "../components/ui/Rating";
 import { useAuthModal } from '../context/AuthModalContext';
 import debounce from 'lodash.debounce';
 import { Label } from "../components/ui/label";
 import { cn } from "../lib/utils";
-// Import getImageUrl from utils and remove local helper/const
 import { getImageUrl } from "../lib/utils";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "../components/ui/sheet";
 
-// --- Reusable ProductCard Component ---
+// ---------------- ProductCard ----------------
 interface ProductCardProps {
     product: Product;
     onAddToWishlist: (e: React.MouseEvent, product: Product) => void;
@@ -144,15 +141,21 @@ function FilterSidebar({ filters, onFilterChange, onPriceChange, uniqueMaterials
     uniqueMaterials: string[];
 }) {
     
-    // Convert URL string parameters to numeric state for slider
-    const [localMinPrice, setLocalMinPrice] = useState(filters.minPrice ?? 0);
-    const [localMaxPrice, setLocalMaxPrice] = useState(filters.maxPrice ?? 50000);
+    // ---------- LOCAL STATES FOR SMOOTH TYPING (only keyword & seller) ----------
+    const [localKeyword, setLocalKeyword] = useState<string>(filters.keyword || "");
+    const [localSeller, setLocalSeller] = useState<string>((filters as any).sellerId || "");
+
+    // Local slider inputs for smooth UI (no debounce here)
+    const [localMinPrice, setLocalMinPrice] = useState<number>(filters.minPrice ?? 0);
+    const [localMaxPrice, setLocalMaxPrice] = useState<number>(filters.maxPrice ?? 50000);
 
     // Sync local state with filters when URL changes
     useEffect(() => {
         setLocalMinPrice(filters.minPrice ?? 0);
         setLocalMaxPrice(filters.maxPrice ?? 50000);
-    }, [filters.minPrice, filters.maxPrice]);
+        setLocalKeyword(filters.keyword || "");
+        setLocalSeller((filters as any).sellerId || "");
+    }, [filters.minPrice, filters.maxPrice, filters.keyword, (filters as any).sellerId]);
     
     // Debounce price update to avoid excessive URL changes while sliding
     const debouncedPriceUpdate = useCallback(
@@ -181,9 +184,15 @@ function FilterSidebar({ filters, onFilterChange, onPriceChange, uniqueMaterials
     }
     
     const handleClearFilters = () => {
+        // clear local states for immediate UI feedback
+        setLocalKeyword("");
+        setLocalSeller("");
+        setLocalMinPrice(0);
+        setLocalMaxPrice(50000);
+
         onFilterChange('keyword', undefined);
         onFilterChange('category', undefined);
-        onFilterChange('sellerId', undefined); // Clear Seller filter
+        onFilterChange('sellerId', undefined);
         onFilterChange('material', undefined);
         onPriceChange([0, 50000]);
     }
@@ -209,8 +218,11 @@ function FilterSidebar({ filters, onFilterChange, onPriceChange, uniqueMaterials
                     <Input
                         placeholder="Search jewelry..."
                         className="pl-9"
-                        value={filters.keyword || ''}
-                        onChange={e => onFilterChange('keyword', e.target.value || undefined)}
+                        value={localKeyword}
+                        onChange={e => {
+                            setLocalKeyword(e.target.value);
+                            onFilterChange('keyword', e.target.value || undefined); // debounced in parent
+                        }}
                     />
                 </div>
             </div>
@@ -240,8 +252,11 @@ function FilterSidebar({ filters, onFilterChange, onPriceChange, uniqueMaterials
                     <Input
                         placeholder="Enter Seller ID/Name..."
                         className="pl-9"
-                        value={(filters as any).sellerId || ''}
-                        onChange={e => onFilterChange('sellerId', e.target.value || undefined)}
+                        value={localSeller}
+                        onChange={e => {
+                            setLocalSeller(e.target.value);
+                            onFilterChange('sellerId', e.target.value || undefined); // debounced in parent
+                        }}
                     />
                 </div>
             </div>
