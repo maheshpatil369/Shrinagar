@@ -132,7 +132,7 @@ export default function UserProfile() {
                                                 >
                                                     {product.name}
                                                 </Link>
-                                                <p className="text-sm text-muted-foreground">${product.price.toFixed(2)}</p>
+                                                <p className="text-sm text-muted-foreground">₹{product.price.toFixed(2)}</p>
                                             </div>
 
                                             <div className="flex items-center gap-2">

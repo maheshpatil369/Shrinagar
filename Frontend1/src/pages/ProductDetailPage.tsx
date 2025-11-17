@@ -351,7 +351,7 @@ export default function ProductDetailPage() {
                                     <h1 className="text-3xl md:text-4xl font-bold leading-tight break-words">{product.name}</h1>
                                     <Rating value={product.rating} text={`${product.numReviews} reviews`} />
                                     <p className="text-muted-foreground text-base break-words">{product.description}</p>
-                                    <p className="text-3xl font-bold">${product.price.toFixed(2)}</p>
+                                    <p className="text-3xl font-bold">₹{product.price.toFixed(2)}</p>
                                     <div className="border-t pt-4">
                                         <h3 className="font-semibold mb-2">Details</h3>
                                         <div className="text-sm text-muted-foreground space-y-1 break-words">
@@ -524,7 +524,7 @@ function RecommendationCard({ product }: { product: Product }) {
             <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm leading-tight group-hover:underline truncate">{product.name}</p>
                 <p className="text-xs text-muted-foreground truncate">{product.brand}</p>
-                <p className="font-bold text-sm mt-1">${product.price.toFixed(2)}</p>
+                <p className="font-bold text-sm mt-1">₹{product.price.toFixed(2)}</p>
             </div>
         </Link>
     );

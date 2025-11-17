@@ -76,7 +76,7 @@ function ProductCard({ product, onAddToWishlist, currentUser, layout }: ProductC
                     <Rating value={product.rating} text={`(${product.numReviews} reviews)`} className="mb-2" />
                     <p className="text-sm text-muted-foreground mb-2 line-clamp-3 flex-grow">{product.description}</p>
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mt-auto pt-2">
-                        <p className="text-lg font-bold">${product.price.toFixed(2)}</p>
+                        <p className="text-lg font-bold">₹{product.price.toFixed(2)}</p>
                         <div className="flex items-center gap-2">
                             <Button variant="outline" size="sm" onClick={handleAffiliateClick}>
                                 <ExternalLink className="h-4 w-4 mr-2" />
@@ -120,7 +120,7 @@ function ProductCard({ product, onAddToWishlist, currentUser, layout }: ProductC
             <CardContent className="p-4 flex-grow flex flex-col">
                 <CardTitle className="text-base font-medium leading-tight mb-1 line-clamp-2">{product.name}</CardTitle>
                 <Rating value={product.rating} text={`(${product.numReviews})`} className="mt-1" />
-                <p className="text-lg font-bold text-primary mt-2">${product.price.toFixed(2)}</p>
+                <p className="text-lg font-bold text-primary mt-2">₹{product.price.toFixed(2)}</p>
             </CardContent>
             <CardFooter className="p-3 pt-0">
                 <Button variant="default" size="sm" className="w-full" onClick={handleAffiliateClick}>
