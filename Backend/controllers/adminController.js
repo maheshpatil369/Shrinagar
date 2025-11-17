@@ -13,6 +13,7 @@ const Notification = require('../models/notificationModel.js'); // Import Notifi
 // @access  Private/Admin
 // ===================================================================
 const getDashboardStats = asyncHandler(async (req, res) => {
+// [ ... unchanged code ... ]
     // Use countDocuments for efficient counting without fetching all data
     const totalUsers = await User.countDocuments();
     const totalSellers = await Seller.countDocuments();
@@ -35,23 +36,28 @@ const getDashboardStats = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 // ===================================================================
 const getChartData = asyncHandler(async (req, res) => {
-    const { period = 'week' } = req.query;
+    const { timeframe } = req.query;
     let startDate = new Date();
-    let groupByFormat = "%Y-%m-%d"; // Daily
+    let groupByFormat = '%Y-%m-%d'; // Default to grouping by day
 
-    switch (period) {
-        case 'year':
-            startDate.setFullYear(startDate.getFullYear() - 1);
-            groupByFormat = "%Y-%m"; // Monthly
-            break;
-        case 'month':
-            startDate.setMonth(startDate.getMonth() - 1);
-            break;
-        case 'week':
-        default:
-            startDate.setDate(startDate.getDate() - 7);
-            break;
+    // --- FIX: Add default logic if timeframe is missing or invalid ---
+    if (timeframe === '7d') {
+        startDate.setDate(startDate.getDate() - 7);
+    } else if (timeframe === '30d') {
+        startDate.setDate(startDate.getDate() - 30);
+    } else if (timeframe === '90d') {
+        startDate.setDate(startDate.getDate() - 90);
+    } else if (timeframe === '12m') {
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        groupByFormat = '%Y-%m'; // Group by month for longer periods
+    } else {
+        // Default to 30 days if no valid timeframe is provided
+        startDate.setDate(startDate.getDate() - 30);
     }
+    // --- END FIX ---
+
+    // Ensure startDate is correctly formatted for the $match query
+    // MongoDB aggregation works directly with JavaScript Date objects.
 
     const usersData = await User.aggregate([
         { $match: { createdAt: { $gte: startDate } } },
@@ -85,6 +91,7 @@ const getChartData = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 // ===================================================================
 const getPendingApprovals = asyncHandler(async (req, res) => {
+// [ ... unchanged code ... ]
     const pendingSellers = await Seller.find({ status: 'pending' }).populate('user', 'name email');
 
     const pendingProducts = await Product.find({ status: 'pending' }).populate({
@@ -117,6 +124,7 @@ const getPendingApprovals = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 // ===================================================================
 const getSellerDetailsForAdmin = asyncHandler(async (req, res) => {
+// [ ... unchanged code ... ]
     const seller = await Seller.findById(req.params.id).populate('user', 'name email');
     if (!seller) {
         res.status(404);
@@ -135,6 +143,7 @@ const getSellerDetailsForAdmin = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 // ===================================================================
 const getSellerHistory = asyncHandler(async (req, res) => {
+// [ ... unchanged code ... ]
     const history = await SellerHistory.find({ sellerId: req.params.id }).sort({ createdAt: -1 }).populate('changedBy', 'name role');
     res.json(history);
 });
@@ -145,6 +154,7 @@ const getSellerHistory = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 // ===================================================================
 const adminGetAllProducts = asyncHandler(async (req, res) => {
+// [ ... unchanged code ... ]
     const products = await Product.find({}).populate({
         path: 'seller',
         select: 'name',
@@ -176,6 +186,7 @@ const adminUpdateSellerStatus = asyncHandler(async (req, res) => {
     const previousStatus = seller.status;
     seller.status = status;
 
+    // 1. Log History
     await SellerHistory.create({
         sellerId: seller._id,
         changedBy: req.user._id,
@@ -187,13 +198,41 @@ const adminUpdateSellerStatus = asyncHandler(async (req, res) => {
         notes: `Seller status changed to ${status} by admin.`
     });
 
+    // 2. Notify Seller
     await Notification.create({
         user: seller.user,
         message: `Your seller profile has been ${status}.`,
         link: '/seller'
     });
 
+    // 3. CRUCIAL: Handle associated products if the status is Rejected or Suspended
+    if (status === 'rejected' || status === 'suspended') {
+        // Find the user ID linked to this seller profile
+        const sellerUserId = seller.user; 
+        
+        // Update all products belonging to this seller to 'suspended' status
+        const result = await Product.updateMany(
+            { seller: sellerUserId },
+            { $set: { status: 'suspended' } }
+        );
+        
+        console.log(`Updated ${result.modifiedCount} products to 'suspended' for seller: ${seller.businessName}`);
+
+        // Notify seller about product status change (optional, but good practice)
+         await Notification.create({
+            user: sellerUserId,
+            message: `All your product listings have been suspended due to the status of your seller profile (${status}).`,
+            link: '/seller'
+        });
+    }
+    
+    // NOTE: If status changes to 'approved', products remain in their current status (e.g., 'pending' or 'approved').
+    // If they were 'suspended' due to a previous rejection, the seller must manually resubmit or the admin must manually approve them again.
+
+    // 4. Save Seller Profile
     await seller.save();
+    
+    // 5. Send Response
     res.json(seller);
 });
 
@@ -202,6 +241,7 @@ const adminUpdateSellerStatus = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 // ===================================================================
 const adminUpdateProductStatus = asyncHandler(async (req, res) => {
+// [ ... unchanged code ... ]
     const { status } = req.body;
     const product = await Product.findById(req.params.id);
 
@@ -227,6 +267,7 @@ const adminUpdateProductStatus = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 // ===================================================================
 const adminDeleteProduct = asyncHandler(async (req, res) => {
+// [ ... unchanged code ... ]
     const product = await Product.findById(req.params.id);
     if (product) {
         await Product.deleteOne({ _id: product._id });
@@ -252,6 +293,7 @@ const adminGetAllUsers = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 // ===================================================================
 const adminUpdateUserRole = asyncHandler(async (req, res) => {
+// [ ... unchanged code ... ]
     const { role } = req.body;
     const user = await User.findById(req.params.id);
 
@@ -270,6 +312,7 @@ const adminUpdateUserRole = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 // ===================================================================
 const adminDeleteUser = asyncHandler(async (req, res) => {
+// [ ... unchanged code ... ]
     const user = await User.findById(req.params.id);
 
     if (user) {
@@ -291,6 +334,7 @@ const adminDeleteUser = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 // ===================================================================
 const adminGetAllReviews = asyncHandler(async (req, res) => {
+// [ ... unchanged code ... ]
     // Aggregate to extract all reviews from all products
     const reviews = await Product.aggregate([
         // Match only products that have at least one review
@@ -334,6 +378,7 @@ const adminGetAllReviews = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 // ===================================================================
 const adminDeleteReview = asyncHandler(async (req, res) => {
+// [ ... unchanged code ... ]
     const { productId, reviewId } = req.params;
 
     const product = await Product.findById(productId);
