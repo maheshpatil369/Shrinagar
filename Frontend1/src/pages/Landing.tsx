@@ -368,7 +368,7 @@ function TrendingSection() {
                  </div>
                  <div className="flex flex-col items-center">
                     <p className="text-base font-semibold line-clamp-2 text-black">{product.name}</p>
-                    <p className="text-sm font-medium text-black/70 mb-1">${product.price.toFixed(2)}</p>
+                    <p className="text-sm font-medium text-black/70 mb-1">₹{product.price.toFixed(2)}</p>
                     <Button variant="default" size="sm" className="bg-black hover:bg-black/80 text-white rounded-full mt-1" onClick={handleAddToCart}>
                          <ShoppingCart className="h-4 w-4 mr-2" /> Add to Cart
                      </Button>

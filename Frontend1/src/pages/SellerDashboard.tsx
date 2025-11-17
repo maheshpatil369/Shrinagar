@@ -220,38 +220,68 @@ export default function SellerDashboard() {
 
   return (
     <div className="container mx-auto p-4 md:p-8">
-       <header className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Seller Portal</h1>
-          {/* --- FONT SIZE INCREASED --- */}
-          <p className="text-base text-muted-foreground">Welcome back, {user.name}!</p>
-        </div>
-        {/* --- ADDED COLORFUL BADGE --- */}
-        <div className="flex items-center gap-4">
-          {/* --- ICON SIZE INCREASED --- */}
-          <Badge className="bg-orange-500 hover:bg-orange-600 text-white"><Package className="mr-2 h-6 w-6" />Seller</Badge>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline">
-                {/* --- ICON SIZE INCREASED --- */}
-                <LogOut className="mr-2 h-6 w-6" /> Logout
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  You will be returned to the login page.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleLogout}>Confirm Logout</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </header>
+    <header className="flex flex-wrap items-center justify-between gap-3 mb-8">
+  
+  {/* LEFT SIDE — Title + Welcome */}
+  <div className="flex-1 min-w-0">
+    <div className="flex items-center gap-3">
+      <h1 className="text-4xl font-bold truncate">Seller Portal</h1>
+    </div>
+    <p className="text-xl text-muted-foreground leading-tight mt-1 truncate">
+      Welcome back, {user.name}!
+    </p>
+  </div>
+
+  {/* RIGHT SIDE — Seller Badge + Logout (mobile small / desktop original) */}
+  <div className="flex items-center gap-3 flex-shrink-0">
+
+    {/* SELLER BADGE */}
+    <Badge
+      className="
+        bg-orange-500 hover:bg-orange-600 text-white flex items-center
+        text-xs px-2 py-0.5 
+        md:text-base md:px-3 md:py-1
+      "
+    >
+      <Package className="mr-2 h-4 w-4 md:h-6 md:w-6" />
+      Seller
+    </Badge>
+
+    {/* LOGOUT BUTTON */}
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="outline"
+          className="
+            flex items-center whitespace-nowrap
+            h-7 px-2 py-1 text-xs
+            md:h-10 md:px-4 md:py-2 md:text-base
+          "
+        >
+          <LogOut className="mr-2 h-4 w-4 md:h-6 md:w-6" /> Logout
+        </Button>
+      </AlertDialogTrigger>
+
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+          <AlertDialogDescription>
+            You will be returned to the login page.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleLogout}>Confirm Logout</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </div>
+
+</header>
+
+
+
+
 
        {!seller ? (
          <Alert className="mb-6"><Info className="h-6 w-6" /><AlertTitle>Welcome, Seller!</AlertTitle><AlertDescription>Please complete your profile to start listing products.</AlertDescription></Alert>
@@ -271,58 +301,55 @@ export default function SellerDashboard() {
       ) : null}
 
       {/* --- ADDED NEW COLORFUL STATS GRID --- */}
-      {analytics && (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-              <Card className="cursor-pointer hover:bg-muted/50 transition-colors border-l-4 border-blue-500">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      {/* --- FONT SIZE INCREASED --- */}
-                      <CardTitle className="text-base font-medium">Total Products</CardTitle>
-                      {/* --- ICON SIZE INCREASED --- */}
-                      <Package className="h-6 w-6 text-blue-500" />
-                  </CardHeader>
-                  <CardContent>
-                      {/* --- FONT SIZE INCREASED --- */}
-                      <div className="text-3xl font-bold">{products.length}</div>
-                  </CardContent>
-              </Card>
-              <Card className="cursor-pointer hover:bg-muted/50 transition-colors border-l-4 border-green-500">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      {/* --- FONT SIZE INCREASED --- */}
-                      <CardTitle className="text-base font-medium">Total Views</CardTitle>
-                      {/* --- ICON SIZE INCREASED --- */}
-                      <Eye className="h-6 w-6 text-green-500" />
-                  </CardHeader>
-                  <CardContent>
-                      {/* --- FONT SIZE INCREASED --- */}
-                      <div className="text-3xl font-bold">{analytics.totalViews || 0}</div>
-                  </CardContent>
-              </Card>
-              <Card className="cursor-pointer hover:bg-muted/50 transition-colors border-l-4 border-amber-500">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      {/* --- FONT SIZE INCREASED --- */}
-                      <CardTitle className="text-base font-medium">Total Clicks</CardTitle>
-                      {/* --- ICON SIZE INCREASED --- */}
-                      <MousePointerClick className="h-6 w-6 text-amber-500" />
-                  </CardHeader>
-                  <CardContent>
-                      {/* --- FONT SIZE INCREASED --- */}
-                      <div className="text-3xl font-bold">{analytics.totalClicks || 0}</div>
-                  </CardContent>
-              </Card>
-              <Card className="cursor-pointer hover:bg-muted/50 transition-colors border-l-4 border-red-500">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      {/* --- FONT SIZE INCREASED --- */}
-                      <CardTitle className="text-base font-medium">Pending Products</CardTitle>
-                      {/* --- ICON SIZE INCREASED --- */}
-                      <Clock className="h-6 w-6 text-red-500" />
-                  </CardHeader>
-                  <CardContent>
-                      {/* --- FONT & COLOR UPDATED --- */}
-                      <div className={cn("text-3xl font-bold", pendingProductsCount > 0 ? "text-red-500" : "")}>{pendingProductsCount}</div>
-                  </CardContent>
-              </Card>
-          </div>
-      )}
+{analytics && (
+  <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 mb-8">
+
+    <Card className="cursor-pointer hover:bg-muted/50 transition-colors border-l-4 border-blue-500">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-base font-medium">Total Products</CardTitle>
+        <Package className="h-6 w-6 text-blue-500" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold">{products.length}</div>
+      </CardContent>
+    </Card>
+
+    <Card className="cursor-pointer hover:bg-muted/50 transition-colors border-l-4 border-green-500">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-base font-medium">Total Views</CardTitle>
+        <Eye className="h-6 w-6 text-green-500" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold">{analytics.totalViews || 0}</div>
+      </CardContent>
+    </Card>
+
+    <Card className="cursor-pointer hover:bg-muted/50 transition-colors border-l-4 border-amber-500">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-base font-medium">Total Clicks</CardTitle>
+        <MousePointerClick className="h-6 w-6 text-amber-500" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold">{analytics.totalClicks || 0}</div>
+      </CardContent>
+    </Card>
+
+    <Card className="cursor-pointer hover:bg-muted/50 transition-colors border-l-4 border-red-500">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-base font-medium">Pending Products</CardTitle>
+        <Clock className="h-6 w-6 text-red-500" />
+      </CardHeader>
+      <CardContent>
+        <div className={cn("text-3xl font-bold", pendingProductsCount > 0 ? "text-red-500" : "")}>
+          {pendingProductsCount}
+        </div>
+      </CardContent>
+    </Card>
+
+  </div>
+)}
+
+
       {/* --- END OF NEW STATS GRID --- */}
 
 
@@ -335,143 +362,272 @@ export default function SellerDashboard() {
           <TabsTrigger value="profile" className="text-base data-[state=active]:bg-indigo-600 dark:data-[state=active]:bg-indigo-600 data-[state=active]:text-white rounded-md">Profile</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="products" className="mt-6">
-            <Card>
-                <CardHeader className="flex-row items-center justify-between">
-                {/* --- FONT SIZE INCREASED --- */}
-                <div><CardTitle className="text-2xl">Your Products</CardTitle><CardDescription className="text-base">Manage your inventory.</CardDescription></div>
-                {/* --- UPDATED ADD PRODUCT BUTTON COLOR --- */}
-                <Button 
-                  onClick={() => handleOpenDialog(null)} 
-                  disabled={seller?.status !== 'approved'}
-                  className="bg-pink-600 text-white hover:bg-pink-700"
-                >
-                  {/* --- ICON SIZE INCREASED --- */}
-                  <PlusCircle className="mr-2 h-6 w-6" /> Add Product
-                </Button>
-                </CardHeader>
-                <CardContent>
-                <Table>
-                    {/* --- SR. NO. ADDED --- */}
-                    <TableHeader><TableRow><TableHead className="w-[80px] text-base">Sr. No.</TableHead><TableHead className="text-base">Name</TableHead><TableHead className="text-base">Price</TableHead><TableHead className="text-base">Status</TableHead><TableHead className="text-base">Views</TableHead><TableHead className="text-base">Clicks</TableHead><TableHead className="text-right text-base">Actions</TableHead></TableRow></TableHeader>
-                    <TableBody>
-                    {/* --- SR. NO. & FONT SIZE ADDED --- */}
-                    {products.length > 0 ? products.map((product, index) => (
-                        <TableRow key={product._id}>
-                        <TableCell className="text-base">{index + 1}</TableCell>
-                        <TableCell className="font-medium flex items-center gap-4 text-base"><img src={product.images[0]} alt={product.name} className="w-10 h-10 object-cover rounded-md border"/>{product.name}</TableCell>
-                        <TableCell className="text-base">${product.price.toFixed(2)}</TableCell>
-                        <TableCell className="text-base"><Badge variant={getStatusBadgeVariant(product.status)} className="capitalize">{product.status}</Badge></TableCell>
-                        <TableCell className="text-base">{product.viewCount}</TableCell>
-                        <TableCell className="text-base">{product.clickCount}</TableCell>
-                        <TableCell className="text-right">
-                            <AlertDialog>
-                            <DropdownMenu>
-                                {/* --- ICON SIZE INCREASED --- */}
-                                <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreVertical className="h-6 w-6" /></Button></DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                {/* --- ICON SIZE INCREASED --- */}
-                                <DropdownMenuItem onClick={() => handleOpenDialog(product)}><Edit className="mr-2 h-6 w-6"/> Edit</DropdownMenuItem>
-                                {/* --- ICON SIZE INCREASED --- */}
-                                <AlertDialogTrigger asChild><DropdownMenuItem className="text-red-500"><Trash2 className="mr-2 h-6 w-6"/> Delete</DropdownMenuItem></AlertDialogTrigger>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <AlertDialogContent>
-                                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete your product "{product.name}".</AlertDialogDescription></AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete(product._id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                                </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </TableCell>
-                        </TableRow>
-                    )) : (
-                        <TableRow><TableCell colSpan={7} className="text-center h-24 text-base">No products found. Add your first product!</TableCell></TableRow>
-                    )}
-                    </TableBody>
-                </Table>
-                </CardContent>
-            </Card>
-        </TabsContent>
+     <TabsContent value="products" className="mt-6">
+  <Card>
 
-        <TabsContent value="analytics" className="mt-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {/* --- REMOVED YELLOW BG --- */}
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-base font-medium">Total Views</CardTitle>
-                        <Eye className="h-6 w-6 text-blue-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{analytics?.totalViews || 0}</div>
-                    </CardContent>
-                </Card>
-                {/* --- REMOVED YELLOW BG --- */}
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-base font-medium">Total Clicks</CardTitle>
-                        <MousePointerClick className="h-6 w-6 text-amber-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{analytics?.totalClicks || 0}</div>
-                    </CardContent>
-                </Card>
-                {/* --- REMOVED YELLOW BG --- */}
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-base font-medium">Conversion Rate</CardTitle>
-                        <TrendingUp className="h-6 w-6 text-green-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-green-600 dark:text-green-400">{(analytics?.conversionRate || 0).toFixed(2)}%</div>
-                    </CardContent>
-                </Card>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-4">
-                <Card className="col-span-1 lg:col-span-4">
-                    {/* --- FONT SIZE INCREASED --- */}
-                    <CardHeader><CardTitle className="text-2xl">Product Performance</CardTitle><CardDescription className="text-base">Views vs. Clicks for each product.</CardDescription></CardHeader>
-                    <CardContent>
-                        {/* --- UPDATED CHART COLORS --- */}
-                        <ChartContainer config={{
-                            views: { label: "Views", color: "#3b82f6" }, // Blue
-                            clicks: { label: "Clicks", color: "#ec4899" }, // Pink
-                        }} className="h-[250px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={analytics?.performanceData || []} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-                                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                    {/* --- FONT SIZE INCREASED --- */}
-                                    <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value.length > 15 ? value.slice(0, 15) + '...' : value} className="text-sm"/>
-                                    <YAxis tickLine={false} axisLine={false} className="text-sm"/>
-                                    <Tooltip content={<ChartTooltipContent indicator="dot" />} cursor={{ fill: 'hsl(var(--muted))' }}/>
-                                    <Bar dataKey="views" fill="var(--color-views)" radius={4} />
-                                    <Bar dataKey="clicks" fill="var(--color-clicks)" radius={4} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </ChartContainer>
-                    </CardContent>
-                </Card>
-                 <Card className="col-span-1 lg:col-span-3">
-                    {/* --- FONT SIZE INCREASED --- */}
-                    <CardHeader><CardTitle className="text-2xl">Top 5 Products by Views</CardTitle></CardHeader>
-                    <CardContent>
-                        <Table>
-                            {/* --- FONT SIZE INCREASED --- */}
-                            <TableHeader><TableRow><TableHead className="text-base">Product</TableHead><TableHead className="text-right text-base">Views</TableHead></TableRow></TableHeader>
-                            <TableBody>
-                                {analytics?.topProducts && analytics.topProducts.length > 0 ? analytics.topProducts.map(p => (
-                                    <TableRow key={p._id}>
-                                        <TableCell className="font-medium text-base">{p.name}</TableCell>
-                                        <TableCell className="text-right text-base">{p.viewCount}</TableCell>
-                                    </TableRow>
-                                )) : <TableRow><TableCell colSpan={2} className="text-center h-24 text-base">No product data available.</TableCell></TableRow>}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                 </Card>
-            </div>
-        </TabsContent>
+    {/* HEADER (DESKTOP SAME, MOBILE FIXED) */}
+    <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between">
+
+      <div>
+        <CardTitle className="text-2xl">Your Products</CardTitle>
+        <CardDescription className="text-base">Manage your inventory.</CardDescription>
+      </div>
+
+      {/* Mobile button goes below title — Desktop unchanged */}
+      <div className="mt-4 md:mt-0 w-full md:w-auto">
+        <Button
+          onClick={() => handleOpenDialog(null)}
+          disabled={seller?.status !== 'approved'}
+          className="bg-pink-600 text-white hover:bg-pink-700 w-full md:w-auto"
+        >
+          <PlusCircle className="mr-2 h-6 w-6" /> Add Product
+        </Button>
+      </div>
+
+    </CardHeader>
+
+    <CardContent>
+
+      {/* MOBILE SCROLL WRAPPER — DESKTOP UNCHANGED */}
+      <div className="overflow-x-auto">
+        <Table className="min-w-[850px] md:min-w-0">
+
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[80px] text-base">Sr. No.</TableHead>
+              <TableHead className="text-base">Name</TableHead>
+              <TableHead className="text-base">Price</TableHead>
+              <TableHead className="text-base">Status</TableHead>
+              <TableHead className="text-base">Views</TableHead>
+              <TableHead className="text-base">Clicks</TableHead>
+              <TableHead className="text-right text-base">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+
+          <TableBody>
+            {products.length > 0 ? (
+              products.map((product, index) => (
+                <TableRow key={product._id}>
+                  <TableCell className="text-base">{index + 1}</TableCell>
+
+                  <TableCell className="font-medium flex items-center gap-4 text-base">
+                    <img
+                      src={product.images[0]}
+                      alt={product.name}
+                      className="w-10 h-10 object-cover rounded-md border"
+                    />
+                    {product.name}
+                  </TableCell>
+
+                  <TableCell className="text-base">₹{product.price.toFixed(2)}</TableCell>
+
+                  <TableCell className="text-base">
+                    <Badge
+                      variant={getStatusBadgeVariant(product.status)}
+                      className="capitalize"
+                    >
+                      {product.status}
+                    </Badge>
+                  </TableCell>
+
+                  <TableCell className="text-base">{product.viewCount}</TableCell>
+                  <TableCell className="text-base">{product.clickCount}</TableCell>
+
+                  <TableCell className="text-right">
+                    <AlertDialog>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-6 w-6" />
+                          </Button>
+                        </DropdownMenuTrigger>
+
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleOpenDialog(product)}>
+                            <Edit className="mr-2 h-6 w-6" /> Edit
+                          </DropdownMenuItem>
+
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem className="text-red-500">
+                              <Trash2 className="mr-2 h-6 w-6" /> Delete
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action will permanently delete "{product.name}".
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(product._id)}
+                            className="bg-destructive hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center h-24 text-base">
+                  No products found. Add your first product!
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+
+        </Table>
+      </div>
+
+    </CardContent>
+  </Card>
+</TabsContent>
+
+
+   <TabsContent value="analytics" className="mt-6">
+
+  {/* --- TOP ANALYTICS CARDS (MOBILE = 2 COLS / DESKTOP = 3 COLS) --- */}
+  <div className="grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-3">
+
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-base font-medium">Total Views</CardTitle>
+        <Eye className="h-6 w-6 text-blue-500" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+          {analytics?.totalViews || 0}
+        </div>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-base font-medium">Total Clicks</CardTitle>
+        <MousePointerClick className="h-6 w-6 text-amber-500" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">
+          {analytics?.totalClicks || 0}
+        </div>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-base font-medium">Conversion Rate</CardTitle>
+        <TrendingUp className="h-6 w-6 text-green-500" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+          {(analytics?.conversionRate || 0).toFixed(2)}%
+        </div>
+      </CardContent>
+    </Card>
+
+  </div>
+
+
+  {/* --- SECOND ROW: PERFORMANCE CHART + TOP PRODUCTS --- */}
+  <div className="grid gap-4 grid-cols-1 md:grid-cols-1 lg:grid-cols-7 mt-4">
+
+    {/* --- CHART FULL WIDTH ON MOBILE/TABLET --- */}
+    <Card className="col-span-1 lg:col-span-4">
+      <CardHeader>
+        <CardTitle className="text-2xl">Product Performance</CardTitle>
+        <CardDescription className="text-base">
+          Views vs. Clicks for each product.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer
+          config={{
+            views: { label: "Views", color: "#3b82f6" },
+            clicks: { label: "Clicks", color: "#ec4899" }
+          }}
+          className="h-[260px] w-full"
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={analytics?.performanceData || []}
+              margin={{ top: 5, right: 20, left: -20, bottom: 5 }}
+            >
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis
+                dataKey="name"
+                tickLine={false}
+                tickMargin={10}
+                axisLine={false}
+                className="text-xs md:text-sm"
+                tickFormatter={(value) =>
+                  value.length > 12 ? value.slice(0, 12) + "..." : value
+                }
+              />
+              <YAxis className="text-xs md:text-sm" />
+              <Tooltip content={<ChartTooltipContent indicator="dot" />} />
+              <Bar dataKey="views" fill="var(--color-views)" radius={4} />
+              <Bar dataKey="clicks" fill="var(--color-clicks)" radius={4} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+
+
+    {/* --- TOP PRODUCTS TABLE (FULL WIDTH ON MOBILE/TABLET) --- */}
+    <Card className="col-span-1 lg:col-span-3">
+      <CardHeader>
+        <CardTitle className="text-2xl">Top 5 Products by Views</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-base">Product</TableHead>
+              <TableHead className="text-right text-base">Views</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {analytics?.topProducts?.length > 0 ? (
+              analytics.topProducts.map((p) => (
+                <TableRow key={p._id}>
+                  <TableCell className="font-medium text-base">
+                    {p.name}
+                  </TableCell>
+                  <TableCell className="text-right text-base">
+                    {p.viewCount}
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={2}
+                  className="text-center h-24 text-base"
+                >
+                  No product data available.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+
+  </div>
+</TabsContent>
+
 
          <TabsContent value="profile" className="mt-6">
             <SellerProfile seller={seller} onProfileUpdate={fetchData} />

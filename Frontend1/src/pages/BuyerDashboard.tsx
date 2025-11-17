@@ -310,8 +310,8 @@ function FilterSidebar({ filters, onFilterChange, onPriceChange, uniqueMaterials
                     onValueChange={handlePriceSliderChange}
                 />
                 <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>$0</span>
-                    <span>$50,000+</span>
+                    <span>₹0</span>
+                    <span>₹50,000+</span>
                 </div>
             </div>
         </div>
