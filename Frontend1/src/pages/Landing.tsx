@@ -1,11 +1,39 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowUpRight, ArrowRight, Gem, Sparkles, Coins, Disc } from 'lucide-react'; // Added icons for metals
+import { 
+    ArrowUpRight, ArrowRight, Gem, Sparkles, Menu, X, User, 
+    LogOut, LayoutDashboard, Settings, ShoppingBag 
+} from 'lucide-react'; 
 import { fetchMetalPrice, MetalPriceData } from '@/lib/gold';
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"; 
+import { useUser } from "@/context/UserContext"; 
+import { useAuthModal } from "@/context/AuthModalContext";
+
+// --- UI Components for Dropdown ---
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 // --- Asset Imports ---
-// Importing images from the assets folder as per your screenshot
 import goldImg from '../../assets/goldimg.png';
 import silverImg from '../../assets/silver.png';
 import platinumImg from '../../assets/platinum.png';
@@ -18,6 +46,12 @@ import sellerImg from '../../assets/seller.png';
 
 // --- Header Component ---
 function Header() {
+    const navigate = useNavigate();
+    
+    // Use global contexts for reactive state
+    const { user, logoutUser } = useUser();
+    const { setAuthModalOpen } = useAuthModal();
+
     const navLinks = [
         { name: "HOME", path: "/" },
         { name: "TRY-ON", path: "#" },
@@ -34,135 +68,235 @@ function Header() {
         }
     };
 
+    const handleLogout = () => {
+        logoutUser();
+        navigate('/');
+    };
+
     return (
-        <header className="sticky top-0 z-50 w-full bg-[#020817]/80 backdrop-blur-md border-b border-white/5 transition-all duration-300">
-            <div className="container mx-auto flex h-20 items-center justify-center px-4 md:px-8">
-                <nav className="flex gap-6 md:gap-12 items-center text-xs md:text-sm font-medium tracking-[0.2em]">
+        <header 
+            className="fixed top-0 left-0 right-0 z-50 w-full bg-[#020817]/90 backdrop-blur-md border-b border-white/10 shadow-lg py-4"
+        >
+            <div className="container mx-auto flex items-center justify-between px-4 md:px-8 h-16 max-w-7xl">
+
+                {/* 1. Logo (Left) */}
+                <div
+                    className="flex items-center gap-3 cursor-pointer group shrink-0" 
+                    onClick={() => navigate('/')}
+                >
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-brand-yellow/20 rounded-full blur-md transition-all duration-300"></div>
+                        <div className="relative p-2.5 rounded-full border border-brand-yellow/30 bg-[#051024]/80">
+                            <Gem className="h-6 w-6 text-brand-yellow" />
+                        </div>
+                    </div>
+                    <span className="text-brand-yellow font-bold text-xl tracking-[0.15em] hidden sm:block transition-colors">
+                        SHRINGAR
+                    </span>
+                </div>
+
+                {/* 2. NAVIGATION — ALWAYS VISIBLE */}
+                <nav className="
+                    flex gap-10 items-center ml-auto mr-6 
+                    overflow-x-auto whitespace-nowrap no-scrollbar
+                ">
                     {navLinks.map((link) => (
                         <a 
                             key={link.name} 
                             href={link.path}
                             onClick={link.name === 'CONTACT' ? handleScrollToContact : undefined}
-                            className="relative text-white/70 hover:text-brand-yellow transition-colors duration-300 uppercase group py-2"
+                            className="
+                                relative text-sm font-medium tracking-[0.15em] 
+                                text-white/90 hover:text-brand-yellow 
+                                transition-colors duration-300 uppercase group py-2
+                            "
                         >
                             {link.name}
-                            <span className="absolute bottom-0 left-1/2 w-0 h-[1px] bg-brand-yellow transition-all duration-300 ease-out group-hover:w-full group-hover:left-0"></span>
+                            <span className="
+                                absolute bottom-0 left-1/2 w-0 h-[2px] 
+                                bg-brand-yellow transition-all duration-300 ease-out 
+                                group-hover:w-full group-hover:left-0
+                            "></span>
                         </a>
                     ))}
                 </nav>
+
+                {/* 3. RIGHT ACTIONS: PROFILE DROPDOWN OR LOGIN BUTTON */}
+                <div className="flex items-center gap-4 shrink-0">
+
+                    {user ? (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-11 w-11 rounded-full relative">
+                                    <Avatar className="h-10 w-10 border-2 border-white/20 hover:border-brand-yellow/50 transition-all">
+                                        <AvatarFallback className="bg-brand-yellow text-[#020817] font-bold text-sm">
+                                            {user.name ? user.name[0].toUpperCase() : "U"}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                </Button>
+                            </DropdownMenuTrigger>
+
+                            <DropdownMenuContent 
+                                className="w-64 bg-white text-black p-0 rounded-xl border-none shadow-2xl mt-2" 
+                                align="end"
+                            >
+                                <div className="px-4 py-4 border-b border-gray-100 bg-gray-50/50">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="font-bold text-base truncate max-w-[120px]">
+                                            {user.name}
+                                        </span>
+                                        <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full capitalize font-bold">
+                                            {user.role}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                                </div>
+
+                                <div className="p-2 space-y-1">
+                                    <DropdownMenuItem 
+                                        className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                        onClick={() => navigate('/profile')}
+                                    >
+                                        <User className="h-4 w-4" /> Profile
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem 
+                                        className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                        onClick={() => navigate('/buyer')}
+                                    >
+                                        <ShoppingBag className="h-4 w-4" /> Browse Jewelry
+                                    </DropdownMenuItem>
+
+                                    {user.role === 'seller' && (
+                                        <DropdownMenuItem 
+                                            className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                            onClick={() => navigate('/seller')}
+                                        >
+                                            <LayoutDashboard className="h-4 w-4" /> Seller Dashboard
+                                        </DropdownMenuItem>
+                                    )}
+
+                                    {user.role === 'admin' && (
+                                        <DropdownMenuItem 
+                                            className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                            onClick={() => navigate('/admin')}
+                                        >
+                                            <Settings className="h-4 w-4" /> Admin Dashboard
+                                        </DropdownMenuItem>
+                                    )}
+                                </div>
+
+                                <div className="p-2 border-t border-gray-100">
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button className="w-full bg-red-50 text-red-600 hover:bg-red-600 hover:text-white font-semibold h-10 rounded-lg">
+                                                <LogOut className="h-4 w-4" /> Log out
+                                            </Button>
+                                        </AlertDialogTrigger>
+
+                                        <AlertDialogContent className="bg-white text-black border border-gray-200">
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Log out?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    You will be returned to the home page.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction 
+                                                    onClick={handleLogout} 
+                                                    className="bg-red-600 text-white"
+                                                >
+                                                    Log out
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    ) : (
+                        <Button 
+                            onClick={() => setAuthModalOpen(true)}
+                            className="
+                                bg-brand-yellow text-[#020817] hover:bg-white 
+                                font-bold tracking-wider text-xs sm:text-sm px-8 py-5 
+                                rounded-full transition-all shadow-[0_0_15px_rgba(255,215,0,0.3)] 
+                                hover:shadow-[0_0_25px_rgba(255,215,0,0.6)]
+                            "
+                        >
+                            LOGIN / SIGN UP
+                        </Button>
+                    )}
+
+                </div>
+
             </div>
         </header>
     );
 }
 
-// --- Hero Section (UNCHANGED) ---
-// function HeroSection() {
-//     return (
-//         <section className="relative h-[90vh] flex flex-col items-center text-center px-4 overflow-hidden">
-//             {/* Animated Background */}
-//             <div className="absolute inset-0 bg-gradient-to-br from-[#020817] via-[#0f2342] to-[#1e1b4b] animate-gradient-xy z-0"></div>
-//             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0 mix-blend-soft-light"></div>
 
-//             {/* 1. Main Center Content (Logo + Title ONLY) */}
-//             <div className="relative z-10 flex flex-col items-center justify-center flex-grow w-full max-w-7xl mx-auto">
-                
-//                 {/* Logo + Title Row */}
-//                 <div className="flex flex-col xl:flex-row items-center justify-center gap-8 md:gap-16">
-                    
-//                     {/* Logo Circle - Increased Size */}
-//                     <div className="relative shrink-0 group cursor-pointer">
-//                         <div className="absolute inset-0 bg-brand-yellow/20 rounded-full blur-xl group-hover:blur-2xl transition-all duration-500 animate-pulse"></div>
-//                         {/* Increased circle size */}
-//                         <div className="relative w-32 h-32 md:w-48 md:h-48 rounded-full border-2 border-brand-yellow bg-[#051024] flex flex-col items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.15)]">
-//                             <Gem className="h-12 w-12 md:h-16 md:w-16 text-brand-yellow mb-2" />
-//                             {/* Increased LOGO text size */}
-//                             <span className="text-brand-yellow font-bold text-xs md:text-base tracking-[0.3em]">LOGO</span> 
-//                         </div>
-//                     </div>
-
-//                     {/* SHRINGAR AI Text - MASSIVE FONT INCREASE */}
-//                     <h1 className="text-7xl sm:text-8xl md:text-[9rem] lg:text-[11rem] xl:text-[13rem] font-thin tracking-wider text-white leading-[0.9] flex flex-col xl:block text-center xl:text-left drop-shadow-2xl">
-//                         SHRINGAR <span className="font-normal text-brand-yellow">AI</span>
-//                     </h1>
-//                 </div>
-//             </div>
-
-//             {/* 2. Bottom Content (Subtitle + Feature Links) */}
-//             <div className="relative z-10 pb-12 w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-                
-//                 {/* Subtitle - Increased Font Size */}
-//                 <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white/90 font-serif italic tracking-wide mb-10 leading-relaxed max-w-4xl">
-//                     Your one-stop platform for Jewellery.
-//                 </p>
-
-//                 {/* Feature Links - Increased Font Size */}
-//                 <div className="flex flex-wrap justify-center items-center gap-6 md:gap-16 text-lg md:text-2xl font-medium tracking-[0.25em] text-brand-yellow uppercase">
-//                     <span className="hover:text-white transition-colors cursor-default hover:scale-105 duration-300">AR TRY-ON</span>
-//                     <span className="text-white/20 text-base md:text-xl">•</span>
-//                     <span className="hover:text-white transition-colors cursor-default hover:scale-105 duration-300">DESIGN TO CAD</span>
-//                     <span className="text-white/20 text-base md:text-xl">•</span>
-//                     <span className="hover:text-white transition-colors cursor-default hover:scale-105 duration-300">MARKETPLACE</span>
-//                 </div>
-//             </div>
-
-//         </section>
-//     );
-// }
-
-function HeroSection() {
+// --- Hero Section (Fixed positioning overlap) ---
+function HeroSection() { 
     return (
-        <section className="relative h-[90vh] flex flex-col items-center text-center px-4 overflow-hidden">
+        <section className="relative min-h-screen flex flex-col px-4 overflow-hidden pt-32 md:pt-40">
             {/* Animated Background */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#020817] via-[#0f2342] to-[#1e1b4b] animate-gradient-xy z-0"></div>
             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0 mix-blend-soft-light"></div>
 
-            {/* 1. Main Center Content (Logo + Title ONLY) */}
-            <div className="relative z-10 flex flex-col items-center justify-center flex-grow w-full max-w-7xl mx-auto">
-                
-                {/* Logo + Title Row */}
-                <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12">
-                    
+            {/* CENTER CONTENT */}
+            <div className="relative z-10 flex-grow flex flex-col items-center justify-center w-full max-w-7xl mx-auto">
+
+                {/* Row: Logo + Text */}
+                <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
+
                     {/* Logo Circle */}
                     <div className="relative shrink-0 group cursor-pointer">
                         <div className="absolute inset-0 bg-brand-yellow/20 rounded-full blur-xl group-hover:blur-2xl transition-all duration-500 animate-pulse"></div>
-                        {/* Increased circle size slightly to accommodate larger icon/text */}
-                        <div className="relative w-28 h-28 md:w-40 md:h-40 rounded-full border-2 border-brand-yellow bg-[#051024] flex flex-col items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.15)]">
-                            <Gem className="h-10 w-10 md:h-14 md:w-14 text-brand-yellow mb-2" />
-                            {/* Increased LOGO text size */}
-                            <span className="text-brand-yellow font-bold text-xs md:text-sm tracking-[0.3em]">LOGO</span> 
+                        <div className="relative w-32 h-32 md:w-48 md:h-48 rounded-full border-2 border-brand-yellow bg-[#051024] flex flex-col items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.15)]">
+                            <Gem className="h-12 w-12 md:h-16 md:w-16 text-brand-yellow mb-2" />
+                            <span className="text-brand-yellow font-bold text-xs md:text-base tracking-[0.3em]">LOGO</span>
                         </div>
                     </div>
 
-                    {/* SHRINGAR AI Text - MASSIVE FONT INCREASE */}
-                    <h1 className="text-7xl sm:text-6xl md:text-[11rem] lg:text-[10rem] font-thin tracking-wider text-white leading-none flex flex-col md:block text-center md:text-left drop-shadow-2xl">
+                    {/* SHRINGAR AI — ALWAYS ONE LINE */}
+                    <h1
+                        className="
+                            text-center md:text-left
+                            font-thin tracking-wider text-white drop-shadow-2xl
+                            leading-none whitespace-nowrap
+                            text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-[10rem]
+                        "
+                    >
                         SHRINGAR <span className="font-normal text-brand-yellow">AI</span>
                     </h1>
                 </div>
             </div>
 
-            {/* 2. Bottom Content (Subtitle + Feature Links) */}
-            <div className="relative z-10 pb-16 w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-                
-                {/* Subtitle - Increased Font Size */}
-                <p className="text-2xl md:text-4xl lg:text-4xl text-white/90 font-serif italic tracking-wide mb-10 leading-relaxed">
+            {/* BOTTOM CONTENT: Subtitle + Features */}
+            <div className="relative z-10 pb-12 w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+
+                {/* Subtitle */}
+                <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white/90 font-serif italic tracking-wide mb-10 leading-relaxed max-w-4xl text-center">
                     Your one-stop platform for Jewellery.
                 </p>
 
-                {/* Feature Links - Increased Font Size */}
-                <div className="flex flex-wrap justify-center items-center gap-6 md:gap-14 text-base md:text-xl font-medium tracking-[0.25em] text-brand-yellow uppercase">
-                    <span className="hover:text-white transition-colors cursor-default">AR TRY-ON</span>
-                    <span className="text-white/20 text-sm">•</span>
-                    <span className="hover:text-white transition-colors cursor-default">DESIGN TO CAD</span>
-                    <span className="text-white/20 text-sm">•</span>
-                    <span className="hover:text-white transition-colors cursor-default">MARKETPLACE</span>
+                {/* Feature Links */}
+                <div className="flex flex-wrap justify-center items-center gap-6 md:gap-16 text-lg md:text-2xl font-medium tracking-[0.25em] text-brand-yellow uppercase">
+                    <span className="hover:text-white transition-colors cursor-default hover:scale-105 duration-300">AR TRY-ON</span>
+                    <span className="text-white/20 text-base md:text-xl">•</span>
+                    <span className="hover:text-white transition-colors cursor-default hover:scale-105 duration-300">DESIGN TO CAD</span>
+                    <span className="text-white/20 text-base md:text-xl">•</span>
+                    <span className="hover:text-white transition-colors cursor-default hover:scale-105 duration-300">MARKETPLACE</span>
                 </div>
             </div>
-        
+
         </section>
     );
 }
 
-// --- 2nd Screen: 6 Boxes (Rates + Features) with BACKGROUND IMAGES ---
+
 function GridSection() {
     const navigate = useNavigate();
     const [rates, setRates] = useState<{
@@ -192,10 +326,9 @@ function GridSection() {
         return `Rs. ${(data.price / divisor).toLocaleString('en-IN', { maximumFractionDigits: 0 })}/${unit}`;
     };
 
-    // Helper component for background image card
     const GridCard = ({ 
         image, 
-        children, 
+        children,   
         onClick, 
         borderColorClass = "hover:border-brand-yellow/50" 
     }: { 
@@ -208,20 +341,14 @@ function GridSection() {
             onClick={onClick}
             className={`group relative aspect-[4/3] bg-[#0b1e3b] border border-white/10 rounded-xl overflow-hidden cursor-pointer transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] ${borderColorClass}`}
         >
-            {/* Background Image with Zoom Effect */}
-            <div 
-                className="absolute inset-0 z-0 transition-transform duration-700 group-hover:scale-110 opacity-60 group-hover:opacity-70"
-                style={{ 
-                    backgroundImage: `url(${image})`, 
-                    backgroundSize: 'cover', 
-                    backgroundPosition: 'center' 
-                }}
+            <img 
+                src={image}
+                alt="background"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-60 group-hover:opacity-70 z-0"
             />
             
-            {/* Gradient Overlay for readability */}
             <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30 group-hover:via-black/40 transition-colors duration-300" />
-
-            {/* Content Container */}
+        
             <div className="relative z-10 h-full p-8 flex flex-col justify-between">
                 {children}
             </div>
@@ -232,12 +359,8 @@ function GridSection() {
         <section className="bg-[#051024] py-20 px-4 border-y border-white/10 relative">
             <div className="container mx-auto max-w-7xl">
                 
-                {/* The 6-Box Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-
-                    {/* --- ROW 1: METAL RATES --- */}
                     
-                    {/* 1. GOLD */}
                     <GridCard image={goldImg} borderColorClass="hover:border-yellow-400">
                         <div className="flex justify-between items-start">
                             <h3 className="text-2xl font-bold tracking-[0.2em] text-white group-hover:text-yellow-400 transition-colors duration-200">GOLD</h3>
