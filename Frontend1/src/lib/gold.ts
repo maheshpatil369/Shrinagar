@@ -1,20 +1,21 @@
 // Frontend1/src/lib/gold.ts
 import { api } from './api';
 
-export interface GoldPriceData {
+export interface MetalPriceData {
+    symbol: string;
     price: number;
     currency: string;
     timestamp: number;
-    changePercent?: number; // Optional change percentage
+    changePercent?: number;
 }
 
-export const fetchGoldPrice = async (): Promise<GoldPriceData> => {
+export const fetchMetalPrice = async (symbol: 'XAU' | 'XAG' | 'XPT'): Promise<MetalPriceData> => {
     try {
-        const { data } = await api.get('/gold/price');
+        // Fetch from our backend which proxies the GoldAPI
+        const { data } = await api.get(`/gold/${symbol}`);
         return data;
     } catch (error) {
-        console.error("Failed to fetch gold price:", error);
-        // You might want to return a default or throw a specific error
-        throw new Error("Could not load gold price.");
+        console.error(`Failed to fetch ${symbol} price:`, error);
+        throw new Error(`Could not load ${symbol} price.`);
     }
 };

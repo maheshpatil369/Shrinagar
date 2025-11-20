@@ -37,7 +37,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import { fetchGoldPrice, GoldPriceData } from "../lib/gold";
+// --- UPDATED IMPORT: Use fetchMetalPrice instead of fetchGoldPrice ---
+import { fetchMetalPrice, MetalPriceData } from "../lib/gold"; 
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from 'date-fns';
 import { useAuthModal } from "../context/AuthModalContext";
@@ -62,7 +63,8 @@ export default function BuyerLayout() {
 
   const { setAuthModalOpen, setPostLoginRedirect } = useAuthModal();
 
-  const [goldPrice, setGoldPrice] = useState<GoldPriceData | null>(null);
+  // --- UPDATED STATE TYPE ---
+  const [goldPrice, setGoldPrice] = useState<MetalPriceData | null>(null);
   const [loadingGold, setLoadingGold] = useState(false);
   const [goldError, setGoldError] = useState<string | null>(null);
 
@@ -70,7 +72,8 @@ export default function BuyerLayout() {
     setLoadingGold(true);
     setGoldError(null);
     try {
-      const data = await fetchGoldPrice();
+      // --- UPDATED CALL: Fetch specifically for Gold (XAU) ---
+      const data = await fetchMetalPrice('XAU');
       setGoldPrice(data);
     } catch {
       setGoldError("Failed to load");
@@ -154,7 +157,7 @@ export default function BuyerLayout() {
               </PopoverTrigger>
               <PopoverContent className="w-64 p-4">
                 <div className="space-y-2">
-                  <h4 className="font-medium leading-none text-amber-500">Live Gold (XAU/USD)</h4>
+                  <h4 className="font-medium leading-none text-amber-500">Live Gold (XAU/INR)</h4>
 
                   {loadingGold ? (
                     <div className="space-y-1">
@@ -167,7 +170,8 @@ export default function BuyerLayout() {
                     </p>
                   ) : goldPrice ? (
                     <>
-                      <p className="text-2xl font-bold">${goldPrice.price.toFixed(2)}</p>
+                      {/* Updated to show Rupees symbol since backend returns INR now */}
+                      <p className="text-2xl font-bold">₹{(goldPrice.price / 10).toLocaleString('en-IN', { maximumFractionDigits: 0 })}<span className="text-sm font-normal text-muted-foreground ml-1">/10g</span></p>
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         {goldPrice.changePercent !== undefined && (
                           <span

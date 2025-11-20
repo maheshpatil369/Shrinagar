@@ -1,6 +1,20 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowUpRight, ArrowRight, Gem, Sparkles } from 'lucide-react';
+import { ArrowUpRight, ArrowRight, Gem, Sparkles, Coins, Disc } from 'lucide-react'; // Added icons for metals
+import { fetchMetalPrice, MetalPriceData } from '@/lib/gold';
+
+// --- Asset Imports ---
+// Importing images from the assets folder as per your screenshot
+import goldImg from '../../assets/goldimg.png';
+import silverImg from '../../assets/silver.png';
+import platinumImg from '../../assets/platinum.png';
+import arVrImg from '../../assets/ar-vr.png';
+import cadImg from '../../assets/CAD.png';
+import marketImg from '../../assets/market.png';
+import manufacturerImg from '../../assets/manufactor.png';
+import distributorImg from '../../assets/distributor.png';
+import sellerImg from '../../assets/seller.png';
 
 // --- Header Component ---
 function Header() {
@@ -41,7 +55,60 @@ function Header() {
     );
 }
 
-// --- Hero Section (Increased Font Sizes) ---
+// --- Hero Section (UNCHANGED) ---
+// function HeroSection() {
+//     return (
+//         <section className="relative h-[90vh] flex flex-col items-center text-center px-4 overflow-hidden">
+//             {/* Animated Background */}
+//             <div className="absolute inset-0 bg-gradient-to-br from-[#020817] via-[#0f2342] to-[#1e1b4b] animate-gradient-xy z-0"></div>
+//             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0 mix-blend-soft-light"></div>
+
+//             {/* 1. Main Center Content (Logo + Title ONLY) */}
+//             <div className="relative z-10 flex flex-col items-center justify-center flex-grow w-full max-w-7xl mx-auto">
+                
+//                 {/* Logo + Title Row */}
+//                 <div className="flex flex-col xl:flex-row items-center justify-center gap-8 md:gap-16">
+                    
+//                     {/* Logo Circle - Increased Size */}
+//                     <div className="relative shrink-0 group cursor-pointer">
+//                         <div className="absolute inset-0 bg-brand-yellow/20 rounded-full blur-xl group-hover:blur-2xl transition-all duration-500 animate-pulse"></div>
+//                         {/* Increased circle size */}
+//                         <div className="relative w-32 h-32 md:w-48 md:h-48 rounded-full border-2 border-brand-yellow bg-[#051024] flex flex-col items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.15)]">
+//                             <Gem className="h-12 w-12 md:h-16 md:w-16 text-brand-yellow mb-2" />
+//                             {/* Increased LOGO text size */}
+//                             <span className="text-brand-yellow font-bold text-xs md:text-base tracking-[0.3em]">LOGO</span> 
+//                         </div>
+//                     </div>
+
+//                     {/* SHRINGAR AI Text - MASSIVE FONT INCREASE */}
+//                     <h1 className="text-7xl sm:text-8xl md:text-[9rem] lg:text-[11rem] xl:text-[13rem] font-thin tracking-wider text-white leading-[0.9] flex flex-col xl:block text-center xl:text-left drop-shadow-2xl">
+//                         SHRINGAR <span className="font-normal text-brand-yellow">AI</span>
+//                     </h1>
+//                 </div>
+//             </div>
+
+//             {/* 2. Bottom Content (Subtitle + Feature Links) */}
+//             <div className="relative z-10 pb-12 w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+                
+//                 {/* Subtitle - Increased Font Size */}
+//                 <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white/90 font-serif italic tracking-wide mb-10 leading-relaxed max-w-4xl">
+//                     Your one-stop platform for Jewellery.
+//                 </p>
+
+//                 {/* Feature Links - Increased Font Size */}
+//                 <div className="flex flex-wrap justify-center items-center gap-6 md:gap-16 text-lg md:text-2xl font-medium tracking-[0.25em] text-brand-yellow uppercase">
+//                     <span className="hover:text-white transition-colors cursor-default hover:scale-105 duration-300">AR TRY-ON</span>
+//                     <span className="text-white/20 text-base md:text-xl">•</span>
+//                     <span className="hover:text-white transition-colors cursor-default hover:scale-105 duration-300">DESIGN TO CAD</span>
+//                     <span className="text-white/20 text-base md:text-xl">•</span>
+//                     <span className="hover:text-white transition-colors cursor-default hover:scale-105 duration-300">MARKETPLACE</span>
+//                 </div>
+//             </div>
+
+//         </section>
+//     );
+// }
+
 function HeroSection() {
     return (
         <section className="relative h-[90vh] flex flex-col items-center text-center px-4 overflow-hidden">
@@ -90,150 +157,246 @@ function HeroSection() {
                     <span className="hover:text-white transition-colors cursor-default">MARKETPLACE</span>
                 </div>
             </div>
-
+        
         </section>
     );
 }
 
-// --- Rates Section ---
-function RatesSection() {
-    const rates = [
-        { metal: "GOLD", price: "12,540", unit: "/g", trend: "up" },
-        { metal: "SILVER", price: "10,000", unit: "/kg", trend: "down" }, 
-        { metal: "PLATINUM", price: "5,000", unit: "/g", trend: "up" },
-    ];
+// --- 2nd Screen: 6 Boxes (Rates + Features) with BACKGROUND IMAGES ---
+function GridSection() {
+    const navigate = useNavigate();
+    const [rates, setRates] = useState<{
+        gold: MetalPriceData | null;
+        silver: MetalPriceData | null;
+        platinum: MetalPriceData | null;
+    }>({ gold: null, silver: null, platinum: null });
+
+    useEffect(() => {
+        const fetchRates = async () => {
+            try {
+                const [goldData, silverData, platinumData] = await Promise.all([
+                    fetchMetalPrice('XAU'),
+                    fetchMetalPrice('XAG'),
+                    fetchMetalPrice('XPT')
+                ]);
+                setRates({ gold: goldData, silver: silverData, platinum: platinumData });
+            } catch (error) {
+                console.error("Error loading rates:", error);
+            }
+        };
+        fetchRates();
+    }, []);
+
+    const formatPrice = (data: MetalPriceData | null, unit: string, divisor: number = 1) => {
+        if (!data) return "Loading...";
+        return `Rs. ${(data.price / divisor).toLocaleString('en-IN', { maximumFractionDigits: 0 })}/${unit}`;
+    };
+
+    // Helper component for background image card
+    const GridCard = ({ 
+        image, 
+        children, 
+        onClick, 
+        borderColorClass = "hover:border-brand-yellow/50" 
+    }: { 
+        image: string, 
+        children: React.ReactNode, 
+        onClick?: () => void, 
+        borderColorClass?: string 
+    }) => (
+        <div 
+            onClick={onClick}
+            className={`group relative aspect-[4/3] bg-[#0b1e3b] border border-white/10 rounded-xl overflow-hidden cursor-pointer transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] ${borderColorClass}`}
+        >
+            {/* Background Image with Zoom Effect */}
+            <div 
+                className="absolute inset-0 z-0 transition-transform duration-700 group-hover:scale-110 opacity-60 group-hover:opacity-70"
+                style={{ 
+                    backgroundImage: `url(${image})`, 
+                    backgroundSize: 'cover', 
+                    backgroundPosition: 'center' 
+                }}
+            />
+            
+            {/* Gradient Overlay for readability */}
+            <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30 group-hover:via-black/40 transition-colors duration-300" />
+
+            {/* Content Container */}
+            <div className="relative z-10 h-full p-8 flex flex-col justify-between">
+                {children}
+            </div>
+        </div>
+    );
 
     return (
-        <section className="bg-[#051024] py-0 border-y border-white/10 relative z-20">
-            <div className="container mx-auto max-w-6xl">
-                <div className="grid grid-cols-1 md:grid-cols-3">
-                    {rates.map((rate, index) => (
-                        <div 
-                            key={rate.metal} 
-                            className={`
-                                relative p-10 text-center group overflow-hidden cursor-pointer
-                                border-b md:border-b-0 border-white/10 
-                                ${index !== rates.length - 1 ? 'md:border-r' : ''}
-                                transition-colors duration-300 hover:bg-white/5
-                            `}
-                        >
-                             <div className="absolute inset-0 bg-brand-yellow/5 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out"></div>
+        <section className="bg-[#051024] py-20 px-4 border-y border-white/10 relative">
+            <div className="container mx-auto max-w-7xl">
+                
+                {/* The 6-Box Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 
-                             <div className="relative z-10 flex justify-between items-center mb-6 opacity-70 group-hover:opacity-100 transition-opacity">
-                                <h3 className="text-sm font-medium tracking-[0.3em] text-white group-hover:text-brand-yellow transition-colors">{rate.metal}</h3>
-                                <div className={`w-2 h-2 rounded-full ${rate.trend === 'up' ? 'bg-green-500' : 'bg-red-500'} animate-pulse shadow-[0_0_8px_currentColor]`}></div>
-                             </div>
-                             
-                             <div className="relative z-10">
-                                 <p className="text-4xl font-bold text-white group-hover:scale-110 transition-transform duration-300 origin-center inline-block">
-                                    <span className="text-xl align-top text-brand-yellow mr-1">Rs.</span>
-                                    {rate.price}
-                                    <span className="text-sm text-white/40 font-normal ml-2 tracking-normal">{rate.unit}</span>
-                                 </p>
+                    {/* --- ROW 1: METAL RATES --- */}
+                    
+                    {/* 1. GOLD */}
+                    <GridCard image={goldImg} borderColorClass="hover:border-yellow-400">
+                        <div className="flex justify-between items-start">
+                            <h3 className="text-2xl font-bold tracking-[0.2em] text-white group-hover:text-yellow-400 transition-colors duration-200">GOLD</h3>
+                            <div className="p-2 rounded-full bg-yellow-500/20 border border-yellow-500/50">
+                                <div className="h-4 w-4 rounded-full bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.8)]"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div className="h-px w-full bg-white/30 mb-4 group-hover:bg-yellow-400/50 transition-colors" />
+                            <p className="text-3xl font-serif italic text-white font-semibold text-shadow-sm">
+                                {formatPrice(rates.gold, 'g', 31.1)}
+                            </p>
+                        </div>
+                    </GridCard>
+
+                    {/* 2. SILVER */}
+                    <GridCard image={silverImg} borderColorClass="hover:border-gray-300">
+                        <div className="flex justify-between items-start">
+                            <h3 className="text-2xl font-bold tracking-[0.2em] text-white group-hover:text-gray-300 transition-colors duration-200">SILVER</h3>
+                            <div className="p-2 rounded-full bg-gray-400/20 border border-gray-400/50">
+                                <div className="h-4 w-4 rounded-full bg-gray-300 shadow-[0_0_10px_rgba(209,213,219,0.8)]"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div className="h-px w-full bg-white/30 mb-4 group-hover:bg-gray-300/50 transition-colors" />
+                            <p className="text-3xl font-serif italic text-white font-semibold text-shadow-sm">
+                                {formatPrice(rates.silver, 'kg', 0.0311)}
+                            </p>
+                        </div>
+                    </GridCard>
+
+                    {/* 3. PLATINUM */}
+                    <GridCard image={platinumImg} borderColorClass="hover:border-purple-300">
+                        <div className="flex justify-between items-start">
+                            <h3 className="text-2xl font-bold tracking-[0.2em] text-white group-hover:text-purple-300 transition-colors duration-200">PLATINUM</h3>
+                            <div className="p-2 rounded-full bg-purple-400/20 border border-purple-400/50">
+                                <div className="h-4 w-4 rounded-full bg-purple-300 shadow-[0_0_10px_rgba(216,180,254,0.8)]"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div className="h-px w-full bg-white/30 mb-4 group-hover:bg-purple-300/50 transition-colors" />
+                            <p className="text-3xl font-serif italic text-white font-semibold text-shadow-sm">
+                                {formatPrice(rates.platinum, 'g', 31.1)}
+                            </p>
+                        </div>
+                    </GridCard>
+
+                    {/* --- ROW 2: FEATURES --- */}
+
+                    {/* 4. VIRTUAL TRY-ON */}
+                    <GridCard 
+                        image={arVrImg} 
+                        onClick={() => console.log("Navigate to Try-On")}
+                        borderColorClass="hover:border-[#00d2ff]"
+                    >
+                        <div className="flex-grow flex items-center justify-center">
+                            <h2 className="text-3xl font-bold tracking-widest text-white text-center leading-tight group-hover:text-[#00d2ff] transition-colors duration-200 drop-shadow-lg">
+                                VIRTUAL<br/>TRY - ON
+                            </h2>
+                        </div>
+                        <div className="flex justify-end">
+                             <div className="p-3 rounded-full border border-white/30 bg-black/20 group-hover:bg-[#00d2ff] group-hover:border-[#00d2ff] transition-all duration-300">
+                                <ArrowUpRight className="h-6 w-6 text-white group-hover:text-black transition-colors duration-200" />
                              </div>
                         </div>
-                    ))}
+                    </GridCard>
+
+                    {/* 5. DESIGN TO CAD */}
+                    <GridCard 
+                        image={cadImg} 
+                        onClick={() => console.log("Navigate to Design to CAD")}
+                        borderColorClass="hover:border-[#9D50BB]"
+                    >
+                        <div className="flex-grow flex items-center justify-center">
+                            <h2 className="text-3xl font-bold tracking-widest text-white text-center leading-tight group-hover:text-[#9D50BB] transition-colors duration-200 drop-shadow-lg">
+                                DESIGN TO<br/>CAD
+                            </h2>
+                        </div>
+                        <div className="flex justify-end">
+                             <div className="p-3 rounded-full border border-white/30 bg-black/20 group-hover:bg-[#9D50BB] group-hover:border-[#9D50BB] transition-all duration-300">
+                                <ArrowUpRight className="h-6 w-6 text-white transition-colors duration-200" />
+                             </div>
+                        </div>
+                    </GridCard>
+
+                    {/* 6. MARKET PLACE */}
+                    <GridCard 
+                        image={marketImg} 
+                        onClick={() => navigate('/buyer')}
+                        borderColorClass="hover:border-brand-yellow"
+                    >
+                        <div className="flex-grow flex items-center justify-center">
+                            <h2 className="text-3xl font-bold tracking-widest text-white text-center leading-tight group-hover:text-brand-yellow transition-colors duration-200 drop-shadow-lg">
+                                MARKET PLACE
+                            </h2>
+                        </div>
+                        <div className="flex justify-end">
+                             <div className="p-3 rounded-full border border-white/30 bg-black/20 group-hover:bg-brand-yellow group-hover:border-brand-yellow transition-all duration-300">
+                                <ArrowUpRight className="h-6 w-6 text-white group-hover:text-black transition-colors duration-200" />
+                             </div>
+                        </div>
+                    </GridCard>
+
                 </div>
             </div>
         </section>
     );
 }
 
-// --- Features Section (Big Cards) ---
-function FeaturesSection() {
-    const navigate = useNavigate();
-
-    const features = [
-        { 
-            title: "VIRTUAL\nTRY - ON", 
-            action: () => console.log("Navigate to Try-On"),
-            gradient: "from-[#00d2ff] via-[#3a7bd5] to-[#00d2ff]" 
-        },
-        { 
-            title: "DESIGN TO\nCAD", 
-            action: () => console.log("Navigate to Design to CAD"),
-            gradient: "from-[#9D50BB] via-[#6E48AA] to-[#9D50BB]"
-        },
-        { 
-            title: "MARKET PLACE", 
-            action: () => navigate('/buyer'),
-            gradient: "from-[#FFD700] via-[#FDB931] to-[#FFD700]"
-        },
-    ];
-
-    return (
-        <section className="bg-[#051024] py-32 px-4 relative overflow-hidden">
-             <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-900/20 rounded-full blur-[128px] pointer-events-none"></div>
-             <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-yellow-600/10 rounded-full blur-[128px] pointer-events-none"></div>
-
-            <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl relative z-10">
-                {features.map((feature, idx) => (
-                    <div 
-                        key={feature.title} 
-                        onClick={feature.action}
-                        className="group relative h-[400px] md:h-[500px] w-full rounded-xl overflow-hidden cursor-pointer"
-                    >
-                        {/* Animated Rotating Border */}
-                        <div className={`absolute inset-[-50%] bg-gradient-to-r ${feature.gradient} opacity-0 group-hover:opacity-100 animate-[spin_4s_linear_infinite] transition-opacity duration-500`}></div>
-                        
-                        {/* Card Content */}
-                        <div className="absolute inset-[2px] bg-[#0a192f] rounded-xl flex flex-col justify-between p-10 z-10 border border-white/10 group-hover:border-transparent transition-colors">
-                            
-                            {/* Inner Glow */}
-                            <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500 rounded-xl`}></div>
-                            
-                            {/* Title */}
-                            <div className="relative z-20 flex-grow flex items-center justify-center">
-                                <h2 className="text-3xl md:text-5xl font-extralight tracking-widest text-white text-center whitespace-pre-line leading-tight group-hover:text-brand-yellow transition-colors duration-500 drop-shadow-lg">
-                                    {feature.title}
-                                </h2>
-                            </div>
-                            
-                            {/* Bottom Corner Arrow */}
-                            <div className="relative z-20 flex justify-end pt-6">
-                                <div className="p-3 rounded-full border border-white/20 group-hover:bg-white/10 group-hover:border-brand-yellow transition-all duration-300">
-                                    <ArrowUpRight className="h-6 w-6 text-white group-hover:text-brand-yellow transition-colors duration-300" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </section>
-    );
-}
-
-// --- Contact Section ---
+// --- Contact Section with FIXED ANIMATION & VISIBILITY ---
 function ContactSection() {
     const cards = [
-        { text: "ARE YOU A\nMANUFACTURER?", link: "/auth" },
-        { text: "ARE YOU A\nDISTRIBUTOR?", link: "/auth" },
-        { text: "ARE YOU A\nSELLER?", link: "/auth" }
+        { text: "ARE YOU A\nMANUFACTURER?", link: "/auth", image: manufacturerImg },
+        { text: "ARE YOU A\nDISTRIBUTOR?", link: "/auth", image: distributorImg },
+        { text: "ARE YOU A\nSELLER?", link: "/auth", image: sellerImg }
     ];
     const navigate = useNavigate();
 
     return (
-        <section id="contact" className="bg-[#020817] py-32 px-4 border-t border-white/5 relative">
+        <section id="contact" className="bg-[#020817] py-16 px-4 border-t border-white/5 relative">
             <div className="container mx-auto max-w-6xl text-center">
-                <h2 className="text-5xl md:text-7xl font-thin tracking-[0.1em] text-white mb-24">
+                <h2 className="text-4xl md:text-6xl font-thin tracking-[0.1em] text-white mb-12 drop-shadow-2xl">
                     CONTACT <span className="text-brand-yellow font-normal">US</span>
                 </h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24">
+                {/* Updated aspect ratio for shorter, rectangular cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
                     {cards.map((item, idx) => (
                         <div 
                             key={idx} 
                             onClick={() => navigate(item.link)}
-                            className="group relative rounded-xl overflow-hidden cursor-pointer min-h-[280px]"
+                            // Changed from aspect-[4/5] to aspect-[4/3] to make it shorter (rectangle)
+                            className="group relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer transition-transform duration-300 hover:-translate-y-2"
                         >
-                            <div className="absolute inset-[-100%] bg-[conic-gradient(from_90deg_at_50%_50%,#020817_50%,#FFD700_100%)] animate-[spin_4s_linear_infinite] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <div className="absolute inset-[1px] bg-[#051024] rounded-xl p-12 flex flex-col items-center justify-center gap-8 hover:bg-[#0a192f] transition-colors duration-300 border border-white/10 group-hover:border-transparent">
-                                <p className="text-white font-light tracking-wide text-xl whitespace-pre-line leading-relaxed group-hover:text-brand-yellow transition-colors duration-300">
-                                    {item.text}
-                                </p>
+                            {/* 1. Rotating Gradient Border Layer - ALWAYS VISIBLE & ANIMATING */}
+                            <div className="absolute -inset-[150%] bg-gradient-to-r from-transparent via-brand-yellow/80 to-transparent animate-[spin_3s_linear_infinite] z-0 opacity-100"></div>
+                            
+                            {/* 2. Inner Content Container */}
+                            <div className="absolute inset-[3px] bg-[#051024] rounded-2xl overflow-hidden z-10">
                                 
-                                <div className="opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 flex items-center gap-2 text-brand-yellow font-bold tracking-widest text-sm">
-                                    JOIN NOW <ArrowRight className="h-4 w-4" />
+                                {/* Background Image - Always Visible */}
+                                <img 
+                                    src={item.image}
+                                    alt={item.text}
+                                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-70 group-hover:opacity-100 z-0"
+                                />
+                                
+                                {/* Dark Overlay */}
+                                <div className="absolute inset-0 z-10 bg-black/60 group-hover:bg-black/40 transition-colors duration-300" />
+
+                                {/* Content */}
+                                <div className="relative z-20 h-full p-6 flex flex-col items-center justify-center gap-4 text-center">
+                                    <p className="text-white font-bold tracking-widest text-2xl md:text-3xl whitespace-pre-line leading-tight group-hover:text-brand-yellow transition-colors duration-300 drop-shadow-lg">
+                                        {item.text}
+                                    </p>
+                                    
+                                    <div className="transition-all duration-500 ease-out flex items-center gap-3 text-black bg-brand-yellow font-bold tracking-widest text-sm px-6 py-2 rounded-full shadow-[0_0_25px_rgba(255,215,0,0.6)] group-hover:scale-110">
+                                        JOIN NOW <ArrowRight className="h-4 w-4" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -244,9 +407,10 @@ function ContactSection() {
                     <Button 
                         variant="outline" 
                         className="
-                            h-auto py-6 px-12 rounded-full bg-transparent text-white border-white/30 
+                            h-auto py-4 px-12 rounded-full bg-transparent text-white border-white/30 
                             hover:bg-brand-yellow hover:text-brand-navy hover:border-brand-yellow 
                             text-lg tracking-[0.2em] transition-all duration-300 hover:scale-105
+                            shadow-[0_0_15px_rgba(255,255,255,0.1)]
                         "
                         onClick={() => window.location.href = 'mailto:contact@shringar.com'}
                     >
@@ -255,9 +419,10 @@ function ContactSection() {
                     <Button 
                         variant="outline" 
                         className="
-                            h-auto py-6 px-12 rounded-full bg-transparent text-white border-white/30 
+                            h-auto py-4 px-12 rounded-full bg-transparent text-white border-white/30 
                             hover:bg-[#25D366] hover:text-white hover:border-[#25D366] 
                             text-lg tracking-[0.2em] transition-all duration-300 hover:scale-105
+                            shadow-[0_0_15px_rgba(255,255,255,0.1)]
                         "
                         onClick={() => window.open('https://wa.me/', '_blank')}
                     >
@@ -272,12 +437,17 @@ function ContactSection() {
 // --- Footer ---
 function Footer() {
     return (
-        <footer className="bg-[#020817] py-12 text-center border-t border-white/5">
-            <div className="flex justify-center items-center gap-2 mb-4 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-                 <Gem className="h-5 w-5 text-brand-yellow" />
-                 <span className="text-brand-yellow font-bold tracking-widest">SHRINGAR AI</span>
+        <footer className="bg-[#020817] py-8 text-center border-t border-white/5">
+            <div className="flex flex-row justify-center items-center gap-4">
+                 <div className="flex items-center gap-2 opacity-50 hover:opacity-100 transition-opacity duration-300">
+                    <Gem className="h-4 w-4 text-brand-yellow" />
+                    <span className="text-brand-yellow font-bold tracking-widest text-sm">SHRINGAR AI</span>
+                 </div>
+                 <span className="text-white/20 text-sm hidden sm:inline">|</span>
+                 <p className="text-white/30 text-[10px] sm:text-xs tracking-widest uppercase mt-0">
+                    © {new Date().getFullYear()} Shringar AI. All Rights Reserved.
+                 </p>
             </div>
-            <p className="text-white/30 text-xs tracking-widest uppercase">© {new Date().getFullYear()} Shringar AI. All Rights Reserved.</p>
         </footer>
     );
 }
@@ -288,8 +458,7 @@ export default function Landing() {
             <Header />
             <main>
                 <HeroSection />
-                <RatesSection />
-                <FeaturesSection />
+                <GridSection /> 
                 <ContactSection />
             </main>
             <Footer />
