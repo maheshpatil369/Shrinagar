@@ -95,41 +95,131 @@ function ProductCard({ product, onAddToWishlist, currentUser, layout }: ProductC
     }
 
     // --- Grid View Card (Updated Style) ---
-    return (
-        <Card className="overflow-hidden group cursor-pointer h-full flex flex-col" onClick={handleCardClick}>
-            <CardHeader className="p-0 relative aspect-square">
-                <Badge className="absolute top-2 left-2 z-10 bg-green-600 hover:bg-green-600 text-white shadow">Best Seller</Badge>
-                {product.images && product.images.length > 0 ? (
-                    <img
-                        src={getImageUrl(product.images[0])}
-                        alt={product.name}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        onError={handleImageError} 
-                    />
-                ) : (
-                    <div className="w-full h-full bg-muted flex items-center justify-center text-sm text-muted-foreground">No Image</div>
-                )}
-                <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                    {currentUser && (
-                        <Button variant="outline" size="icon" className="h-8 w-8 bg-background/80 hover:bg-background rounded-full shadow" onClick={(e) => onAddToWishlist(e, product)}>
-                            <Heart className="h-4 w-4" />
-                        </Button>
-                    )}
-                </div>
-            </CardHeader>
-            <CardContent className="p-4 flex-grow flex flex-col">
-                <CardTitle className="text-base font-medium leading-tight mb-1 line-clamp-2">{product.name}</CardTitle>
-                <Rating value={product.rating} text={`(${product.numReviews})`} className="mt-1" />
-                <p className="text-lg font-bold text-primary mt-2">₹{product.price.toFixed(2)}</p>
-            </CardContent>
-            <CardFooter className="p-3 pt-0">
-                <Button variant="default" size="sm" className="w-full" onClick={handleAffiliateClick}>
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Visit Seller
-                </Button>
-            </CardFooter>
-        </Card>
-    );
+   return (
+  <Card
+    className="
+      group cursor-pointer h-full flex flex-col 
+      bg-[#071324] border border-white/10 rounded-xl 
+      hover:border-yellow-400/40 hover:shadow-[0_0_20px_rgba(255,215,0,0.25)]
+      transition-all duration-300 overflow-hidden
+    "
+    onClick={handleCardClick}
+  >
+
+    {/* IMAGE SECTION */}
+    <CardHeader className="p-0 relative aspect-square overflow-hidden">
+
+      {/* BEST SELLER BADGE */}
+      <Badge className="
+          absolute top-3 left-3 z-10 
+          bg-green-600 text-white px-3 py-1 rounded-full text-[10px] font-semibold
+          shadow-md
+      ">
+        Best Seller
+      </Badge>
+
+      {/* IMAGE */}
+      {product.images && product.images.length > 0 ? (
+        <img
+          src={getImageUrl(product.images[0])}
+          alt={product.name}
+          onError={handleImageError}
+          className="
+            w-full h-full object-cover 
+            transition-transform duration-500 
+            group-hover:scale-110
+          "
+        />
+      ) : (
+        <div className="
+          w-full h-full bg-[#0e1b33] 
+          flex items-center justify-center 
+          text-sm text-white/40
+        ">
+          No Image
+        </div>
+      )}
+
+      {/* WISHLIST BUTTON */}
+      <div className="
+        absolute top-3 right-3 opacity-0 group-hover:opacity-100 
+        transition-all duration-300 z-20
+      ">
+        {currentUser && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => onAddToWishlist(e, product)}
+            className="
+              h-8 w-8 rounded-full 
+              bg-black/40 backdrop-blur-sm border border-white/20 
+              hover:bg-yellow-400 hover:text-black
+              transition-all duration-300
+            "
+          >
+            <Heart className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+    </CardHeader>
+
+    {/* CONTENT */}
+    <CardContent className="p-4 flex flex-col flex-grow text-white">
+      <CardTitle className="
+        text-base font-medium leading-tight mb-1 line-clamp-2 
+        group-hover:text-yellow-300 transition-colors
+      ">
+        {product.name}
+      </CardTitle>
+
+      <Rating value={product.rating} text={`(${product.numReviews})`} className="mt-1" />
+
+      <p className="text-xl font-semibold text-yellow-400 mt-3">
+        ₹{product.price.toFixed(2)}
+      </p>
+    </CardContent>
+
+    {/* FOOTER */}
+<CardFooter className="p-4 pt-0 flex gap-3">
+
+  {/* VISIT SELLER */}
+  <Button
+    size="sm"
+    className="
+      flex-1 bg-yellow-400 text-black font-semibold
+      hover:bg-white hover:text-black
+      rounded-full transition-all duration-300 shadow-md
+    "
+    onClick={handleAffiliateClick}
+  >
+    <ExternalLink className="h-4 w-4 mr-2" />
+    Visit Seller
+  </Button>
+
+  {/* AR-VR */}
+  <Button
+    size="sm"
+    className="
+      flex-1 bg-[#0e1b33] border border-yellow-400 text-yellow-300
+      hover:bg-yellow-400 hover:text-black
+      rounded-full transition-all duration-300 shadow-md
+    "
+    onClick={(e) => {
+      e.stopPropagation();
+      console.log("Go to AR-VR Try On");
+    }}
+  >
+    <ExternalLink className="h-4 w-4 mr-2" />
+    AR-VR
+  </Button>
+
+</CardFooter>
+
+
+
+  </Card>
+);
+
 }
 
 // --- FilterSidebar Component (Includes Category, Seller ID, Material) ---
@@ -458,116 +548,162 @@ export default function BuyerDashboard() {
     uniqueMaterials: allMaterials,
   }), [filters, handleFilterChange, handlePriceChange, allMaterials]);
 
-  return (
-    <div className="container mx-auto max-w-screen-2xl p-4 md:px-8">
+ return (
+  <div className="min-h-screen w-full bg-[#020817] text-white px-4 md:px-10 py-6">
 
-      <main className="w-full">
-        <div className="flex flex-wrap items-center justify-between mb-6 border-b pb-4 gap-4">
-          
-          {/* UPDATED: Changed name to "Jwelart Shop" and removed red styling */}
-          <h1 className="text-2xl font-bold flex items-center gap-3 text-gray-800">
-              {/* <Gem className="h-6 w-6 text-current" /> */}
-              Jwelary Shop
-          </h1>
+    {/* HEADER ROW */}
+    <div className="flex flex-wrap items-center justify-between mb-10 pb-6 border-b border-white/10">
 
-          <div className="flex items-center gap-2">
-            
-            {/* Filter Button */}
-            <Sheet open={isMobileFilterOpen} onOpenChange={setIsMobileFilterOpen}>
-                <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 font-semibold">
-                        <SlidersHorizontal className="h-4 w-4 mr-2" />
-                        Filters
-                    </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] sm:max-w-xs overflow-y-auto pt-10">
-                    <SheetHeader>
-                        <SheetTitle className="text-2xl">Product Filters</SheetTitle>
-                    </SheetHeader>
-                    {/* FilterSidebar rendered inside the mobile drawer (overlaps content) */}
-                    <FilterSidebar {...filterProps} />
-                    <SheetClose asChild>
-                         <Button className="w-full mt-4" onClick={() => setIsMobileFilterOpen(false)}>Apply & Close</Button>
-                    </SheetClose>
-                </SheetContent>
-            </Sheet>
+      <h1 className="text-3xl md:text-4xl font-light tracking-[0.15em] text-white flex items-center gap-3">
+        <Gem className="h-6 w-6 text-brand-yellow" />
+        JEWELLERY SHOP
+      </h1>
 
-            {/* Sorting and Layout Controls (Always visible) */}
-            <Select value={sortOption} onValueChange={handleSortChange}>
-              <SelectTrigger className="w-[160px] text-xs h-9">
-                <SelectValue placeholder="Default Sorting" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="default">Default Sorting</SelectItem>
-                <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                <SelectItem value="name-asc">Name: A to Z</SelectItem>
-                <SelectItem value="name-desc">Name: Z to A</SelectItem>
-              </SelectContent>
-            </Select>
+      <div className="flex items-center gap-3">
 
-            <Button variant={layout === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-9 w-9" onClick={() => setLayout('grid')}>
-              <LayoutGrid className="h-4 w-4" />
+        {/* FILTER BUTTON */}
+        <Sheet open={isMobileFilterOpen} onOpenChange={setIsMobileFilterOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-10 bg-white/5 text-white border-white/20 hover:bg-white/10"
+            >
+              <SlidersHorizontal className="h-4 w-4 mr-2" />
+              Filters
             </Button>
-            <Button variant={layout === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-9 w-9" onClick={() => setLayout('list')}>
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+          </SheetTrigger>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Permanent Sidebar is now hidden on ALL screens */}
-            <aside className="hidden min-w-[250px]"> 
-                <FilterSidebar {...filterProps} />
-            </aside>
+          <SheetContent
+            side="left"
+            className="w-[300px] sm:max-w-xs bg-[#051024] text-white border-r border-white/10"
+          >
+            <SheetHeader>
+              <SheetTitle className="text-2xl font-semibold text-brand-yellow">
+                Product Filters
+              </SheetTitle>
+            </SheetHeader>
 
-            {/* Main Product Area now takes full width on large screens */}
-            <div className="lg:col-span-12">
-                {isLoading ? (
-                  <div className={`grid gap-6 ${layout === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'space-y-4'}`}>
-                    {[...Array(layout === 'grid' ? 12 : 6)].map((_, i) => (
-                      <Skeleton key={i} className={`rounded-lg ${layout === 'grid' ? 'h-96 w-full' : 'h-32 w-full'}`} />
-                    ))}
-                  </div>
-                ) : error ? (
-                  <div className="text-center py-20 border rounded-lg">
-                    <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold">Error</h2>
-                    <p className="text-muted-foreground mt-2">{error}</p>
-                  </div>
-                ) : sortedProducts.length === 0 ? (
-                  <div className="text-center py-20 border rounded-lg">
-                    <h2 className="text-xl font-semibold">No Jewelry Found</h2>
-                    <p className="text-muted-foreground mt-2">Try adjusting your filters.</p>
-                  </div>
-                ) : layout === 'grid' ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
-                    {sortedProducts.map((product) => (
-                      <ProductCard
-                        key={product._id}
-                        product={product}
-                        onAddToWishlist={handleAddToWishlist}
-                        currentUser={currentUser}
-                        layout="grid"
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {sortedProducts.map((product) => (
-                      <ProductCard
-                        key={product._id}
-                        product={product}
-                        onAddToWishlist={handleAddToWishlist}
-                        currentUser={currentUser}
-                        layout="list"
-                      />
-                    ))}
-                  </div>
-                )}
-            </div>
-        </div>
-      </main>
+            <FilterSidebar {...filterProps} />
+
+            <SheetClose asChild>
+              <Button className="w-full mt-4 bg-brand-yellow text-black hover:bg-yellow-400">
+                Apply & Close
+              </Button>
+            </SheetClose>
+          </SheetContent>
+        </Sheet>
+
+        {/* SORTING */}
+        <Select value={sortOption} onValueChange={handleSortChange}>
+          <SelectTrigger className="w-[160px] h-10 bg-white/5 border-white/20 text-white">
+            <SelectValue placeholder="Default Sorting" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#051024] text-white border-white/10">
+            <SelectItem value="default">Default Sorting</SelectItem>
+            <SelectItem value="price-asc">Price: Low to High</SelectItem>
+            <SelectItem value="price-desc">Price: High to Low</SelectItem>
+            <SelectItem value="name-asc">Name: A → Z</SelectItem>
+            <SelectItem value="name-desc">Name: Z → A</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* LAYOUT SWITCH */}
+        <Button
+          variant={layout === "grid" ? "secondary" : "ghost"}
+          size="icon"
+          className={`h-10 w-10 rounded-lg ${layout === "grid"
+            ? "bg-brand-yellow text-black"
+            : "text-white hover:bg-white/10"
+            }`}
+          onClick={() => setLayout("grid")}
+        >
+          <LayoutGrid className="h-4 w-4" />
+        </Button>
+
+        <Button
+          variant={layout === "list" ? "secondary" : "ghost"}
+          size="icon"
+          className={`h-10 w-10 rounded-lg ${layout === "list"
+            ? "bg-brand-yellow text-black"
+            : "text-white hover:bg-white/10"
+            }`}
+          onClick={() => setLayout("list")}
+        >
+          <List className="h-4 w-4" />
+        </Button>
+
+      </div>
     </div>
-  );
+
+    {/* MAIN CONTENT */}
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+
+      {/* SIDEBAR HIDDEN - MOBILE ONLY */}
+      <aside className="hidden">
+        <FilterSidebar {...filterProps} />
+      </aside>
+
+      {/* PRODUCTS SECTION */}
+      <div className="lg:col-span-12">
+
+        {/* Loading State */}
+        {isLoading ? (
+          <div className={`grid gap-10 ${layout === "grid"
+            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            : "space-y-4"
+            }`}
+          >
+            {[...Array(layout === "grid" ? 8 : 6)].map((_, i) => (
+              <Skeleton
+                key={i}
+                className={`rounded-xl bg-white/10 ${layout === "grid"
+                  ? "h-80"
+                  : "h-28"
+                  }`}
+              />
+            ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-20 border border-white/10 rounded-xl bg-[#071324]">
+            <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-3" />
+            <h2 className="text-xl font-semibold">Error Loading Products</h2>
+            <p className="text-white/60 mt-2">{error}</p>
+          </div>
+        ) : sortedProducts.length === 0 ? (
+          <div className="text-center py-20 border border-white/10 rounded-xl bg-[#071324]">
+            <h2 className="text-xl font-semibold">No Jewelry Found</h2>
+            <p className="text-white/60 mt-2">Try adjusting your filters.</p>
+          </div>
+        ) : layout === "grid" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-10">
+            {sortedProducts.map((product) => (
+              <ProductCard
+                key={product._id}
+                product={product}
+                onAddToWishlist={handleAddToWishlist}
+                currentUser={currentUser}
+                layout="grid"
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {sortedProducts.map((product) => (
+              <ProductCard
+                key={product._id}
+                product={product}
+                onAddToWishlist={handleAddToWishlist}
+                currentUser={currentUser}
+                layout="list"
+              />
+            ))}
+          </div>
+        )}
+
+      </div>
+    </div>
+  </div>
+);
+
 }

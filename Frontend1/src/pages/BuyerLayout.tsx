@@ -1,4 +1,3 @@
-// Frontend1/src/pages/BuyerLayout.tsx
 import { useEffect, useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -16,7 +15,7 @@ import {
   RefreshCw, 
   LayoutDashboard, 
   Search,
-  Heart        // ⭐ CART ICON ADDED
+  Heart        // ⭐ CART/WISHLIST ICON
 } from 'lucide-react';
 
 import {
@@ -28,7 +27,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 import {
@@ -59,8 +57,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 export default function BuyerLayout() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
-  const navigate = useNavigate();
+  
+  // --- NEW STATE FOR LOGOUT DIALOG (Kept this logic as it is more robust than nesting dialogs in dropdowns) ---
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
+  const navigate = useNavigate();
   const { setAuthModalOpen, setPostLoginRedirect } = useAuthModal();
 
   // --- UPDATED STATE TYPE ---
@@ -116,183 +117,194 @@ export default function BuyerLayout() {
 
   if (isLoadingUser) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <LoaderCircle className="h-12 w-12 animate-spin text-primary" />
+      <div className="flex h-screen items-center justify-center bg-[#020817]">
+        <LoaderCircle className="h-12 w-12 animate-spin text-yellow-400" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 w-full border-b bg-background">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 md:px-8">
+    // Applied Dark Theme Background
+    <div className="min-h-screen bg-[#020817] text-white">
+      
+      {/* MOVED ALERT DIALOG OUTSIDE HEADER AND DROPDOWN (LOGIC) BUT STYLED WITH DARK THEME (UI) */}
+      <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+        <AlertDialogContent className="bg-[#051024] border border-white/10 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/60">
+              You will be returned to the landing page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-white/10 hover:bg-white/20 border-none text-white">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700">Confirm Logout</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* HEADER - Applied backdrop blur and dark background */}
+      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#020817]/80 backdrop-blur-xl shadow-lg">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 md:px-10">
 
           {/* LOGO */}
           <Link to="/buyer" className="flex items-center gap-2 shrink-0">
-            <Gem className="h-6 w-6 text-primary" />
-            <span className="font-bold text-xl">SHRINGAR</span>
+            <Gem className="h-6 w-6 text-yellow-400 drop-shadow" />
+            <span className="font-semibold tracking-wider text-lg text-white">SHRINGAR</span>
           </Link>
 
-          {/* Search Bar */}
-          <div className="flex-1 max-w-lg mx-4 hidden md:block">
+          {/* SEARCH BAR - Applied dark glassmorphism styles */}
+          <div className="flex-1 max-w-lg mx-6 hidden md:block">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 h-4 w-4" />
               <Input
                 type="text"
-                placeholder="Search for jewelry, sellers, or categories..."
-                className="pl-10 h-9 w-full rounded-full"
+                placeholder="Search jewelry, sellers, categories..."
+                className="pl-11 h-10 w-full rounded-full bg-white/10 border-white/20 text-white placeholder-white/50 focus-visible:ring-yellow-400"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          <div className="flex items-center gap-4">
 
-            {/* GOLD PRICE */}
+            {/* GOLD PRICE BUTTON */}
             <Popover onOpenChange={(open) => open && !goldPrice && loadGoldPrice()}>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-amber-500">
-                  <TrendingUp className="h-4 w-4 mr-1 sm:mr-2" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-yellow-400 hover:bg-white/10 rounded-full px-3"
+                >
+                  <TrendingUp className="h-4 w-4 mr-1" />
                   <span className="hidden sm:inline">Gold Price</span>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-64 p-4">
+
+              <PopoverContent className="w-72 p-4 bg-[#071324] text-white border border-white/10 rounded-xl shadow-lg">
                 <div className="space-y-2">
-                  <h4 className="font-medium leading-none text-amber-500">Live Gold (XAU/INR)</h4>
+                  <h4 className="font-medium text-yellow-400 leading-none">Live Gold (XAU/INR)</h4>
 
                   {loadingGold ? (
                     <div className="space-y-1">
-                      <Skeleton className="h-6 w-24" />
-                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-6 w-24 bg-white/10" />
+                      <Skeleton className="h-4 w-full bg-white/10" />
                     </div>
                   ) : goldError ? (
-                    <p className="text-sm text-red-500 flex items-center gap-1">
+                    <p className="text-sm text-red-500 flex items-center gap-2">
                       <AlertCircle className="h-4 w-4" /> {goldError}
                     </p>
                   ) : goldPrice ? (
                     <>
-                      {/* Updated to show Rupees symbol since backend returns INR now */}
-                      <p className="text-2xl font-bold">₹{(goldPrice.price / 10).toLocaleString('en-IN', { maximumFractionDigits: 0 })}<span className="text-sm font-normal text-muted-foreground ml-1">/10g</span></p>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        {goldPrice.changePercent !== undefined && (
-                          <span
-                            className={`font-medium ${
-                              goldPrice.changePercent >= 0 ? "text-green-500" : "text-red-500"
-                            }`}
-                          >
-                            {goldPrice.changePercent >= 0 ? "+" : ""}
-                            {goldPrice.changePercent.toFixed(2)}%
-                          </span>
-                        )}
+                      <p className="text-3xl font-semibold text-white">
+                        ₹{(goldPrice.price / 10).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                        <span className="text-sm font-normal text-white/60 ml-1">/10g</span>
+                      </p>
+
+                      <div className="flex items-center justify-between text-xs text-white/50">
+                        <span
+                          className={
+                            goldPrice.changePercent >= 0
+                              ? "text-green-500"
+                              : "text-red-500"
+                          }
+                        >
+                          {goldPrice.changePercent >= 0 ? "+" : ""}
+                          {goldPrice.changePercent.toFixed(2)}%
+                        </span>
+
                         <span>{formatPriceTimestamp(goldPrice.timestamp)}</span>
-                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={loadGoldPrice}>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 hover:bg-white/10 text-white"
+                          onClick={loadGoldPrice}
+                        >
                           <RefreshCw className="h-3 w-3" />
                         </Button>
                       </div>
                     </>
                   ) : (
-                    <p className="text-sm text-muted-foreground">Price unavailable</p>
+                    <p className="text-sm text-white/60">Price unavailable</p>
                   )}
                 </div>
               </PopoverContent>
             </Popover>
 
-            {/* ⭐ CART ICON → REDIRECT TO PROFILE / WISHLIST */}
+            {/* WISHLIST ICON */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate("/profile")}
-              className="relative hover:bg-gray-100"
+              className="hover:bg-white/10 rounded-full text-white"
             >
-              <Heart className="h-5 w-5 text-black" />
+              <Heart className="h-5 w-5" />
             </Button>
 
             {/* USER DROPDOWN */}
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
+                  <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-white/10">
                     <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-white text-gray-800 font-bold text-xl shadow-md ring-2 ring-primary/50">
+                      <AvatarFallback className="bg-yellow-400 text-black font-bold shadow ring-2 ring-yellow-300">
                         {user.name ? user.name[0].toUpperCase() : "U"}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent className="w-64" align="end">
-                  <DropdownMenuLabel className="font-normal pt-2 pb-1">
-                    <div className="flex flex-col space-y-1">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-sm font-medium min-w-[70px]">Name:</span>
-                        <p className="text-base font-semibold truncate">{user.name}</p>
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-sm font-medium min-w-[70px]">Email:</span>
-                        <p className="text-sm truncate">{user.email}</p>
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-sm font-medium min-w-[70px]">Role:</span>
-                        <p className="text-sm capitalize font-medium">{user.role}</p>
-                      </div>
+                <DropdownMenuContent className="w-72 bg-[#071324] text-white border border-white/10 shadow-xl" align="end">
+                  <DropdownMenuLabel className="font-normal pt-2 pb-2">
+                    <div className="flex flex-col space-y-1 text-white">
+                      <p className="text-lg font-semibold">{user.name}</p>
+                      <p className="text-sm text-white/60">{user.email}</p>
+                      <p className="text-xs capitalize text-yellow-400">{user.role}</p>
                     </div>
                   </DropdownMenuLabel>
 
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator className="bg-white/10" />
 
                   <DropdownMenuGroup>
                     <Link to="/profile">
-                      <DropdownMenuItem className="cursor-pointer text-base">
+                      <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10 text-white">
                         <UserIcon className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
+                        Profile
                       </DropdownMenuItem>
                     </Link>
 
                     {(user.role === "seller" || user.role === "admin") && (
                       <Link to={`/${user.role}`}>
-                        <DropdownMenuItem className="cursor-pointer text-base">
+                        <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10 text-white">
                           <LayoutDashboard className="mr-2 h-4 w-4" />
-                          <span>
-                            {user.role === "seller" ? "Seller Dashboard" : "Admin Dashboard"}
-                          </span>
+                          {user.role === "seller" ? "Seller Dashboard" : "Admin Dashboard"}
                         </DropdownMenuItem>
                       </Link>
                     )}
 
                     {user.role !== "admin" && (
-                      <Link to="/buyer">
-                        <DropdownMenuItem className="cursor-pointer text-base">
-                          <Gem className="mr-2 h-4 w-4" />
-                          <span>Browse Jewelry</span>
-                        </DropdownMenuItem>
-                      </Link>
+                        <Link to="/buyer">
+                            <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10 text-white">
+                            <Gem className="mr-2 h-4 w-4" />
+                            Browse Jewelry
+                            </DropdownMenuItem>
+                        </Link>
                     )}
                   </DropdownMenuGroup>
 
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator className="bg-white/10" />
 
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem
-                        onSelect={(e) => e.preventDefault()}
-                        className="cursor-pointer font-semibold bg-destructive text-destructive-foreground justify-center rounded-md"
-                      >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Log out</span>
-                      </DropdownMenuItem>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          You will be returned to the landing page.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleLogout}>Confirm Logout</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  {/* Logout Trigger - Uses state to open the Dialog defined above */}
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setIsLogoutDialogOpen(true);
+                    }}
+                    className="cursor-pointer bg-red-600 hover:bg-red-700 focus:bg-red-700 text-white font-semibold justify-center rounded-md mt-2"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log Out
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
@@ -300,17 +312,17 @@ export default function BuyerLayout() {
                 onClick={handleLoginClick}
                 variant="outline"
                 size="sm"
-                className="flex text-black border-input hover:bg-gray-100"
+                className="text-white border-white/20 hover:bg-white/10 rounded-full px-4 bg-transparent"
               >
-                <UserIcon className="h-4 w-4 sm:mr-2 text-black" />
-                <span className="hidden sm:inline">Login / Sign Up</span>
+                <UserIcon className="h-4 w-4 mr-2" />
+                Login / Sign Up
               </Button>
             )}
           </div>
         </div>
       </header>
 
-      <main>
+      <main className="pt-4 pb-10">
         <Outlet />
       </main>
     </div>
