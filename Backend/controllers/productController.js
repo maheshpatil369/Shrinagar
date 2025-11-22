@@ -8,7 +8,8 @@ const { getClientIp } = require('../utils/ipHelper.js'); // For accurate view tr
 // @route   GET /api/products
 // @access  Public
 const getProducts = asyncHandler(async (req, res) => {
-  const { keyword, category, brand, material, minPrice, maxPrice, ids } = req.query;
+  const { keyword, category, brand, material, ids } = req.query;
+  // PRICE FILTER REMOVED
   let query = { status: 'approved' };
 
   if (ids) {
@@ -27,11 +28,7 @@ const getProducts = asyncHandler(async (req, res) => {
     if (category) query.category = category;
     if (brand) query.brand = brand;
     if (material) query.material = material;
-    if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = Number(minPrice);
-      if (maxPrice) query.price.$lte = Number(maxPrice);
-    }
+    // Price filtering logic removed
   }
 
   const products = await Product.find(query).populate({
@@ -131,13 +128,14 @@ const trackAffiliateClick = asyncHandler(async (req, res) => {
 // @route   POST /api/products
 // @access  Private/Seller
 const createProduct = asyncHandler(async (req, res) => {
-  const { name, price, description, brand, category, material, images, affiliateUrl } = req.body;
+  // REMOVED price
+  const { name, description, brand, category, material, images, affiliateUrl } = req.body;
   
   const productImages = Array.isArray(images) ? images : images.split(',').map(img => img.trim()).filter(Boolean);
 
   const product = new Product({
     name,
-    price,
+    // price removed
     seller: req.user._id,
     brand,
     category,
@@ -156,12 +154,13 @@ const createProduct = asyncHandler(async (req, res) => {
 // @route   PUT /api/products/:id
 // @access  Private/Seller
 const updateProduct = asyncHandler(async (req, res) => {
-  const { name, price, description, brand, category, material, images, affiliateUrl } = req.body;
+  // REMOVED price
+  const { name, description, brand, category, material, images, affiliateUrl } = req.body;
   const product = await Product.findById(req.params.id);
 
   if (product && product.seller.toString() === req.user._id.toString()) {
     product.name = name || product.name;
-    product.price = price || product.price;
+    // product.price = price || product.price; // REMOVED
     product.description = description || product.description;
     product.brand = brand || product.brand;
     product.category = category || product.category;

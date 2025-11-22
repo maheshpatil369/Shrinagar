@@ -873,7 +873,7 @@ export default function AdminDashboard() {
                           <TableHead className="text-base">Product</TableHead>
                           {/* Added Seller Column */}
                           <TableHead className="text-base">Seller</TableHead>
-                          <TableHead className="text-base">Price</TableHead>
+                          {/* PRICE REMOVED */}
                           <TableHead className="text-base">Status</TableHead>
                           <TableHead className="text-right text-base">Actions</TableHead>
                         </TableRow>
@@ -885,7 +885,7 @@ export default function AdminDashboard() {
                             <TableCell className="text-sm">{p.name}</TableCell>
                             {/* Display Seller Name (using populated value from backend) */}
                             <TableCell className="text-xs sm:text-sm">{(p as any).seller?.name || 'N/A'}</TableCell>
-                            <TableCell className="text-sm">₹{p.price.toFixed(2)}</TableCell>
+                            {/* PRICE CELL REMOVED */}
                             <TableCell className="text-sm"><Badge className={cn("capitalize text-xs px-2 py-1", getStatusBadgeClass(p.status))}>{p.status}</Badge></TableCell>
                             <TableCell className="text-right space-x-2 whitespace-nowrap">
                               <Button variant="ghost" size="sm" onClick={() => setViewingProductDetails(p)} className="text-xs"><Eye className="h-4 w-4 mr-1" />Review</Button>
@@ -1180,7 +1180,7 @@ export default function AdminDashboard() {
 
                     <div>
                       <p className="text-base sm:text-lg font-semibold">{p.name}</p>
-                      <p className="text-sm text-muted-foreground">${p.price.toFixed(2)}</p>
+                      {/* PRICE DISPLAY REMOVED */}
                       <Badge className={cn("capitalize mt-1 text-xs px-2 py-0.5", getStatusBadgeClass(p.status))}>
                         {p.status}
                       </Badge>
@@ -1284,7 +1284,7 @@ export default function AdminDashboard() {
 
         <Card className="p-4 border rounded-xl shadow-sm space-y-3">
           <p className="text-sm sm:text-base"><strong>Name:</strong> {viewingProductDetails?.name}</p>
-          <p className="text-sm sm:text-base"><strong>Price:</strong> ₹{viewingProductDetails?.price?.toFixed(2)}</p>
+          {/* PRICE DISPLAY REMOVED */}
           <p className="text-sm sm:text-base"><strong>Category:</strong> {viewingProductDetails?.category}</p>
 
           <p>

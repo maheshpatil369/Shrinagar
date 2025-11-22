@@ -2,7 +2,7 @@ export interface JewelryItem {
   id: string;
   name: string;
   description: string;
-  price: number;
+  // PRICE REMOVED
   category: 'ring' | 'necklace' | 'bracelet' | 'earrings' | 'watch';
   brand: string;
   image: string;
@@ -18,7 +18,7 @@ export const MOCK_JEWELRY: JewelryItem[] = [
     id: '1',
     name: 'Diamond Solitaire Ring',
     description: 'Elegant 18K white gold ring with 1.5ct diamond',
-    price: 12500,
+    // price: 12500,
     category: 'ring',
     brand: 'Luxe Jewels',
     image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500',
@@ -32,7 +32,7 @@ export const MOCK_JEWELRY: JewelryItem[] = [
     id: '2',
     name: 'Pearl Necklace',
     description: 'Classic pearl strand with 18K gold clasp',
-    price: 3800,
+    // price: 3800,
     category: 'necklace',
     brand: 'Pearl House',
     image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500',
@@ -46,7 +46,7 @@ export const MOCK_JEWELRY: JewelryItem[] = [
     id: '3',
     name: 'Rose Gold Bracelet',
     description: 'Delicate rose gold chain bracelet with diamonds',
-    price: 2200,
+    // price: 2200,
     category: 'bracelet',
     brand: 'Elegance',
     image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=500',
@@ -60,7 +60,7 @@ export const MOCK_JEWELRY: JewelryItem[] = [
     id: '4',
     name: 'Sapphire Earrings',
     description: 'Stunning blue sapphire drop earrings',
-    price: 4500,
+    // price: 4500,
     category: 'earrings',
     brand: 'Gem Elite',
     image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=500',
@@ -74,7 +74,7 @@ export const MOCK_JEWELRY: JewelryItem[] = [
     id: '5',
     name: 'Luxury Watch',
     description: 'Swiss automatic watch with diamond bezel',
-    price: 18900,
+    // price: 18900,
     category: 'watch',
     brand: 'Timepiece Co',
     image: 'https://images.unsplash.com/photo-1587836374228-4c70e4bc88f4?w=500',

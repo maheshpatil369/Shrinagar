@@ -44,7 +44,7 @@ export interface Product {
     _id: string;
     name: string;
     description: string;
-    price: number;
+    // PRICE REMOVED
     category: 'ring' | 'necklace' | 'bracelet' | 'earrings' | 'watch' | 'other';
     brand: string;
     material: string;
@@ -65,7 +65,7 @@ export interface Product {
 export type ProductFormData = {
   name: string;
   description: string;
-  price: number;
+  // PRICE REMOVED
   category: 'ring' | 'necklace' | 'bracelet' | 'earrings' | 'watch' | 'other';
   brand: string;
   material: string;
@@ -78,8 +78,7 @@ export interface ProductFilters {
     category?: string;
     brand?: string;
     material?: string;
-    minPrice?: number;
-    maxPrice?: number;
+    // PRICE FILTERS REMOVED
 }
 
 export const getApprovedProducts = async (filters: ProductFilters = {}): Promise<Product[]> => {

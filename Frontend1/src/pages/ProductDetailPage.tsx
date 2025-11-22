@@ -1,23 +1,21 @@
 // Frontend1/src/pages/ProductDetailPage.tsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-// --- All imports are now using alias + file extension ---
-import { getProductById, Product, trackAffiliateClick, PopulatedSeller, createProductReview, Review, deleteProductReview } from '@/lib/products.ts';
-import { useToast } from '@/hooks/use-toast.ts';
-import { Button } from '@/components/ui/button.tsx';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card.tsx';
-import { Badge } from '@/components/ui/badge.tsx';
+import { getProductById, Product, trackAffiliateClick, PopulatedSeller, createProductReview, deleteProductReview } from '@/lib/products';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { ExternalLink, LoaderCircle, ArrowLeft, Heart, View, Maximize, Share2, Star, Trash2 } from 'lucide-react';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel.tsx";
-import { addToWishlist, getWishlist, isProductInWishlist, removeFromWishlist } from '@/lib/user.ts';
-import { Dialog, DialogContent } from '@/components/ui/dialog.tsx';
-import { useAuthModal } from '@/context/AuthModalContext.tsx';
-import { useUser } from '@/context/UserContext.tsx';
-import Rating from '@/components/ui/Rating.tsx';
-import { Textarea } from '@/components/ui/textarea.tsx';
-import { Label } from '@/components/ui/label.tsx';
+import { addToWishlist, getWishlist, isProductInWishlist, removeFromWishlist } from '@/lib/user';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useAuthModal } from '@/context/AuthModalContext';
+import { useUser } from '@/context/UserContext';
+import Rating from '@/components/ui/Rating';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils.ts'; // Import cn utility
+import { cn } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog.tsx";
+} from "@/components/ui/alert-dialog";
 
 
 function addRecentlyViewed(productId: string) {
@@ -46,30 +44,22 @@ export default function ProductDetailPage() {
     const [isInWishlist, setIsInWishlist] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     
-    // --- Use global modal state ---
     const { setAuthModalOpen, setPostLoginRedirect } = useAuthModal();
-    
     const { toast } = useToast();
-    // --- Get user state ONLY from global context ---
     const { user } = useUser();
 
     const [showImageModal, setShowImageModal] = useState(false);
     const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
     
-    // --- NEW: State for review form ---
     const [reviewRating, setReviewRating] = useState(0);
     const [reviewComment, setReviewComment] = useState("");
     const [isReviewLoading, setIsReviewLoading] = useState(false);
-    // ---
 
-    // --- NEW: State for active gallery image ---
     const [activeImage, setActiveImage] = useState<string | null>(null);
-    // ---
 
      const fetchWishlist = useCallback(async () => {
-        // Only fetch wishlist if user is logged in
         if (!user) {
-            setWishlist([]); // Clear wishlist if logged out
+            setWishlist([]);
             return;
         }
         try {
@@ -77,23 +67,20 @@ export default function ProductDetailPage() {
             setWishlist(data);
         } catch (error) {
              console.error("Failed to fetch wishlist for logged in user:", error);
-             setWishlist([]); // Clear on error
+             setWishlist([]);
         }
-    }, [user]); // --- Re-run when user logs in ---
+    }, [user]);
 
     const fetchProduct = useCallback(async (productId: string) => {
         setIsLoading(true);
         try {
-            // Note: Product details now contain full review list
             const { product: data, recommendations: recs } = await getProductById(productId);
             setProduct(data);
             setRecommendations(recs);
             addRecentlyViewed(productId);
-            // --- NEW: Set active image on product load ---
             if (data.images && data.images.length > 0) {
                 setActiveImage(data.images[0]);
             }
-            // ---
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error fetching product', description: error.response?.data?.message || 'Could not fetch product details.' });
             setProduct(null);
@@ -106,26 +93,24 @@ export default function ProductDetailPage() {
         if (id) {
             window.scrollTo(0, 0);
             fetchProduct(id);
-            // Fetch wishlist will now correctly run (or not run) based on user state
             fetchWishlist(); 
         } else {
              setIsLoading(false);
              setProduct(null);
         }
-    }, [id, fetchProduct, fetchWishlist]); // fetchWishlist is now stable
+    }, [id, fetchProduct, fetchWishlist]);
 
 
     useEffect(() => {
-        if (product && user) { // Only check wishlist if user is logged in
+        if (product && user) {
             setIsInWishlist(isProductInWishlist(product._id, wishlist));
         } else {
-            setIsInWishlist(false); // Not in wishlist if logged out
+            setIsInWishlist(false);
         }
-    }, [product, wishlist, user]); // --- Added user dependency ---
+    }, [product, wishlist, user]);
 
-    // --- Click handlers now use the global 'user' object ---
     const handleAffiliateClick = () => {
-         if (!user) { // Check global user
+         if (!user) {
             setPostLoginRedirect(window.location.pathname);
             setAuthModalOpen(true);
             return;
@@ -137,12 +122,11 @@ export default function ProductDetailPage() {
     };
 
     const handleWishlistToggle = async (e?: React.MouseEvent) => {
-        // Stop propagation if event is passed (from icon button)
         e?.stopPropagation(); 
 
         if (!product) return;
 
-        if (!user) { // Check global user
+        if (!user) {
             setPostLoginRedirect(window.location.pathname);
             setAuthModalOpen(true);
             return;
@@ -177,9 +161,7 @@ export default function ProductDetailPage() {
         setShowImageModal(true);
     };
 
-    // --- NEW: Share handler ---
     const handleShare = async (e?: React.MouseEvent) => {
-        // Stop propagation if event is passed (from icon button)
         e?.stopPropagation(); 
 
         if (!product) return;
@@ -195,12 +177,9 @@ export default function ProductDetailPage() {
                 await navigator.share(shareData);
             } catch (err) {
                 console.error('Share failed:', err);
-                // Don't toast on user-cancelled share
             }
         } else {
-            // Fallback: Copy to clipboard
             try {
-                // Use the document.execCommand fallback as per instructions
                 const textArea = document.createElement("textarea");
                 textArea.value = shareUrl;
                 document.body.appendChild(textArea);
@@ -216,10 +195,9 @@ export default function ProductDetailPage() {
         }
     };
 
-    // --- NEW: Review submit handler ---
     const handleReviewSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!product || !user) return; // Should be impossible if form is visible
+        if (!product || !user) return;
         if (reviewRating === 0 || !reviewComment) {
             toast({ variant: "destructive", title: "Error", description: "Please select a rating and write a comment." });
             return;
@@ -234,7 +212,7 @@ export default function ProductDetailPage() {
             toast({ title: "Review Submitted!", description: "Thank you for your feedback." });
             setReviewRating(0);
             setReviewComment("");
-            fetchProduct(product._id); // Refetch product to show new review
+            fetchProduct(product._id);
         } catch (error: any) {
             toast({ variant: "destructive", title: "Submission Failed", description: error.response?.data?.message || "Could not submit review." });
         } finally {
@@ -242,19 +220,17 @@ export default function ProductDetailPage() {
         }
     };
 
-    // --- NEW: Review delete handler ---
     const handleDeleteReview = async (reviewId: string) => {
         if (!product || !user || !id) return;
 
         try {
             await deleteProductReview(id, reviewId);
             toast({ title: "Review Deleted", description: "The review was successfully removed." });
-            fetchProduct(id); // Refetch product to update the list and recalculate rating
+            fetchProduct(id);
         } catch (error: any) {
             toast({ variant: "destructive", title: "Deletion Failed", description: error.response?.data?.message || "Could not delete review." });
         }
     };
-    // --- End new handler ---
 
     const handleArVrClick = () => {
         toast({
@@ -283,100 +259,146 @@ export default function ProductDetailPage() {
             </Dialog>
 
 
-            <div className="container mx-auto max-w-screen-2xl p-4 md:p-8">
-                <Button asChild variant="outline" className="mb-8"><Link to="/buyer"><ArrowLeft className="mr-2 h-4 w-4" /> Back to all products</Link></Button>
-                <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-                    {/* Main Content */}
-                    <main className="lg:flex-[2] xl:flex-[3] min-w-0">
-                        <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+            <div className="container mx-auto max-w-screen-2xl p-4 md:p-6 lg:p-8">
+                <Button asChild variant="outline" className="mb-6 md:mb-8">
+                    <Link to="/buyer"><ArrowLeft className="mr-2 h-4 w-4" /> Back to all products</Link>
+                </Button>
+                
+                {/* MAIN LAYOUT 
+                    Flex-col on Mobile/Tablet (Stacked)
+                    Flex-row on Desktop (Side-by-Side)
+                */}
+                <div className="flex flex-col lg:flex-row gap-10 lg:gap-12">
+                    
+                    {/* --- LEFT: MAIN CONTENT (75% on Desktop) --- */}
+                    <main className="flex-1 lg:w-3/4 min-w-0">
+                        
+                        {/* PRODUCT GRID 
+                            grid-cols-1 on Mobile/Tablet -> This ensures "2 rows" layout (Image Row, Details Row)
+                            grid-cols-2 on Desktop -> This puts image and details side-by-side inside the 75% area
+                        */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
                             
-                            {/* --- NEW: Image Gallery Layout --- */}
-                            <div className="flex gap-4">
-                                {/* Thumbnails */}
-                                <div className="flex flex-col gap-3 w-20 shrink-0">
+                            {/* --- IMAGE GALLERY --- */}
+                            {/* Mobile/Tablet: flex-col-reverse (Thumbnails bottom, Main image top)
+                                Desktop: flex-row (Thumbnails left, Main image right)
+                            */}
+                            <div className="flex flex-col-reverse lg:flex-row gap-4 w-full">
+                                {/* Thumbnails Container */}
+                                <div className="flex flex-row lg:flex-col gap-3 w-full lg:w-20 shrink-0 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 no-scrollbar">
                                     {product.images && product.images.length > 0 ? (
                                         product.images.map((image, index) => (
                                             <div
                                                 key={index}
                                                 className={cn(
-                                                    "aspect-square border rounded-lg overflow-hidden bg-muted cursor-pointer transition-all",
+                                                    "relative aspect-square w-16 lg:w-full border rounded-lg overflow-hidden bg-muted cursor-pointer transition-all shrink-0",
                                                     activeImage === image ? "border-primary ring-2 ring-primary ring-offset-2" : "border-border hover:border-muted-foreground"
                                                 )}
                                                 onMouseEnter={() => setActiveImage(image)}
+                                                onClick={() => setActiveImage(image)}
                                             >
                                                 <img src={image} alt={`${product.name} view ${index + 1}`} className="w-full h-full object-cover" />
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="aspect-square border rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-                                            <span className="text-xs text-muted-foreground p-1">No Image</span>
+                                        <div className="aspect-square w-16 lg:w-full border rounded-lg overflow-hidden bg-muted flex items-center justify-center shrink-0">
+                                            <span className="text-[10px] text-muted-foreground p-1 text-center">No Image</span>
                                         </div>
                                     )}
                                 </div>
                                 
-                                {/* Main Image */}
-                                <div className="flex-1 relative group">
+                                {/* Main Image Container */}
+                                <div className="flex-1 relative group w-full">
                                     {activeImage ? (
-                                        <div className="aspect-square border rounded-lg overflow-hidden bg-muted cursor-pointer" onClick={() => handleImageClick(activeImage)}>
+                                        <div className="aspect-square w-full border rounded-lg overflow-hidden bg-muted cursor-pointer relative" onClick={() => handleImageClick(activeImage)}>
                                             <img src={activeImage} alt="Main product view" className="w-full h-full object-cover" />
                                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
                                                 <Maximize className="h-8 w-8 text-white" />
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="aspect-square border rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                                        <div className="aspect-square w-full border rounded-lg overflow-hidden bg-muted flex items-center justify-center">
                                             <span className="text-muted-foreground">No Image</span>
                                         </div>
                                     )}
+                                    
                                     {/* Overlay Buttons */}
-                                    <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                                        <Button variant="outline" size="icon" className="h-9 w-9 bg-background/80 hover:bg-background rounded-full shadow" onClick={handleWishlistToggle}>
+                                    <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 z-10">
+                                        <Button variant="outline" size="icon" className="h-9 w-9 bg-background/80 hover:bg-background rounded-full shadow backdrop-blur-sm" onClick={handleWishlistToggle}>
                                             <Heart className={`h-4 w-4 ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`} />
                                         </Button>
-                                        <Button variant="outline" size="icon" className="h-9 w-9 bg-background/80 hover:bg-background rounded-full shadow" onClick={handleShare}>
+                                        <Button variant="outline" size="icon" className="h-9 w-9 bg-background/80 hover:bg-background rounded-full shadow backdrop-blur-sm" onClick={handleShare}>
                                             <Share2 className="h-4 w-4" />
                                         </Button>
                                     </div>
                                 </div>
                             </div>
-                            {/* --- END: Image Gallery Layout --- */}
+                            {/* --- END: Image Gallery --- */}
 
                             {/* Product Details */}
-                            <div className="flex flex-col justify-center">
+                            <div className="flex flex-col justify-start space-y-6">
                                 <div className="space-y-4">
                                     <div className="flex gap-2 flex-wrap">
-                                        <Badge variant="secondary" className="capitalize text-sm">{product.category}</Badge>
-                                        <Badge variant="outline" className="text-sm">{product.brand}</Badge>
+                                        <Badge variant="secondary" className="capitalize text-sm px-3 py-1">{product.category}</Badge>
+                                        <Badge variant="outline" className="text-sm px-3 py-1">{product.brand}</Badge>
                                     </div>
-                                    <h1 className="text-3xl md:text-4xl font-bold leading-tight break-words">{product.name}</h1>
-                                    <Rating value={product.rating} text={`${product.numReviews} reviews`} />
-                                    <p className="text-muted-foreground text-base break-words">{product.description}</p>
-                                    <p className="text-3xl font-bold">₹{product.price.toFixed(2)}</p>
-                                    <div className="border-t pt-4">
-                                        <h3 className="font-semibold mb-2">Details</h3>
-                                        <div className="text-sm text-muted-foreground space-y-1 break-words">
-                                            <p><span className="font-medium text-foreground">Material:</span> {product.material}</p>
-                                            <p><span className="font-medium text-foreground">Seller:</span> {sellerDetails ? (typeof sellerDetails.sellerProfile === 'object' ? sellerDetails.sellerProfile.businessName || sellerDetails.name : sellerDetails.name) : 'Unknown'}</p>
+                                    
+                                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight break-words text-foreground">
+                                        {product.name}
+                                    </h1>
+                                    
+                                    <div className="flex items-center gap-4">
+                                        <Rating value={product.rating} text={`${product.numReviews} reviews`} className="scale-105 origin-left" />
+                                    </div>
+
+                                    <p className="text-muted-foreground text-base md:text-lg leading-relaxed break-words">
+                                        {product.description}
+                                    </p>
+                                    
+                                    {/* <p className="text-3xl font-bold">₹{product.price.toFixed(2)}</p> */}
+
+                                    <div className="border-t border-border pt-6 mt-4 space-y-3">
+                                        <h3 className="font-semibold text-lg">Product Specifications</h3>
+                                        <div className="grid grid-cols-2 gap-4 text-sm md:text-base">
+                                            <div className="space-y-1">
+                                                <span className="text-muted-foreground block">Material</span>
+                                                <span className="font-medium">{product.material}</span>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <span className="text-muted-foreground block">Seller</span>
+                                                <span className="font-medium">
+                                                    {sellerDetails ? (typeof sellerDetails.sellerProfile === 'object' ? sellerDetails.sellerProfile.businessName || sellerDetails.name : sellerDetails.name) : 'Unknown'}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                     
-                                    {/* --- UPDATED: Main action buttons (reverted to AR/VR) --- */}
-                                    <div className="flex flex-col sm:flex-row gap-2 pt-4">
-                                        <Button size="lg" className="flex-1 text-base" onClick={handleAffiliateClick}><ExternalLink className="mr-2 h-5 w-5" /> Go to Seller's Site</Button>
-                                        <Button size="lg" variant="outline" className="flex-1 text-base" onClick={handleArVrClick}>
-                                            <View className="mr-2 h-5 w-5" /> AR/VR View
+                                    {/* Action Buttons */}
+                                    <div className="flex flex-col sm:flex-row gap-3 pt-6">
+                                        <Button size="lg" className="flex-1 text-base h-12 shadow-md hover:shadow-lg transition-all" onClick={handleAffiliateClick}>
+                                            <ExternalLink className="mr-2 h-5 w-5" /> 
+                                            Visit Seller Site
                                         </Button>
-                                        {/* Wishlist and Share buttons are now on the image overlay */}
+                                        <Button size="lg" variant="outline" className="flex-1 text-base h-12 border-2 hover:bg-muted" onClick={handleArVrClick}>
+                                            <View className="mr-2 h-5 w-5" /> 
+                                            AR/VR Try-On
+                                        </Button>
                                     </div>
                                     
-                                    {!user && <p className="text-xs text-muted-foreground text-center sm:text-left pt-1">Login to add to wishlist or visit seller</p>}
+                                    {!user && (
+                                        <div className="bg-muted/50 p-3 rounded-lg text-center mt-4">
+                                            <p className="text-sm text-muted-foreground">
+                                                <span className="font-medium text-foreground cursor-pointer hover:underline" onClick={() => { setPostLoginRedirect(window.location.pathname); setAuthModalOpen(true); }}>Log in</span> to save this item to your wishlist.
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
-                        {/* --- Reviews Section (Updated to include Delete option) --- */}
+                        {/* --- Reviews Section --- */}
                         <div className="mt-12 lg:mt-16">
-                            <h2 className="text-3xl font-bold mb-6">Reviews</h2>
+                            <h2 className="text-2xl md:text-3xl font-bold mb-6">Reviews</h2>
                             <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
                                 {/* Review Form */}
                                 <div>
@@ -490,13 +512,12 @@ export default function ProductDetailPage() {
                                 </div>
                             </div>
                         </div>
-                        {/* --- End Reviews Section --- */}
                     </main>
 
-                    {/* Recommendations Sidebar (Unchanged as requested) */}
-                    <aside className="lg:flex-[1] space-y-4 min-w-0">
+                    {/* --- RIGHT: RECOMMENDATIONS SIDEBAR (25% on Desktop) --- */}
+                    <aside className="w-full lg:w-1/4 space-y-6 mt-8 lg:mt-0 border-t lg:border-t-0 lg:border-l border-border pt-8 lg:pt-0 lg:pl-8">
                         <h2 className="text-2xl font-bold">You Might Also Like</h2>
-                        <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
                             {recommendations.length > 0
                                 ? recommendations.map(rec => <RecommendationCard key={rec._id} product={rec} />)
                                 : <p className="text-sm text-muted-foreground">No recommendations found in this category.</p>
@@ -511,9 +532,8 @@ export default function ProductDetailPage() {
 
 
 function RecommendationCard({ product }: { product: Product }) {
-    // ... existing code ...
     return (
-        <Link to={`/product/${product._id}`} className="flex items-center gap-4 group p-2 rounded-lg hover:bg-muted/50 transition-colors">
+        <Link to={`/product/${product._id}`} className="flex items-center gap-4 group p-2 rounded-lg hover:bg-muted/50 transition-colors border lg:border-none">
             <div className="w-20 h-20 shrink-0">
                 {product.images && product.images.length > 0 ? (
                     <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover rounded-md border" />

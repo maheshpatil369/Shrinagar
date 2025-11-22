@@ -16,9 +16,9 @@ Content-Type: application/json
 Body: Select raw and JSON.
 
 {
-    "name": "Test Customer",
-    "email": "customer@example.com",
-    "password": "password123"
+"name": "Test Customer",
+"email": "customer@example.com",
+"password": "password123"
 }
 
 Action: Click Send.
@@ -33,10 +33,10 @@ URL: http://localhost:8000/api/auth/register
 Body: Select raw and JSON. Notice the added "role": "seller".
 
 {
-    "name": "Test Seller",
-    "email": "seller@example.com",
-    "password": "password123",
-    "role": "seller"
+"name": "Test Seller",
+"email": "seller@example.com",
+"password": "password123",
+"role": "seller"
 }
 
 Action: Click Send.
@@ -51,8 +51,8 @@ URL: http://localhost:8000/api/auth/login
 Body: Select raw and JSON.
 
 {
-    "email": "seller@example.com",
-    "password": "password123"
+"email": "seller@example.com",
+"password": "password123"
 }
 
 Action: Click Send.
@@ -77,15 +77,15 @@ Authorization: Bearer <PASTE_YOUR_SELLER_TOKEN_HERE>
 Body: Select raw and JSON.
 
 {
-    "businessName": "Elegant Gems",
-    "gstNumber": "22ABCDE1234F1Z5",
-    "panNumber": "ABCDE1234F",
-    "address": {
-        "street": "123 Diamond Lane",
-        "city": "Jaipur",
-        "state": "Rajasthan",
-        "pincode": "302001"
-    }
+"businessName": "Elegant Gems",
+"gstNumber": "22ABCDE1234F1Z5",
+"panNumber": "ABCDE1234F",
+"address": {
+"street": "123 Diamond Lane",
+"city": "Jaipur",
+"state": "Rajasthan",
+"pincode": "302001"
+}
 }
 
 Action: Click Send.
@@ -139,12 +139,11 @@ Authorization: Bearer <PASTE_APPROVED_SELLER_TOKEN_HERE>
 Body: Select raw and JSON.
 
 {
-  "name": "Classic Gold Bangle",
-  "description": "A timeless 22k gold bangle.",
-  "price": 75000,
-  "category": "Bracelets",
-  "material": "Gold",
-  "affiliateUrl": "[https://example.com/bangle-123](https://example.com/bangle-123)"
+"name": "Classic Gold Bangle",
+"description": "A timeless 22k gold bangle.",
+"category": "Bracelets",
+"material": "Gold",
+"affiliateUrl": "https://example.com/bangle-123"
 }
 
 Action: Click Send.
@@ -180,125 +179,224 @@ Expected Result: 200 OK status and an array containing the "Classic Gold Bangle"
 
 This workflow confirms that your entire backend—from user roles and authentication to product and seller lifecycles—is working correctly.
 
+💍 Shringar Jewelry Marketplace – Backend API
 
+Welcome to the Shringar Jewelry Marketplace Backend API.
+This document provides an overview of the API's architecture, data models, and endpoints, along with a guide for testing the complete user workflow.
 
-# 💍 Shringar Jewelry Marketplace – Backend API
+📑 Table of Contents
 
-Welcome to the **Shringar Jewelry Marketplace Backend API**.
-This document provides an overview of the API's **architecture, data models, and endpoints**, along with a **guide for testing the complete user workflow**.
+Core Concepts
 
----
+User Roles
 
-## 📑 Table of Contents
+Data Workflow
 
-1. [Core Concepts](#-core-concepts)
+Authentication
 
-   * [User Roles](#user-roles)
-   * [Data Workflow](#data-workflow)
-2. [Authentication](#-authentication)
-3. [API Endpoints](#-api-endpoints)
+API Endpoints
 
-   * [Public Routes](#public-routes)
-   * [Customer Routes](#customer-routes)
-   * [Seller Routes](#seller-routes)
-   * [Admin Routes](#admin-routes)
-4. [Testing Workflow Guide](#-testing-workflow-guide)
+Public Routes
 
----
+Customer Routes
 
-## 💡 Core Concepts
+Seller Routes
 
-### User Roles
+Admin Routes
 
-The platform has **three distinct user roles**:
+Testing Workflow Guide
 
-* 👤 **Customer** – Default role for any new user. Can browse approved products, view details, and manage a wishlist.
-* 🛍 **Seller** – Must register and be approved by an Admin. Once approved, can create/manage products (also require Admin approval).
-* 🛠 **Admin** – Full control over the platform. Approves sellers, products, and manages users.
+💡 Core Concepts
 
----
+User Roles
 
-### Data Workflow
+The platform has three distinct user roles:
 
-> The system uses a **multi-step approval process** for quality control.
+👤 Customer – Default role for any new user. Can browse approved products, view details, and manage a wishlist.
 
-1. **Seller Registration** → User registers, seller profile created with `status: "pending"`.
-2. **Admin Approval (Seller)** → Admin reviews & approves seller (`status: "approved"`).
-3. **Product Creation** → Approved seller creates a product (`status: "pending"`).
-4. **Admin Approval (Product)** → Admin approves product (`status: "approved"`).
-5. **Public Visibility** → Only approved products are shown to customers.
+🛍 Seller – Must register and be approved by an Admin. Once approved, can create/manage products (also require Admin approval).
 
----
+🛠 Admin – Full control over the platform. Approves sellers, products, and manages users.
 
-## 🔑 Authentication
+Data Workflow
 
-* The API uses **JWT (JSON Web Tokens)** for authentication.
-* Include your token in headers for all protected routes:
+The system uses a multi-step approval process for quality control.
 
-```
+Seller Registration → User registers, seller profile created with status: "pending".
+
+Admin Approval (Seller) → Admin reviews & approves seller (status: "approved").
+
+Product Creation → Approved seller creates a product (status: "pending").
+
+Admin Approval (Product) → Admin approves product (status: "approved").
+
+Public Visibility → Only approved products are shown to customers.
+
+🔑 Authentication
+
+The API uses JWT (JSON Web Tokens) for authentication.
+
+Include your token in headers for all protected routes:
+
 Authorization: Bearer <YOUR_JWT_TOKEN>
-```
 
-* **Login** → `POST /api/auth/login` returns a JWT.
 
----
+Login → POST /api/auth/login returns a JWT.
 
-## 📡 API Endpoints
+📡 API Endpoints
 
-### Public Routes (No Auth Required)
+Public Routes (No Auth Required)
 
-| Method | Endpoint                | Description                                |
-| ------ | ----------------------- | ------------------------------------------ |
-| POST   | `/api/auth/register`    | Register a new customer.                   |
-| POST   | `/api/sellers/register` | Register a new seller + profile (pending). |
-| POST   | `/api/auth/login`       | Log in & get JWT.                          |
-| GET    | `/api/products`         | Get all approved products.                 |
-| GET    | `/api/products/:id`     | Get single approved product.               |
+Method
 
----
+Endpoint
 
-### Customer Routes (JWT Required)
+Description
 
-| Method | Endpoint                         | Description                   |
-| ------ | -------------------------------- | ----------------------------- |
-| GET    | `/api/auth/me`                   | Get current user profile.     |
-| GET    | `/api/users/wishlist`            | Get wishlist.                 |
-| POST   | `/api/users/wishlist`            | Add product to wishlist.      |
-| DELETE | `/api/users/wishlist/:productId` | Remove product from wishlist. |
+POST
 
----
+/api/auth/register
 
-### Seller Routes (Seller JWT Required)
+Register a new customer.
 
-| Method | Endpoint                 | Description                     |
-| ------ | ------------------------ | ------------------------------- |
-| POST   | `/api/products`          | Create a new product (pending). |
-| PUT    | `/api/products/:id`      | Update seller’s own product.    |
-| GET    | `/api/sellers/dashboard` | Seller dashboard data.          |
+POST
 
----
+/api/sellers/register
 
-### Admin Routes (Admin JWT Required)
+Register a new seller + profile (pending).
 
-| Method | Endpoint                       | Description                    |
-| ------ | ------------------------------ | ------------------------------ |
-| GET    | `/api/sellers`                 | List all sellers.              |
-| PUT    | `/api/sellers/:userId/approve` | Approve a seller.              |
-| PUT    | `/api/sellers/:userId/suspend` | Suspend a seller.              |
-| PUT    | `/api/products/:id`            | Update product (incl. status). |
-| DELETE | `/api/products/:id`            | Delete product.                |
-| GET    | `/api/users`                   | List all users.                |
-| DELETE | `/api/users/:id`               | Delete user + related data.    |
+POST
 
----
+/api/auth/login
 
-## 🧪 Testing Workflow Guide
+Log in & get JWT.
 
-Follow these steps in **Postman** to test full flow:
+GET
 
-### 1️⃣ Register a Seller
+/api/products
 
-```http
+Get all approved products.
+
+GET
+
+/api/products/:id
+
+Get single approved product.
+
+Customer Routes (JWT Required)
+
+Method
+
+Endpoint
+
+Description
+
+GET
+
+/api/auth/me
+
+Get current user profile.
+
+GET
+
+/api/users/wishlist
+
+Get wishlist.
+
+POST
+
+/api/users/wishlist
+
+Add product to wishlist.
+
+DELETE
+
+/api/users/wishlist/:productId
+
+Remove product from wishlist.
+
+Seller Routes (Seller JWT Required)
+
+Method
+
+Endpoint
+
+Description
+
+POST
+
+/api/products
+
+Create a new product (pending).
+
+PUT
+
+/api/products/:id
+
+Update seller’s own product.
+
+GET
+
+/api/sellers/dashboard
+
+Seller dashboard data.
+
+Admin Routes (Admin JWT Required)
+
+Method
+
+Endpoint
+
+Description
+
+GET
+
+/api/sellers
+
+List all sellers.
+
+PUT
+
+/api/sellers/:userId/approve
+
+Approve a seller.
+
+PUT
+
+/api/sellers/:userId/suspend
+
+Suspend a seller.
+
+PUT
+
+/api/products/:id
+
+Update product (incl. status).
+
+DELETE
+
+/api/products/:id
+
+Delete product.
+
+GET
+
+/api/users
+
+List all users.
+
+DELETE
+
+/api/users/:id
+
+Delete user + related data.
+
+🧪 Testing Workflow Guide
+
+Follow these steps in Postman to test full flow:
+
+1️⃣ Register a Seller
+
 POST /api/sellers/register
 Content-Type: application/json
 
@@ -308,89 +406,68 @@ Content-Type: application/json
   "password": "securePass123",
   "businessName": "Diamond Crafts Pvt Ltd"
 }
-```
 
-> Response → Seller created with `status: "pending"`
 
----
+Response → Seller created with status: "pending"
 
-### 2️⃣ Create & Promote Admin
+2️⃣ Create & Promote Admin
 
-```http
 POST /api/auth/register
-```
 
-> Then manually set `role: "admin"` in MongoDB.
 
----
+Then manually set role: "admin" in MongoDB.
 
-### 3️⃣ Login & Get JWT
+3️⃣ Login & Get JWT
 
-```http
 POST /api/auth/login
-```
 
-> Copy tokens for both Seller & Admin.
 
----
+Copy tokens for both Seller & Admin.
 
-### 4️⃣ Approve Seller (Admin)
+4️⃣ Approve Seller (Admin)
 
-```http
 PUT /api/sellers/<SELLER_USER_ID>/approve
 Authorization: Bearer <ADMIN_JWT>
-```
 
----
 
-### 5️⃣ Create Product (Seller)
+5️⃣ Create Product (Seller)
 
-```http
 POST /api/products
 Authorization: Bearer <SELLER_JWT>
 Content-Type: application/json
 
 {
   "name": "Gold Necklace",
-  "price": 2000,
   "description": "24k pure gold necklace",
   "category": "Necklaces"
 }
-```
 
-> Product created with `status: "pending"`
 
----
+Product created with status: "pending"
 
-### 6️⃣ Approve Product (Admin)
+6️⃣ Approve Product (Admin)
 
-```http
 PUT /api/products/<PRODUCT_ID>
 Authorization: Bearer <ADMIN_JWT>
 Content-Type: application/json
 
 { "status": "approved" }
-```
 
----
 
-### 7️⃣ Customer Flow
+7️⃣ Customer Flow
 
-```http
 POST /api/auth/register   // Register as Customer
 POST /api/auth/login      // Login as Customer
 GET  /api/products        // Fetch approved products
 POST /api/users/wishlist  // Add product to wishlist
-```
 
----
 
-## ✅ Summary
+✅ Summary
 
-* Customers → Browse & wishlist approved products.
-* Sellers → Register → Wait for admin approval → Add products.
-* Admins → Approve sellers & products → Manage marketplace.
+Customers → Browse & wishlist approved products.
 
----
+Sellers → Register → Wait for admin approval → Add products.
 
-🚀 You’re now ready to use the **Shringar Jewelry Marketplace Backend API**!
+Admins → Approve sellers & products → Manage marketplace.
+
+🚀 You’re now ready to use the Shringar Jewelry Marketplace 

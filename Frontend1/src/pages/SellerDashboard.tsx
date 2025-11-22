@@ -39,7 +39,7 @@ import { cn } from "@/lib/utils";
 const productSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters." }),
   description: z.string().min(10, { message: "Description must be at least 10 characters." }),
-  price: z.coerce.number().positive({ message: "Price must be a positive number." }),
+  // PRICE REMOVED from validation
   brand: z.string().min(2, { message: "Brand is required." }),
   material: z.string().min(2, { message: "Material is required." }),
   category: z.enum(['ring', 'necklace', 'bracelet', 'earrings', 'watch', 'other']),
@@ -66,7 +66,8 @@ export default function SellerDashboard() {
 
   const form = useForm<z.infer<typeof productSchema>>({
     resolver: zodResolver(productSchema),
-    defaultValues: { name: "", description: "", price: 0, brand: "", material: "", category: "other", images: [], affiliateUrl: "" },
+    // REMOVED price from defaultValues
+    defaultValues: { name: "", description: "", brand: "", material: "", category: "other", images: [], affiliateUrl: "" },
   });
 
   const fetchData = async () => {
@@ -122,7 +123,8 @@ export default function SellerDashboard() {
     }
     setEditingProduct(product);
     // Ensure images are correctly reset/populated (now expects URLs)
-    form.reset(product ? { ...product, images: product.images || [] } : { name: "", description: "", price: 0, brand: "", material: "", category: "other", images: [], affiliateUrl: "" });
+    // REMOVED price from reset object
+    form.reset(product ? { ...product, images: product.images || [] } : { name: "", description: "", brand: "", material: "", category: "other", images: [], affiliateUrl: "" });
     setIsDialogOpen(true);
   };
 
@@ -131,7 +133,7 @@ export default function SellerDashboard() {
     const payload = {
         name: data.name,
         description: data.description,
-        price: data.price,
+        // PRICE REMOVED from payload
         category: data.category,
         brand: data.brand,
         material: data.material,
@@ -396,7 +398,7 @@ export default function SellerDashboard() {
             <TableRow>
               <TableHead className="w-[80px] text-base">Sr. No.</TableHead>
               <TableHead className="text-base">Name</TableHead>
-              <TableHead className="text-base">Price</TableHead>
+              {/* PRICE COLUMN REMOVED */}
               <TableHead className="text-base">Status</TableHead>
               <TableHead className="text-base">Views</TableHead>
               <TableHead className="text-base">Clicks</TableHead>
@@ -419,7 +421,7 @@ export default function SellerDashboard() {
                     {product.name}
                   </TableCell>
 
-                  <TableCell className="text-base">₹{product.price.toFixed(2)}</TableCell>
+                  {/* PRICE CELL REMOVED */}
 
                   <TableCell className="text-base">
                     <Badge
@@ -648,8 +650,7 @@ export default function SellerDashboard() {
                {/* --- FONT SIZE INCREASED --- */}
                <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel className="text-base">Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
                <div className="grid grid-cols-3 gap-4">
-                 {/* --- FONT SIZE INCREASED --- */}
-                 <FormField control={form.control} name="price" render={({ field }) => (<FormItem><FormLabel className="text-base">Price</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                 {/* PRICE FIELD REMOVED */}
                  <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel className="text-base">Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select category..."/></SelectTrigger></FormControl><SelectContent>{['ring', 'necklace', 'bracelet', 'earrings', 'watch', 'other'].map(cat => (<SelectItem key={cat} value={cat} className="capitalize">{cat}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
                  <FormField control={form.control} name="material" render={({ field }) => (<FormItem><FormLabel className="text-base">Material</FormLabel><FormControl><Input placeholder="e.g., Gold, Silver, Diamond" {...field} /></FormControl><FormMessage /></FormItem>)} />
               </div>
