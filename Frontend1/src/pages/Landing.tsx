@@ -5,10 +5,13 @@ import {
     ArrowUpRight, ArrowRight, Gem, Sparkles, Menu, X, User, 
     LogOut, LayoutDashboard, Settings, ShoppingBag 
 } from 'lucide-react'; 
-import { fetchMetalPrice, MetalPriceData } from '@/lib/gold';
+
+// Use robust relative paths
+import { fetchMetalPrice, MetalPriceData } from '../lib/gold';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"; 
-import { useUser } from "@/context/UserContext"; 
-import { useAuthModal } from "@/context/AuthModalContext";
+import { useUser } from "../context/UserContext"; 
+import { useAuthModal } from "../context/AuthModalContext";
+import ThreeDBackground from "../components/ThreeDBackground";
 
 // --- UI Components for Dropdown ---
 import {
@@ -34,6 +37,8 @@ import {
 } from "@/components/ui/alert-dialog";
 
 // --- Asset Imports ---
+// These paths are relative to src/pages/Landing.tsx (which is in src/pages)
+// So ../../assets/ points to src/assets/
 import goldImg from '../../assets/goldimg.png';
 import silverImg from '../../assets/silver.png';
 import platinumImg from '../../assets/platinum.png';
@@ -75,7 +80,7 @@ function Header() {
 
     return (
         <header 
-            className="fixed top-0 left-0 right-0 z-50 w-full bg-[#020817]/90 backdrop-blur-md border-b border-white/10 shadow-lg py-4"
+            className="fixed top-0 left-0 right-0 z-50 w-full bg-[#020817]/80 backdrop-blur-md border-b border-white/10 shadow-lg py-4"
         >
             <div className="container mx-auto flex items-center justify-between px-4 md:px-8 h-16 max-w-7xl">
 
@@ -136,84 +141,88 @@ function Header() {
                                 </Button>
                             </DropdownMenuTrigger>
 
-                            <DropdownMenuContent 
-                                className="w-64 bg-white text-black p-0 rounded-xl border-none shadow-2xl mt-2" 
-                                align="end"
-                            >
-                                <div className="px-4 py-4 border-b border-gray-100 bg-gray-50/50">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="font-bold text-base truncate max-w-[120px]">
-                                            {user.name}
-                                        </span>
-                                        <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full capitalize font-bold">
-                                            {user.role}
-                                        </span>
-                                    </div>
-                                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                                </div>
+                          <DropdownMenuContent
+  className="w-72 bg-[#0e1b33] text-white p-0 rounded-xl border border-white/10 shadow-2xl mt-2"
+  align="end"
+>
+  {/* Header Section */}
+  <div className="px-4 py-4 border-b border-white/10 bg-[#051024]/70 rounded-t-xl">
+    <p className="text-sm text-gray-300">
+      <span className="font-semibold text-brand-yellow">Name:</span> {user.name}
+    </p>
+    <p className="text-sm text-gray-300 mt-1">
+      <span className="font-semibold text-brand-yellow">Gmail:</span> {user.email}
+    </p>
+    <p className="text-sm text-gray-300 mt-1">
+      <span className="font-semibold text-brand-yellow">Role:</span> {user.role}
+    </p>
+  </div>
 
-                                <div className="p-2 space-y-1">
-                                    <DropdownMenuItem 
-                                        className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 cursor-pointer"
-                                        onClick={() => navigate('/profile')}
-                                    >
-                                        <User className="h-4 w-4" /> Profile
-                                    </DropdownMenuItem>
+  {/* Menu Items */}
+  <div className="p-2 space-y-1">
+    <DropdownMenuItem
+      className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-gray-200 hover:bg-white/10 cursor-pointer"
+      onClick={() => navigate('/profile')}
+    >
+      <User className="h-4 w-4 text-brand-yellow" /> Profile
+    </DropdownMenuItem>
 
-                                    <DropdownMenuItem 
-                                        className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 cursor-pointer"
-                                        onClick={() => navigate('/buyer')}
-                                    >
-                                        <ShoppingBag className="h-4 w-4" /> Browse Jewelry
-                                    </DropdownMenuItem>
+    <DropdownMenuItem
+      className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-gray-200 hover:bg-white/10 cursor-pointer"
+      onClick={() => navigate('/buyer')}
+    >
+      <ShoppingBag className="h-4 w-4 text-brand-yellow" /> Browse Jewelry
+    </DropdownMenuItem>
 
-                                    {user.role === 'seller' && (
-                                        <DropdownMenuItem 
-                                            className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 cursor-pointer"
-                                            onClick={() => navigate('/seller')}
-                                        >
-                                            <LayoutDashboard className="h-4 w-4" /> Seller Dashboard
-                                        </DropdownMenuItem>
-                                    )}
+    {user.role === 'seller' && (
+      <DropdownMenuItem
+        className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-gray-200 hover:bg-white/10 cursor-pointer"
+        onClick={() => navigate('/seller')}
+      >
+        <LayoutDashboard className="h-4 w-4 text-brand-yellow" /> Seller Dashboard
+      </DropdownMenuItem>
+    )}
 
-                                    {user.role === 'admin' && (
-                                        <DropdownMenuItem 
-                                            className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 cursor-pointer"
-                                            onClick={() => navigate('/admin')}
-                                        >
-                                            <Settings className="h-4 w-4" /> Admin Dashboard
-                                        </DropdownMenuItem>
-                                    )}
-                                </div>
+    {user.role === 'admin' && (
+      <DropdownMenuItem
+        className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-gray-200 hover:bg-white/10 cursor-pointer"
+        onClick={() => navigate('/admin')}
+      >
+        <Settings className="h-4 w-4 text-brand-yellow" /> Admin Dashboard
+      </DropdownMenuItem>
+    )}
+  </div>
 
-                                <div className="p-2 border-t border-gray-100">
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button className="w-full bg-red-50 text-red-600 hover:bg-red-600 hover:text-white font-semibold h-10 rounded-lg">
-                                                <LogOut className="h-4 w-4" /> Log out
-                                            </Button>
-                                        </AlertDialogTrigger>
+  {/* Logout */}
+  <div className="p-3 border-t border-white/10">
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button className="w-full bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white font-semibold h-10 rounded-lg border border-red-500/50">
+          <LogOut className="h-4 w-4 mr-2" /> Log out
+        </Button>
+      </AlertDialogTrigger>
 
-                                        <AlertDialogContent className="bg-white text-black border border-gray-200">
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Log out?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    You will be returned to the home page.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction 
-                                                    onClick={handleLogout} 
-                                                    className="bg-red-600 text-white"
-                                                >
-                                                    Log out
-                                                </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                </div>
-                            </DropdownMenuContent>
+      <AlertDialogContent className="bg-[#0e1b33] text-white border border-white/10">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Log out?</AlertDialogTitle>
+          <AlertDialogDescription className="text-gray-300">
+            You will be returned to the home page.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="bg-white/10 text-white hover:bg-white/20">Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleLogout}
+            className="bg-red-600 text-white hover:bg-red-700"
+          >
+            Log out
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </div>
+</DropdownMenuContent>
+
                         </DropdownMenu>
                     ) : (
                         <Button 
@@ -241,10 +250,8 @@ function Header() {
 function HeroSection() { 
     return (
         <section className="relative min-h-screen flex flex-col px-4 overflow-hidden pt-32 md:pt-40">
-            {/* Animated Background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#020817] via-[#0f2342] to-[#1e1b4b] animate-gradient-xy z-0"></div>
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0 mix-blend-soft-light"></div>
-
+            {/* Transparent background to let fixed ThreeDBackground show through */}
+            
             {/* CENTER CONTENT */}
             <div className="relative z-10 flex-grow flex flex-col items-center justify-center w-full max-w-7xl mx-auto">
 
@@ -254,7 +261,7 @@ function HeroSection() {
                     {/* Logo Circle */}
                     <div className="relative shrink-0 group cursor-pointer">
                         <div className="absolute inset-0 bg-brand-yellow/20 rounded-full blur-xl group-hover:blur-2xl transition-all duration-500 animate-pulse"></div>
-                        <div className="relative w-32 h-32 md:w-48 md:h-48 rounded-full border-2 border-brand-yellow bg-[#051024] flex flex-col items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.15)]">
+                        <div className="relative w-32 h-32 md:w-48 md:h-48 rounded-full border-2 border-brand-yellow bg-[#051024]/80 backdrop-blur-sm flex flex-col items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.15)]">
                             <Gem className="h-12 w-12 md:h-16 md:w-16 text-brand-yellow mb-2" />
                             <span className="text-brand-yellow font-bold text-xs md:text-base tracking-[0.3em]">LOGO</span>
                         </div>
@@ -339,7 +346,7 @@ function GridSection() {
     }) => (
         <div 
             onClick={onClick}
-            className={`group relative aspect-[4/3] bg-[#0b1e3b] border border-white/10 rounded-xl overflow-hidden cursor-pointer transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] ${borderColorClass}`}
+            className={`group relative aspect-[4/3] bg-[#0b1e3b]/70 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden cursor-pointer transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] ${borderColorClass}`}
         >
             <img 
                 src={image}
@@ -356,7 +363,8 @@ function GridSection() {
     );
 
     return (
-        <section className="bg-[#051024] py-20 px-4 border-y border-white/10 relative">
+        // REMOVED solid background color to let the global 3D background show through
+        <section className="py-20 px-4 border-y border-white/10 relative z-10">
             <div className="container mx-auto max-w-7xl">
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -480,7 +488,8 @@ function ContactSection() {
     const navigate = useNavigate();
 
     return (
-        <section id="contact" className="bg-[#020817] py-16 px-4 border-t border-white/5 relative">
+        // REMOVED solid background to allow full scroll 3D animation
+        <section id="contact" className="py-16 px-4 border-t border-white/5 relative z-10">
             <div className="container mx-auto max-w-6xl text-center">
                 <h2 className="text-4xl md:text-6xl font-thin tracking-[0.1em] text-white mb-12 drop-shadow-2xl">
                     CONTACT <span className="text-brand-yellow font-normal">US</span>
@@ -560,7 +569,7 @@ function ContactSection() {
 // --- Footer ---
 function Footer() {
     return (
-        <footer className="bg-[#020817] py-8 text-center border-t border-white/5">
+        <footer className="bg-[#020817]/90 backdrop-blur-md py-8 text-center border-t border-white/5 relative z-10">
             <div className="flex flex-row justify-center items-center gap-4">
                  <div className="flex items-center gap-2 opacity-50 hover:opacity-100 transition-opacity duration-300">
                     <Gem className="h-4 w-4 text-brand-yellow" />
@@ -577,14 +586,21 @@ function Footer() {
 
 export default function Landing() {
     return (
-        <div className="min-h-screen bg-brand-navy font-sans selection:bg-brand-yellow selection:text-brand-navy overflow-x-hidden">
-            <Header />
-            <main>
-                <HeroSection />
-                <GridSection /> 
-                <ContactSection />
-            </main>
-            <Footer />
+        <div className="min-h-screen bg-[#020817] font-sans selection:bg-brand-yellow selection:text-brand-navy overflow-x-hidden relative">
+            {/* Global Fixed 3D Background */}
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <ThreeDBackground />
+            </div>
+
+            <div className="relative z-10">
+                <Header />
+                <main>
+                    <HeroSection />
+                    <GridSection /> 
+                    <ContactSection />
+                </main>
+                <Footer />
+            </div>
         </div>
     );
-}
+} 

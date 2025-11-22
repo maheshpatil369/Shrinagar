@@ -135,136 +135,228 @@ export default function AuthModal() {
   return (
     <Dialog open={isAuthModalOpen} onOpenChange={handleOnOpenChange}>
       {/* Added animation classes for slide-in/out */}
-      <DialogContent 
-        className="sm:max-w-md data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-8 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-bottom-8 duration-300"
-      >
-        {isSignUp ? (
-          <>
-            {/* --- SIGN UP FORM --- */}
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold flex items-center">
-                <Gem className="h-6 w-6 mr-2 text-pink-500" /> Create Account
-              </DialogTitle>
-              <DialogDescription>
-                Sign up to discover exquisite jewelry or become a seller.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSignup} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <Terminal className="h-4 w-4" />
-                  <AlertTitle>Signup Failed</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              <div className="relative">
-                <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input id="modal-signup-name" placeholder="Name" required value={signupName} onChange={(e) => setSignupName(e.target.value)} disabled={isLoading} className="pl-9" />
-              </div>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input id="modal-signup-email" type="email" placeholder="Email" required value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} disabled={isLoading} className="pl-9" />
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                {/* Updated password field with type toggle and icon */}
-                <Input 
-                  id="modal-signup-password" 
-                  type={showPassword ? 'text' : 'password'} 
-                  placeholder="Password" 
-                  required 
-                  value={signupPassword} 
-                  onChange={(e) => setSignupPassword(e.target.value)} 
-                  disabled={isLoading} 
-                  className="pl-9 pr-10" 
-                />
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="icon" 
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground" 
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
-              <div className="grid gap-2 text-sm">
-                <Label className="text-muted-foreground">Register as a:</Label>
-                <RadioGroup value={signupRole} onValueChange={(value) => setSignupRole(value as 'customer' | 'seller')} className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2"><RadioGroupItem value="customer" id="modal-role-customer" /><Label htmlFor="modal-role-customer">Buyer</Label></div>
-                  <div className="flex items-center space-x-2"><RadioGroupItem value="seller" id="modal-role-seller" /><Label htmlFor="modal-role-seller">Seller</Label></div>
-                </RadioGroup>
-              </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? <LoaderCircle className="animate-spin" /> : 'Create Account'}
-              </Button>
-            </form>
-            <DialogFooter className="text-sm text-muted-foreground justify-center">
-              Already have an account?
-              <Button variant="link" className="p-0 h-auto" onClick={(e) => toggleAuthMode(e, 'login')}>
-                Sign In
-              </Button>
-            </DialogFooter>
-          </>
-        ) : (
-          <>
-            {/* --- SIGN IN FORM --- */}
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold flex items-center">
-                <Gem className="h-6 w-6 mr-2 text-pink-500" /> Welcome Back!
-              </DialogTitle>
-              <DialogDescription>
-                Sign in to access your dashboard, wishlist, and more.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleLogin} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <Terminal className="h-4 w-4" />
-                  <AlertTitle>Login Failed</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input id="modal-login-email" type="email" placeholder="Email" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} disabled={isLoading} className="pl-9" />
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                {/* Updated password field with type toggle and icon */}
-                <Input 
-                  id="modal-login-password" 
-                  type={showPassword ? 'text' : 'password'} 
-                  placeholder="Password" 
-                  required 
-                  value={loginPassword} 
-                  onChange={(e) => setLoginPassword(e.target.value)} 
-                  disabled={isLoading} 
-                  className="pl-9 pr-10" 
-                />
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="icon" 
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground" 
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? <LoaderCircle className="animate-spin" /> : 'Sign In'}
-              </Button>
-            </form>
-            <DialogFooter className="text-sm text-muted-foreground justify-center">
-              New here?
-              <Button variant="link" className="p-0 h-auto" onClick={(e) => toggleAuthMode(e, 'signup')}>
-                Create an account
-              </Button>
-            </DialogFooter>
-          </>
+   <DialogContent
+  className="
+    sm:max-w-md 
+    bg-[#0e1b33] 
+    text-white 
+    border border-white/10 
+    shadow-[0_0_25px_rgba(255,215,0,0.15)] 
+    rounded-2xl
+    data-[state=open]:animate-in 
+    data-[state=open]:fade-in-0 
+    data-[state=open]:slide-in-from-top-8 
+    data-[state=closed]:animate-out 
+    data-[state=closed]:fade-out-0 
+    data-[state=closed]:slide-out-to-bottom-8 
+    duration-300
+  "
+>
+
+  {/* SIGN UP UI */}
+  {isSignUp ? (
+    <>
+      <DialogHeader className="pb-4">
+        <DialogTitle className="text-3xl font-bold flex items-center gap-2">
+          <Gem className="h-7 w-7 text-brand-yellow drop-shadow" />
+          <span className="bg-gradient-to-r from-yellow-400 to-yellow-200 bg-clip-text text-transparent">
+            Create Account
+          </span>
+        </DialogTitle>
+        <DialogDescription className="text-white/60">
+          Sign up to explore exclusive jewelry designs or become a seller.
+        </DialogDescription>
+      </DialogHeader>
+
+      <form onSubmit={handleSignup} className="space-y-5">
+
+        {/* ERROR BOX */}
+        {error && (
+          <Alert className="bg-red-600/20 border border-red-500/40 text-red-300">
+            <AlertTitle>Signup Failed</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
-      </DialogContent>
+
+        {/* INPUT: NAME */}
+        <div className="relative">
+          <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-yellow-400" />
+          <Input
+            className="pl-10 bg-[#051024] border-white/20 text-white focus:ring-yellow-400 focus:border-yellow-400"
+            placeholder="Full Name"
+            required
+            disabled={isLoading}
+            value={signupName}
+            onChange={(e) => setSignupName(e.target.value)}
+          />
+        </div>
+
+        {/* INPUT: EMAIL */}
+        <div className="relative">
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-yellow-400" />
+          <Input
+            type="email"
+            className="pl-10 bg-[#051024] border-white/20 text-white focus:ring-yellow-400 focus:border-yellow-400"
+            placeholder="Email Address"
+            required
+            disabled={isLoading}
+            value={signupEmail}
+            onChange={(e) => setSignupEmail(e.target.value)}
+          />
+        </div>
+
+        {/* INPUT: PASSWORD */}
+        <div className="relative">
+          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-yellow-400" />
+          <Input
+            type={showPassword ? "text" : "password"}
+            className="pl-10 pr-10 bg-[#051024] border-white/20 text-white focus:ring-yellow-400 focus:border-yellow-400"
+            placeholder="Password"
+            required
+            disabled={isLoading}
+            value={signupPassword}
+            onChange={(e) => setSignupPassword(e.target.value)}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-yellow-400 hover:text-white"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
+        </div>
+
+        {/* ROLE SELECT */}
+        <div>
+          <Label className="text-white/70">Register as:</Label>
+          <RadioGroup
+            value={signupRole}
+            onValueChange={(v) => setSignupRole(v as any)}
+            className="flex space-x-4 mt-1"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="customer" id="cust" />
+              <Label htmlFor="cust">Customer</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="seller" id="sell" />
+              <Label htmlFor="sell">Seller</Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        {/* BUTTON */}
+        <Button
+          className="
+            w-full 
+            bg-yellow-400 text-black 
+            hover:bg-yellow-300
+            font-semibold 
+            shadow-[0_0_15px_rgba(255,215,0,0.5)]
+          "
+          disabled={isLoading}
+        >
+          {isLoading ? <LoaderCircle className="animate-spin" /> : "Create Account"}
+        </Button>
+
+      </form>
+
+      <DialogFooter className="text-center pt-3 text-white/70">
+        Already have an account?
+        <Button variant="link" onClick={(e) => toggleAuthMode(e, "login")} className="text-yellow-300">
+          Sign In
+        </Button>
+      </DialogFooter>
+    </>
+  ) : (
+    <>
+      {/* LOGIN UI */}
+
+      <DialogHeader className="pb-4">
+        <DialogTitle className="text-3xl font-bold flex items-center gap-2">
+          <Gem className="h-7 w-7 text-brand-yellow drop-shadow" />
+          <span className="bg-gradient-to-r from-yellow-400 to-yellow-200 bg-clip-text text-transparent">
+            Welcome Back
+          </span>
+        </DialogTitle>
+        <DialogDescription className="text-white/60">
+          Sign in to access your wishlist, dashboard, and purchases.
+        </DialogDescription>
+      </DialogHeader>
+
+      <form onSubmit={handleLogin} className="space-y-5">
+
+        {error && (
+          <Alert className="bg-red-600/20 border border-red-500/40 text-red-300">
+            <AlertTitle>Login Failed</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* EMAIL */}
+        <div className="relative">
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-yellow-400" />
+          <Input
+            type="email"
+            className="pl-10 bg-[#051024] border-white/20 text-white focus:ring-yellow-400 focus:border-yellow-400"
+            placeholder="Email Address"
+            required
+            disabled={isLoading}
+            value={loginEmail}
+            onChange={(e) => setLoginEmail(e.target.value)}
+          />
+        </div>
+
+        {/* PASSWORD */}
+        <div className="relative">
+          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-yellow-400" />
+          <Input
+            type={showPassword ? "text" : "password"}
+            className="pl-10 pr-10 bg-[#051024] border-white/20 text-white focus:ring-yellow-400 focus:border-yellow-400"
+            placeholder="Password"
+            required
+            disabled={isLoading}
+            value={loginPassword}
+            onChange={(e) => setLoginPassword(e.target.value)}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-yellow-400 hover:text-white"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
+        </div>
+
+        <Button
+          className="
+            w-full 
+            bg-yellow-400 text-black 
+            hover:bg-yellow-300
+            font-semibold
+            shadow-[0_0_15px_rgba(255,215,0,0.5)]
+          "
+          disabled={isLoading}
+        >
+          {isLoading ? <LoaderCircle className="animate-spin" /> : "Sign In"}
+        </Button>
+      </form>
+
+      <DialogFooter className="text-center pt-3 text-white/70">
+        New here?
+        <Button variant="link" onClick={(e) => toggleAuthMode(e, "signup")} className="text-yellow-300">
+          Create an account
+        </Button>
+      </DialogFooter>
+    </>
+  )}
+
+</DialogContent>
+
     </Dialog>
   );
 }
