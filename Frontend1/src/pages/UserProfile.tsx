@@ -1,3 +1,4 @@
+// --- DARK THEME PROFILE PAGE --- 
 import { useEffect, useState, useCallback } from 'react';
 import { User, getCurrentUser } from '@/lib/auth';
 import { Product } from '@/lib/products';
@@ -48,117 +49,142 @@ export default function UserProfile() {
 
     if (isLoading) {
         return (
-            <div className="flex h-[80vh] items-center justify-center">
-                <LoaderCircle className="h-12 w-12 animate-spin text-primary" />
+            <div className="flex h-[80vh] items-center justify-center bg-[#020817] text-white">
+                <LoaderCircle className="h-12 w-12 animate-spin text-yellow-400" />
             </div>
         );
     }
+return (
+    <div className="min-h-screen bg-[#020817] text-white py-10 px-4">
+        <div className="container mx-auto max-w-6xl">
 
-    return (
-        <div className="container mx-auto max-w-6xl p-4 md:p-8">
-            <h1 className="text-3xl font-bold mb-2">My Profile</h1>
-            <p className="text-muted-foreground mb-8">Manage your account, wishlist & history.</p>
+            {/* Back Button */}
+            <Button
+                asChild
+                className="  bg-[#0e1b33]
+    text-yellow-300 
+    border border-yellow-400 
+    rounded-full
+mb-6 md:mb-8
+    text-sm font-medium
+    hover:bg-yellow-400 hover:text-black
+    transition-all
+    shadow-md"
+            >
+                <Link to="/buyer">← Back to Marketplace</Link>
+            </Button>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <h1 className="text-4xl font-bold mb-2 text-white">My Profile</h1>
 
-                {/* LEFT SIDE PROFILE CARD */}
-                <div className="md:col-span-1">
-                    <Card>
-                        <CardHeader className="text-center">
-                          <img
-                          src={user?.profileImg || defaultAvatar}
-                           alt="profile"
-                               className="h-28 w-28 rounded-full mx-auto mb-3 object-cover border-2 border-primary ring-2 ring-gray-200"
-                               />
 
-                            <CardTitle className="text-xl">{user?.name || "Guest User"}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2 text-sm">
-                            <p><span className="font-semibold">Email:</span> {user?.email}</p>
-                            <p><span className="font-semibold">Role:</span> <span className="capitalize">{user?.role}</span></p>
-                        </CardContent>
-                    </Card>
+<Button
+    asChild
+    className="mb-4 bg-yellow-400 text-black font-semibold px-6 py-2 rounded-lg hover:bg-yellow-500 transition-all shadow-md"
+>
+    {/* <Link to="/buyer">← Back to Marketplace</Link> */}
+</Button>
 
-                    {/* ORDER HISTORY (Empty Placeholder) */}
-                    <Card className="mt-6">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg">
-                                <UserRound className="h-5 w-5" />
-                                Order History
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-muted-foreground text-sm">
-                                You have no orders yet.
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
+<p className="text-white/60 mb-8">Manage your account, wishlist & history.</p>
 
-                {/* RIGHT – WISHLIST */}
-                <div className="md:col-span-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-xl">
-                                <Heart className="h-6 w-6 text-red-500" /> My Wishlist
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {!user && wishlist.length > 0 && (
-                                <Alert className="mb-4">
-                                    <AlertTitle>Your wishlist is saved locally!</AlertTitle>
-                                    <AlertDescription>
-                                        <Link to="/auth" className="underline font-semibold">Log in or sign up</Link>{" "}
-                                        to sync your wishlist across devices.
-                                    </AlertDescription>
-                                </Alert>
-                            )}
 
-                            {wishlist.length === 0 ? (
-                                <p className="text-muted-foreground">Your wishlist is empty.</p>
-                            ) : (
-                                <div className="space-y-4">
-                                    {wishlist.map(product => (
-                                        <div key={product._id} className="flex items-center gap-4 rounded-md border p-4">
-                                            <img
-                                                src={product.images[0]}
-                                                alt={product.name}
-                                                className="h-16 w-16 rounded-md object-cover"
-                                            />
-                                            <div className="flex-grow">
-                                                <Link
-                                                    to={`/product/${product._id}`}
-                                                    className="font-semibold hover:underline"
-                                                >
-                                                    {product.name}
-                                                </Link>
-                                                <p className="text-sm text-muted-foreground">₹{product.price.toFixed(2)}</p>
+                <div className="grid md:grid-cols-3 gap-8">
+
+                    {/* LEFT SIDE PROFILE CARD */}
+                    <div className="md:col-span-1">
+                        <Card className="bg-[#071324] border border-white/10 text-white shadow-lg">
+                            <CardHeader className="text-center">
+                                <img
+                                    src={user?.profileImg || defaultAvatar}
+                                    alt="profile"
+                                    className="h-28 w-28 rounded-full mx-auto mb-3 object-cover border-2 border-yellow-400 ring-2 ring-yellow-300 shadow-lg"
+                                />
+
+                                <CardTitle className="text-xl text-white">
+                                    {user?.name || "Guest User"}
+                                </CardTitle>
+                            </CardHeader>
+
+                            <CardContent className="space-y-3 text-sm">
+                                <p><span className="font-semibold text-white">Email:</span> {user?.email}</p>
+                                <p><span className="font-semibold text-white">Role:</span> <span className="capitalize">{user?.role}</span></p>
+                            </CardContent>
+                        </Card>
+
+                        {/* ORDER HISTORY */}
+                        <Card className="mt-6 bg-[#071324] border border-white/10 text-white shadow-lg">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-lg text-white">
+                                    <UserRound className="h-5 w-5 text-yellow-400" />
+                                    Order History
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-white/60 text-sm">You have no orders yet.</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* RIGHT – WISHLIST */}
+                    <div className="md:col-span-2">
+                        <Card className="bg-[#071324] border border-white/10 text-white shadow-lg">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-xl text-white">
+                                    <Heart className="h-6 w-6 text-red-500" />
+                                    My Wishlist
+                                </CardTitle>
+                            </CardHeader>
+
+                            <CardContent>
+                                {wishlist.length === 0 ? (
+                                    <p className="text-white/60">Your wishlist is empty.</p>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {wishlist.map(product => (
+                                            <div key={product._id} className="flex items-center gap-4 rounded-md bg-[#020817] border border-white/10 p-4">
+
+                                                <img
+                                                    src={product.images[0]}
+                                                    alt={product.name}
+                                                    className="h-16 w-16 rounded-md object-cover border border-white/20"
+                                                />
+
+                                                <div className="flex-grow min-w-0">
+                                                    <Link
+                                                        to={`/product/${product._id}`}
+                                                        className="font-semibold text-white hover:underline truncate block"
+                                                    >
+                                                        {product.name}
+                                                    </Link>
+
+                                                    {/* ❌ Remove price as requested */}
+                                                </div>
+
+                                                <div className="flex items-center gap-2">
+                                                    <Button asChild variant="outline" size="sm"
+                                                        className="border-white/20 text-red-500 hover:bg-yellow/10">
+                                                        <a href={product.affiliateUrl} target="_blank" rel="noopener noreferrer">
+                                                            <ExternalLink className="h-4 w-4" />
+                                                        </a>
+                                                    </Button>
+
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-red-500 hover:text-red-700 border border-red-500/20 rounded-md"
+                                                        onClick={() => handleRemoveFromWishlist(product._id)}
+                                                    >
+                                                        <X className="h-5 w-5" />
+                                                    </Button>
+                                                </div>
                                             </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
 
-                                            <div className="flex items-center gap-2">
-                                                <Button asChild variant="outline" size="sm">
-                                                    <a href={product.affiliateUrl} target="_blank" rel="noopener noreferrer">
-                                                        <ExternalLink className="h-4 w-4" />
-                                                    </a>
-                                                </Button>
-
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-red-500 hover:text-red-700"
-                                                    onClick={() => handleRemoveFromWishlist(product._id)}
-                                                >
-                                                    <X className="h-5 w-5" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
                 </div>
-
             </div>
         </div>
     );

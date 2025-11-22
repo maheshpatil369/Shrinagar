@@ -260,7 +260,18 @@ export default function ProductDetailPage() {
 
 
             <div className="container mx-auto max-w-screen-2xl p-4 md:p-6 lg:p-8">
-                <Button asChild variant="outline" className="mb-6 md:mb-8">
+<Button
+  asChild
+  className="
+    mb-6 md:mb-8
+    bg-[#0e1b33] 
+    text-yellow-300 
+    border border-yellow-400 
+    rounded-full
+    hover:bg-yellow-400 hover:text-black
+    transition-all
+  "
+>
                     <Link to="/buyer"><ArrowLeft className="mr-2 h-4 w-4" /> Back to all products</Link>
                 </Button>
                 
@@ -339,11 +350,20 @@ export default function ProductDetailPage() {
                             <div className="flex flex-col justify-start space-y-6">
                                 <div className="space-y-4">
                                     <div className="flex gap-2 flex-wrap">
-                                        <Badge variant="secondary" className="capitalize text-sm px-3 py-1">{product.category}</Badge>
-                                        <Badge variant="outline" className="text-sm px-3 py-1">{product.brand}</Badge>
+                                      <Badge 
+  variant="secondary"
+  className="capitalize text-sm px-3 py-1 
+  bg-yellow-400/20 text-yellow-300 border border-yellow-400/30"
+>
+{product.category}</Badge>
+                                       <Badge
+  variant="outline"
+  className="text-sm px-3 py-1 bg-white/10 text-white border-white/20"
+>
+{product.brand}</Badge>
                                     </div>
                                     
-                                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight break-words text-foreground">
+<h1 className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight break-words text-yellow-300">
                                         {product.name}
                                     </h1>
                                     
@@ -374,15 +394,28 @@ export default function ProductDetailPage() {
                                     </div>
                                     
                                     {/* Action Buttons */}
-                                    <div className="flex flex-col sm:flex-row gap-3 pt-6">
-                                        <Button size="lg" className="flex-1 text-base h-12 shadow-md hover:shadow-lg transition-all" onClick={handleAffiliateClick}>
-                                            <ExternalLink className="mr-2 h-5 w-5" /> 
-                                            Visit Seller Site
-                                        </Button>
-                                        <Button size="lg" variant="outline" className="flex-1 text-base h-12 border-2 hover:bg-muted" onClick={handleArVrClick}>
-                                            <View className="mr-2 h-5 w-5" /> 
-                                            AR/VR Try-On
-                                        </Button>
+<div className="flex flex-col gap-3 pt-6 sm:flex-row sm:items-center sm:justify-start">
+        <Button
+    size="lg"
+    className="w-full sm:flex-1 text-base h-11 sm:h-12 rounded-full bg-yellow-400 text-black hover:bg-yellow-200"
+    onClick={handleAffiliateClick}
+>
+
+  <ExternalLink className="mr-2 h-5 w-5" /> 
+  Visit Seller Site
+</Button>
+
+ <Button
+    size="lg"
+    variant="outline"
+    className="w-full sm:flex-1 text-base h-11 sm:h-12 rounded-full bg-yellow-500 text-black hover:bg-yellow-200"
+    onClick={handleArVrClick}
+>
+
+  <View className="mr-2 h-5 w-5" /> 
+  AR/VR Try-On
+</Button>
+
                                     </div>
                                     
                                     {!user && (
@@ -402,7 +435,7 @@ export default function ProductDetailPage() {
                             <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
                                 {/* Review Form */}
                                 <div>
-                                    <Card>
+<Card className="bg-[#071324] border border-white/10 text-white">
                                         <CardHeader>
                                             <CardTitle>Write a Customer Review</CardTitle>
                                         </CardHeader>
@@ -429,17 +462,35 @@ export default function ProductDetailPage() {
                                                         </div>
                                                         <div>
                                                             <Label htmlFor="comment">Your Review</Label>
-                                                            <Textarea
-                                                                id="comment"
-                                                                placeholder="Tell us what you think..."
-                                                                value={reviewComment}
-                                                                onChange={(e) => setReviewComment(e.target.value)}
-                                                                disabled={isReviewLoading}
-                                                                className="mt-2 min-h-[100px]"
-                                                            />
+                                                          <Textarea
+    id="comment"
+    placeholder="Tell us what you think..."
+    value={reviewComment}
+    onChange={(e) => setReviewComment(e.target.value)}
+    disabled={isReviewLoading}
+    className="
+        mt-2 min-h-[100px]
+        bg-[#0A1424] 
+        border border-white/10 
+        text-white 
+        placeholder:text-white/40
+        focus-visible:ring-yellow-400
+    "
+/>
+
                                                         </div>
-                                                        <Button type="submit" disabled={isReviewLoading}>
-                                                            {isReviewLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                                                     <Button
+    type="submit"
+    disabled={isReviewLoading}
+    className="
+      bg-yellow-400 
+      text-black 
+      hover:bg-yellow-300 
+      transition-all 
+      font-semibold
+    "
+>
+
                                                             Submit Review
                                                         </Button>
                                                     </form>
@@ -544,7 +595,7 @@ function RecommendationCard({ product }: { product: Product }) {
             <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm leading-tight group-hover:underline truncate">{product.name}</p>
                 <p className="text-xs text-muted-foreground truncate">{product.brand}</p>
-                <p className="font-bold text-sm mt-1">₹{product.price.toFixed(2)}</p>
+                {/* <p className="font-bold text-sm mt-1">₹{product.price.toFixed(2)}</p> */}
             </div>
         </Link>
     );
