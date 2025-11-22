@@ -110,7 +110,7 @@ const ThreeDBackground = () => {
 
       // Update and draw stars
       stars.forEach((star) => {
-        star.update(2); // Speed
+        star.update(0.5)
         star.draw();
       });
 
